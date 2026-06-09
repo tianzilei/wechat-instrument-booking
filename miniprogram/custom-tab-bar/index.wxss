@@ -1,0 +1,32 @@
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  min-height: 104rpx;
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1rpx solid #d8dee6;
+  background: #ffffff;
+}
+
+.tab-bar__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 104rpx;
+  color: #526170;
+}
+
+.tab-bar__item--active {
+  color: #0f766e;
+}
+
+.tab-bar__text {
+  font-size: 34rpx;
+  font-weight: 700;
+  line-height: 1;
+  text-align: center;
+}

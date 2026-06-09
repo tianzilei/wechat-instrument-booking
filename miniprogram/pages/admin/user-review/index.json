@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "注册审核",
+  "usingComponents": {
+    "empty-state": "../../../components/empty-state/index"
+  }
+}

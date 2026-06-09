@@ -1,0 +1,73 @@
+@import "../../styles/components.wxss";
+
+.sheet-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(24, 33, 43, 0.38);
+}
+
+.sheet {
+  width: 100%;
+  padding: 18rpx 24rpx calc(24rpx + env(safe-area-inset-bottom));
+  border-radius: 24rpx 24rpx 0 0;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+}
+
+.sheet__handle {
+  width: 72rpx;
+  height: 8rpx;
+  margin: 0 auto 24rpx;
+  border-radius: 999rpx;
+  background: var(--color-border-strong);
+}
+
+.sheet__title {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+.sheet__time {
+  margin-top: 10rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.sheet__hint {
+  margin-top: 18rpx;
+  padding: 16rpx;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+}
+
+.sheet__hint--warning {
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+}
+
+.sheet__hint--danger {
+  background: var(--color-danger-soft);
+  color: var(--color-danger);
+}
+
+.sheet__hint--accent {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.sheet__textarea {
+  margin-top: 24rpx;
+}
+
+.sheet__actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  margin-top: 24rpx;
+}

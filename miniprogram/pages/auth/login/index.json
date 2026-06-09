@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "登录",
+  "usingComponents": {
+    "status-tag": "../../../components/status-tag/index"
+  }
+}

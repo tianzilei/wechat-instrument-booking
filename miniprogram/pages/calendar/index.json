@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "仪器周历",
+  "usingComponents": {
+    "calendar-grid": "../../components/calendar-grid/index",
+    "time-range-sheet": "../../components/time-range-sheet/index"
+  }
+}

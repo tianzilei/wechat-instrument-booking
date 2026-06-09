@@ -1,0 +1,7 @@
+.user-card {
+  margin-bottom: 16rpx;
+}
+
+.user-name {
+  font-weight: 800;
+}

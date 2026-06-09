@@ -1,0 +1,5 @@
+@import "../../styles/calendar.wxss";
+
+.calendar-mode {
+  margin: 0 24rpx 12rpx;
+}

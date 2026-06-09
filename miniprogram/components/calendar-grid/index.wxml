@@ -1,0 +1,29 @@
+<scroll-view class="calendar-scroll" scroll-x scroll-y>
+  <view class="calendar-grid" style="grid-template-columns: 88rpx repeat({{days.length}}, 144rpx);">
+    <view class="calendar-corner"></view>
+    <view wx:for="{{days}}" wx:key="date" class="calendar-day {{item.isWeekend ? 'calendar-day--weekend' : ''}}">
+      <view class="calendar-day__label">{{item.label}}</view>
+      <view class="calendar-day__date">{{item.displayDate}}</view>
+    </view>
+
+    <block wx:for="{{hours}}" wx:key="hour" wx:for-item="hour">
+      <view class="calendar-hour">{{hourTextMap[hour]}}</view>
+      <view
+        wx:for="{{days}}"
+        wx:key="date"
+        wx:for-item="day"
+        class="calendar-cell {{cellMap[day.date + '-' + hour] ? cellMap[day.date + '-' + hour].className : 'calendar-cell--available'}} {{selectedMap[day.date + '-' + hour] ? 'calendar-cell--selecting' : ''}}"
+        data-date="{{day.date}}"
+        data-hour="{{hour}}"
+        bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
+        bindtouchend="onTouchEnd"
+        bindtap="onCellTap"
+      >
+        <view class="calendar-cell__text">{{cellMap[day.date + '-' + hour] ? cellMap[day.date + '-' + hour].text : ''}}</view>
+        <view wx:if="{{cellMap[day.date + '-' + hour] && cellMap[day.date + '-' + hour].subtext}}" class="calendar-cell__sub">{{cellMap[day.date + '-' + hour].subtext}}</view>
+        <view wx:if="{{selectedMap[day.date + '-' + hour]}}" class="calendar-cell__select-mark">选中</view>
+      </view>
+    </block>
+  </view>
+</scroll-view>

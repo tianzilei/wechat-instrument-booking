@@ -1,0 +1,21 @@
+.profile-name {
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+}
+
+.nav-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.nav-title {
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.nav-arrow {
+  color: var(--color-text-muted);
+  font-size: 48rpx;
+}

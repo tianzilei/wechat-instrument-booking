@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="page-header">
+    <view>
+      <view class="page-title">管理台</view>
+      <view class="page-subtitle">注册审核、预约审核、维护与统计</view>
+    </view>
+  </view>
+
+  <empty-state wx:if="{{!isAdmin}}" title="暂无管理权限" description="管理员身份需要在数据库中手动设置。" />
+
+  <block wx:else>
+    <view class="stat-grid">
+      <view class="stat-card">
+        <view class="stat-value">{{dashboard.registrationPending || 0}}</view>
+        <view class="stat-label">注册待审</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{dashboard.bookingPending || 0}}</view>
+        <view class="stat-label">预约待审</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{dashboard.cancelPending || 0}}</view>
+        <view class="stat-label">取消待审</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{dashboard.monthHours || 0}}</view>
+        <view class="stat-label">本月小时</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view wx:for="{{navs}}" wx:key="url" class="list-card admin-nav" data-url="{{item.url}}" bindtap="goPage">
+        <view>
+          <view class="admin-nav__title">{{item.title}}</view>
+          <view class="page-subtitle">{{item.desc}}</view>
+        </view>
+        <view class="admin-nav__arrow">›</view>
+      </view>
+    </view>
+  </block>
+</view>

@@ -1,0 +1,39 @@
+<view class="page">
+  <view class="page-header">
+    <view>
+      <view class="page-title">个人统计</view>
+      <view class="page-subtitle">预约时长与使用结构</view>
+    </view>
+  </view>
+
+  <view class="stat-grid">
+    <view class="stat-card">
+      <view class="stat-value">{{stats.totalHours || 0}}</view>
+      <view class="stat-label">总小时</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value">{{stats.workingHours || 0}}</view>
+      <view class="stat-label">工作时间</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value">{{stats.nonWorkingHours || 0}}</view>
+      <view class="stat-label">非工作时间</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value">{{stats.cancelledCount || 0}}</view>
+      <view class="stat-label">取消记录</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">近 12 个月</view>
+    <empty-state wx:if="{{trend.length === 0}}" title="暂无趋势数据" />
+    <view wx:else class="list-card">
+      <view wx:for="{{trend}}" wx:key="month" class="trend-row">
+        <view class="trend-month">{{item.month}}</view>
+        <view class="trend-bar"><view class="trend-bar__fill" style="width: {{item.percent}}%;"></view></view>
+        <view class="trend-hours">{{item.hours}}h</view>
+      </view>
+    </view>
+  </view>
+</view>

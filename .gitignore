@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+miniprogram/node_modules/
+miniprogram/miniprogram_npm/
+legacy-wechat-demo/
+
+# WeChat developer tool local/private settings
+project.private.config.json
+
+# Build and temporary output
+dist/
+build/
+.tmp/
+*.log
+
+# CloudBase local artifacts
+.cloudbase/

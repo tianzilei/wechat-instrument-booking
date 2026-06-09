@@ -1,0 +1,50 @@
+{
+  "pages": [
+    "pages/calendar/index",
+    "pages/auth/login/index",
+    "pages/auth/register/index",
+    "pages/booking/form/index",
+    "pages/profile/bookings/index",
+    "pages/profile/stats/index",
+    "pages/waitlist/index/index",
+    "pages/admin/user-review/index",
+    "pages/admin/booking-review/index",
+    "pages/admin/cancel-review/index",
+    "pages/admin/maintenance/index",
+    "pages/admin/restricted/index",
+    "pages/admin/users/index",
+    "pages/admin/stats/index",
+    "pages/profile/index/index",
+    "pages/admin/index/index"
+  ],
+  "window": {
+    "navigationBarTitleText": "仪器预约",
+    "navigationBarBackgroundColor": "#0f766e",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f7f8fa",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "custom": true,
+    "color": "#526170",
+    "selectedColor": "#0f766e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/calendar/index",
+        "text": "周历"
+      },
+      {
+        "pagePath": "pages/profile/index/index",
+        "text": "我的"
+      },
+      {
+        "pagePath": "pages/admin/index/index",
+        "text": "管理"
+      }
+    ]
+  },
+  "style": "v2",
+  "sitemapLocation": "sitemap.json"
+}

@@ -1,0 +1,14 @@
+.review-card {
+  margin-bottom: 16rpx;
+}
+
+.review-title {
+  font-weight: 800;
+}
+
+.review-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+  margin-top: 18rpx;
+}

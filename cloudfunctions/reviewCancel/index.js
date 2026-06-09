@@ -1,0 +1,53 @@
+const cloud = require('wx-server-sdk')
+
+cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
+
+const db = cloud.database()
+
+function ok(data) {
+  return { success: true, data, error: null }
+}
+
+function fail(code, message) {
+  return { success: false, data: null, error: { code, message } }
+}
+
+async function getAdmin(openid) {
+  const res = await db.collection('users').where({ openid }).limit(1).get()
+  const user = res.data[0]
+  return user && user.role === 'admin' ? user : null
+}
+
+exports.main = async (event) => {
+  const { OPENID } = cloud.getWXContext()
+  const admin = await getAdmin(OPENID)
+  if (!admin) return fail('PERMISSION_DENIED', '无权限操作')
+  if (!event.bookingId || !['approve', 'reject'].includes(event.action)) return fail('INVALID_PARAMS', '参数错误')
+
+  const ref = db.collection('bookings').doc(event.bookingId)
+  const booking = (await ref.get()).data
+  if (!booking || booking.status !== 'cancel_pending') return fail('STATE_CHANGED', '取消申请状态已变化')
+
+  const status = event.action === 'approve' ? 'cancelled' : 'confirmed'
+  const now = db.serverDate()
+  await ref.update({
+    data: {
+      status,
+      cancelReviewReason: event.reason || '',
+      reviewedBy: admin._id,
+      reviewedAt: now,
+      updatedAt: now,
+    },
+  })
+  await db.collection('review_logs').add({
+    data: {
+      targetType: 'cancel',
+      targetId: event.bookingId,
+      action: event.action,
+      reason: event.reason || '',
+      reviewerId: admin._id,
+      createdAt: now,
+    },
+  })
+  return ok({ bookingId: event.bookingId, status })
+}

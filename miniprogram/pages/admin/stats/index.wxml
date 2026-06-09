@@ -1,0 +1,41 @@
+<view class="page">
+  <view class="stat-grid">
+    <view class="stat-card">
+      <view class="stat-value">{{stats.totalHours || 0}}</view>
+      <view class="stat-label">总小时</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value">{{stats.workingHours || 0}}</view>
+      <view class="stat-label">工作时间</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value">{{stats.nonWorkingHours || 0}}</view>
+      <view class="stat-label">非工作时间</view>
+    </view>
+    <view class="stat-card">
+      <view class="stat-value">{{stats.byUser.length || 0}}</view>
+      <view class="stat-label">使用用户</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">用户时长</view>
+    <empty-state wx:if="{{stats.byUser.length === 0}}" title="暂无用户统计" />
+    <view wx:for="{{stats.byUser}}" wx:key="userId" class="list-card stat-row">
+      <view>
+        <view class="stat-name">{{item.name}}</view>
+        <view class="page-subtitle">{{item.college}}</view>
+      </view>
+      <view class="stat-hours">{{item.hours}}h</view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">月份统计</view>
+    <empty-state wx:if="{{stats.byMonth.length === 0}}" title="暂无月份统计" />
+    <view wx:for="{{stats.byMonth}}" wx:key="month" class="list-card stat-row">
+      <view class="stat-name">{{item.month}}</view>
+      <view class="stat-hours">{{item.hours}}h</view>
+    </view>
+  </view>
+</view>

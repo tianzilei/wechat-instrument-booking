@@ -1,0 +1,14 @@
+<view class="page">
+  <view class="page-header">
+    <view>
+      <view class="page-title">预约仪器</view>
+      <view class="page-subtitle">第一版推荐从周历长按或点击时段发起预约。</view>
+    </view>
+  </view>
+
+  <view class="list-card">
+    <view class="section-title">预约入口</view>
+    <view class="page-subtitle">请返回周历，选择具体整点时段后提交预约或审核申请。</view>
+    <button class="button button--primary form-action" bindtap="goCalendar">返回周历</button>
+  </view>
+</view>

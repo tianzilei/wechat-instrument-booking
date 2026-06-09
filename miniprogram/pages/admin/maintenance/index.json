@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "维护时间",
+  "usingComponents": {
+    "empty-state": "../../../components/empty-state/index"
+  }
+}

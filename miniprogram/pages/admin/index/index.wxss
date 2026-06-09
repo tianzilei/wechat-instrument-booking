@@ -1,0 +1,15 @@
+.admin-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16rpx;
+}
+
+.admin-nav__title {
+  font-weight: 800;
+}
+
+.admin-nav__arrow {
+  color: var(--color-text-muted);
+  font-size: 48rpx;
+}

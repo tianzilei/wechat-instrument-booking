@@ -1,0 +1,21 @@
+<view class="page">
+  <view class="page-header">
+    <view>
+      <view class="page-title">我的候补</view>
+      <view class="page-subtitle">候补转正后需在 2 小时内确认。</view>
+    </view>
+  </view>
+
+  <empty-state wx:if="{{items.length === 0}}" title="暂无候补记录" description="预约冲突时可加入候补队列。" />
+  <view wx:for="{{items}}" wx:key="_id" class="list-card waitlist-card">
+    <view class="row-between">
+      <view class="waitlist-time">{{item.timeText}}</view>
+      <status-tag text="{{item.statusText}}" tone="{{item.statusTone}}" />
+    </view>
+    <view class="page-subtitle">{{item.remark || '无备注'}}</view>
+    <view wx:if="{{item.status === 'confirming'}}" class="waitlist-actions">
+      <button class="button button--primary" data-id="{{item._id}}" data-action="confirm" bindtap="confirmWaitlist">确认</button>
+      <button class="button button--secondary" data-id="{{item._id}}" data-action="decline" bindtap="confirmWaitlist">放弃</button>
+    </view>
+  </view>
+</view>

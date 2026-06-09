@@ -1,0 +1,6 @@
+{
+  "navigationBarTitleText": "个人统计",
+  "usingComponents": {
+    "empty-state": "../../../components/empty-state/index"
+  }
+}

@@ -1,0 +1,7 @@
+.slot-card {
+  margin-bottom: 16rpx;
+}
+
+.slot-time {
+  font-weight: 800;
+}

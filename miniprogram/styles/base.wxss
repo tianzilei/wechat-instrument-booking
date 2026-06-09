@@ -1,0 +1,83 @@
+page {
+  min-height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+  font-size: var(--font-size-md);
+  line-height: var(--line-normal);
+}
+
+view,
+scroll-view,
+button,
+input,
+textarea {
+  box-sizing: border-box;
+}
+
+button {
+  margin: 0;
+  padding: 0;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  line-height: 1;
+}
+
+button::after {
+  border: 0;
+}
+
+input,
+textarea {
+  width: 100%;
+  color: var(--color-text);
+}
+
+.page {
+  min-height: 100vh;
+  padding: 24rpx 24rpx calc(144rpx + env(safe-area-inset-bottom));
+}
+
+.page--flush {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding-bottom: 24rpx;
+}
+
+.page-title {
+  font-size: var(--font-size-xl);
+  font-weight: 700;
+  line-height: var(--line-tight);
+}
+
+.page-subtitle {
+  margin-top: 8rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.section {
+  margin-top: 24rpx;
+}
+
+.section-title {
+  margin-bottom: 16rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}

@@ -1,0 +1,8 @@
+.login-name {
+  font-size: var(--font-size-lg);
+  font-weight: 800;
+}
+
+.action-gap {
+  margin-top: 16rpx;
+}

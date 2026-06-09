@@ -1,0 +1,32 @@
+{
+  "$schema": "https://static.cloudbase.net/cli/cloudbaserc.schema.json",
+  "envId": "cloud1-d9goiq7y767dbd158",
+  "functionRoot": "cloudfunctions",
+  "functions": [
+    { "name": "cancelBooking", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "cancelWaitlist", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "createBooking", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "createMaintenance", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "createRestrictedSlot", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "deleteMaintenance", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "deleteRestrictedSlot", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "getAdminDashboard", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "getAdminStats", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "getCalendarBookings", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "getUserStats", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "joinWaitlist", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listBookingReviews", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listCancelReviews", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listMaintenanceSlots", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listMyBookings", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listMyWaitlists", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listRegistrationReviews", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listRestrictedSlots", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "listUsers", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "login", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "reviewBooking", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "reviewCancel", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "reviewRegistration", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "submitRegistration", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 }
+  ]
+}

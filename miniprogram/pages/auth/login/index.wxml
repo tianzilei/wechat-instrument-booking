@@ -1,0 +1,23 @@
+<view class="page">
+  <view class="page-header">
+    <view>
+      <view class="page-title">微信登录</view>
+      <view class="page-subtitle">登录后可提交注册申请，通过后预约仪器。</view>
+    </view>
+  </view>
+
+  <view class="list-card">
+    <view class="row-between">
+      <view>
+        <view class="login-name">{{user.name || '未登录用户'}}</view>
+        <view class="page-subtitle">{{openid ? '已获取微信身份' : '尚未获取微信身份'}}</view>
+      </view>
+      <status-tag text="{{statusText}}" tone="{{statusTone}}" />
+    </view>
+  </view>
+
+  <view class="section">
+    <button class="button button--primary" loading="{{loading}}" bindtap="login">登录/刷新状态</button>
+    <button wx:if="{{showRegister}}" class="button button--secondary action-gap" bindtap="goRegister">提交注册申请</button>
+  </view>
+</view>

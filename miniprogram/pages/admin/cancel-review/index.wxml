@@ -1,0 +1,15 @@
+<view class="page">
+  <empty-state wx:if="{{items.length === 0}}" title="暂无取消待审" />
+  <view wx:for="{{items}}" wx:key="_id" class="list-card review-card">
+    <view class="row-between">
+      <view class="review-title">{{item.userName}} · {{item.college}}</view>
+      <status-tag text="取消审核中" tone="warning" />
+    </view>
+    <view class="page-subtitle">{{item.timeText}}</view>
+    <view class="page-subtitle">取消原因：{{item.cancelReason || '无'}}</view>
+    <view class="review-actions">
+      <button class="button button--primary" data-id="{{item._id}}" data-action="approve" bindtap="review">同意取消</button>
+      <button class="button button--danger" data-id="{{item._id}}" data-action="reject" bindtap="review">拒绝</button>
+    </view>
+  </view>
+</view>

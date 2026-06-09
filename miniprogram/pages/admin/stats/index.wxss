@@ -1,0 +1,15 @@
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16rpx;
+}
+
+.stat-name {
+  font-weight: 800;
+}
+
+.stat-hours {
+  color: var(--color-primary);
+  font-weight: 800;
+}

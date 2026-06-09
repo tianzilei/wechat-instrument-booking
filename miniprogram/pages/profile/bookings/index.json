@@ -1,0 +1,7 @@
+{
+  "navigationBarTitleText": "我的预约",
+  "usingComponents": {
+    "status-tag": "../../../components/status-tag/index",
+    "empty-state": "../../../components/empty-state/index"
+  }
+}

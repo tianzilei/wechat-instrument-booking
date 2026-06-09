@@ -1,0 +1,29 @@
+.trend-row {
+  display: grid;
+  grid-template-columns: 120rpx 1fr 72rpx;
+  align-items: center;
+  gap: 16rpx;
+  margin-bottom: 18rpx;
+}
+
+.trend-row:last-child {
+  margin-bottom: 0;
+}
+
+.trend-month,
+.trend-hours {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.trend-bar {
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: var(--color-surface-muted);
+}
+
+.trend-bar__fill {
+  height: 18rpx;
+  border-radius: 999rpx;
+  background: var(--color-primary);
+}

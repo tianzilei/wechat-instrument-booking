@@ -1,0 +1,11 @@
+<view class="page">
+  <empty-state wx:if="{{items.length === 0}}" title="暂无用户" />
+  <view wx:for="{{items}}" wx:key="_id" class="list-card user-card">
+    <view class="row-between">
+      <view class="user-name">{{item.name || '未填写姓名'}}</view>
+      <status-tag text="{{item.statusText}}" tone="{{item.statusTone}}" />
+    </view>
+    <view class="page-subtitle">{{item.college || '未填写学院'}} · {{item.studentId || '未填写学号'}}</view>
+    <view class="page-subtitle">{{item.phone || '未填写手机号'}} · {{item.supervisor || '未填写负责人'}}</view>
+  </view>
+</view>

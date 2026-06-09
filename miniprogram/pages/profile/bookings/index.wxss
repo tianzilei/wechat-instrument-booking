@@ -1,0 +1,11 @@
+.booking-card {
+  margin-bottom: 16rpx;
+}
+
+.booking-time {
+  font-weight: 800;
+}
+
+.booking-action {
+  margin-top: 18rpx;
+}
