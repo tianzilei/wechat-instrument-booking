@@ -5,7 +5,7 @@
 制定日期：2026-06-10
 
 适用范围：业务、产品、前端、云函数、数据库、迁移、测试和提审
-状态：后续实现的最高优先级设计依据
+状态：v2 核心功能已实现（commit 758484c），本文档作为设计与验收参照
 
 ## 1. 文档优先级
 
@@ -1337,19 +1337,29 @@ pending → processing → completed / rejected
 - 最小屏幕、系统字体放大和底部安全区无溢出。
 - 固定表头、时间列、操作栏和底部导航不遮挡内容。
 
-## 21. 当前代码与目标差距
+## 21. 实现状态
 
-当前代码仍属于 v1 数据和流程，不能直接提审。主要差距：
+v2 核心功能已于 2026-06-10 提交（commit 758484c）。v1 函数保留并存，v2 函数以 `V2` 后缀或新命名区分。
 
-- 注册仍采集手机号、学号、学院和导师。
-- 尚无课题、课题申请和独立注册申请集合。
-- 预约仍以单个 `startAt/endAt` 为核心，不能表达目标多时段模型。
-- 周历接口仍可能返回姓名/学院结构。
-- 预约和候补仍冗余保存 `openid`、姓名或学院。
-- 尚无协议、隐私政策、隐私请求和注销任务。
-- 尚无过去时段、自然日提前范围和浏览边界完整校验。
-- 尚无重要变更、规则复审和配置迁移状态机。
-- 管理统计仍包含用户维度。
-- 部分审核列表仍在行内直接操作，与目标详情审核流程不一致。
+### 已实现
 
-因此下一阶段应先完成 P0 数据与接口重构，再继续扩展 UI，避免在旧模型上重复返工。
+- 用户模型重构：移除手机号、学号、学院、导师，新增 `accountStatus`、`needsLegalAcceptance`
+- 课题系统：`projects`、`project_applications` 集合，CRUD + 审核流程
+- 独立注册申请：`registration_applications` 集合，两阶段课题+注册审核
+- 多时段预约单模型：`segments` 数组、`scheduleKey`、`requestId` 幂等
+- 公开/本人/管理员三级周历接口：`getPublicCalendar`、`getMyBookingDetail`、`getAdminBookingDetail`
+- 协议与隐私：`getLegalDocuments`、`acceptLegalDocuments`、结构化隐私请求
+- 账号注销：`deleteAccount` + `processDeletionTasks` 后台任务状态机
+- 重要变更强提醒：`important_events` 集合与强制阅读弹窗
+- 规则复审：`rule_review_pending` 状态 + `scanSettingsVersion`
+- 管理员治理：维护模式、课题审核、隐私请求处理、用户暂停/恢复
+- 数据生命周期：`generateDailyStats`、`cleanupRetentionData`、`expireBookingReviews`、`expireCancelReviews`
+- 候补协调：`reconcileWaitlists` 定时任务
+- 内容安全：所有用户自由文本输入在云函数写入前检测
+
+### 保留待完善
+
+- v1 函数（`createBooking`、`reviewBooking` 等）仍存在于代码中，尚未移除
+- `getAdminStats` 可能仍包含用户维度的统计字段
+- 部分审核列表仍在行内直接操作（见 admin AGENTS.md 标注）
+- 生产环境尚未部署，迁移脚本和验收流程待执行（见 §18）

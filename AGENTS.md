@@ -1,12 +1,12 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-06-10T11:46:41Z
-**Commit:** 754aea0
+**Generated:** 2026-06-10T14:30:00Z
+**Commit:** 758484c
 **Branch:** main
 
 ## OVERVIEW
 
-仪器预约小程序 — WeChat Mini-Program instrument booking system with CloudBase backend. Public calendar view, registration with admin approval, hourly booking with review workflows, waitlist, maintenance/restricted time slots, and usage statistics.
+仪器预约小程序 — WeChat Mini-Program instrument booking system with CloudBase backend. Public calendar view, registration with admin approval, hourly booking with review workflows, waitlist, maintenance/restricted time slots, usage statistics, project management, privacy/legal compliance, data lifecycle, and account lifecycle.
 
 **Stack:** WeChat Mini-Program (native WXML/WXSS/JS) + WeChat CloudBase (Node.js 18.15 cloud functions)
 
@@ -19,14 +19,15 @@
 │   │   ├── calendar/      # Main week-view calendar (primary UI)
 │   │   ├── auth/          # Login + registration (login, register)
 │   │   ├── booking/       # Booking form (stub — redirects to calendar)
-│   │   ├── profile/       # User profile hub (index, bookings, stats)
+│   │   ├── profile/       # User profile hub (index, bookings, stats, privacy)
 │   │   ├── waitlist/      # User waitlist management
-│   │   └── admin/         # Admin: reviews, maintenance, users, stats → AGENTS.md
+│   │   ├── legal/         # Legal documents (agreement, privacy)
+│   │   └── admin/         # Admin: 13 sub-pages (reviews, maintenance, projects, users, stats, privacy, governance) → AGENTS.md
 │   ├── components/        # 5 reusable components
 │   ├── custom-tab-bar/    # Custom text-only tab bar (3 tabs)
 │   ├── styles/            # Global stylesheets (tokens, base, components, calendar)
 │   └── utils/             # Shared utilities (api, date, status, tabbar)
-├── cloudfunctions/        # 25 CloudBase functions → AGENTS.md
+├── cloudfunctions/        # 71 CloudBase functions → AGENTS.md
 ├── docs/                  # Business baseline v2, style guide, audit plan, impl design
 ├── legacy-wechat-demo/    # Archived WeChat demo (gitignored, reference only)
 ├── project.config.json    # WeChat DevTools project config
@@ -38,8 +39,8 @@
 
 | Task | Location | Notes |
 |------|----------|-------|
-| App entry / global state | `miniprogram/app.js` | `App()`, cloud init, `globalData`, `isAdmin()` / `isApprovedUser()` |
-| Page registry / tab config | `miniprogram/app.json` | 18 pages, custom tabBar (3 tabs: 周历/我的/管理) |
+| App entry / global state | `miniprogram/app.js` | `App()`, cloud init, `globalData`, `isAdmin()` / `isApprovedUser()` / `needsLegalAcceptance()` |
+| Page registry / tab config | `miniprogram/app.json` | 24 pages, custom tabBar (3 tabs: 周历/我的/管理) |
 | Config (envId, host) | `miniprogram/config.js` | Cloud env ID, request host |
 | Design tokens | `miniprogram/styles/tokens.wxss` | All colors, fonts, spacing, radii — hardcoded hex ONLY here |
 | Shared UI classes | `miniprogram/styles/components.wxss` | `.card`, `.list-card`, `.button--*`, `.surface-section`, `.status-tag--*` |
@@ -51,9 +52,9 @@
 | Visual specs | `docs/style-guide.md` | Theme tokens, component contracts, acceptance checklist |
 | Privacy/audit compliance | `docs/audit-compliance-optimization-plan.md` | Forbidden data fields, content safety rules |
 | v1 design reference (historical) | `docs/implementation-design.md` | Deprecated — only for understanding existing v1 code |
-| Cloud function deployment | `cloudbaserc.json` | 25 deployed functions, all Nodejs18.15, 15s timeout |
+| Cloud function deployment | `cloudbaserc.json` | 71 deployed functions, all Nodejs18.15, 15s timeout (migrateData: 60s) |
 | Cloud functions source | `cloudfunctions/` | Backend logic — see `cloudfunctions/AGENTS.md` |
-| Admin pages | `miniprogram/pages/admin/` | See `miniprogram/pages/admin/AGENTS.md` |
+| Admin pages | `miniprogram/pages/admin/` | 13 sub-pages — see `miniprogram/pages/admin/AGENTS.md` |
 
 ## CONVENTIONS
 
@@ -62,7 +63,7 @@
 - **Data loaded in `onShow()`** — pages reload on every visibility, not just `onLoad()`
 - **Page file pattern** — `pages/<feature>/<subpage>/index.{js,json,wxml,wxss}` (all 4 files always present)
 - **Cloud function pattern** — `index.main` handler, `{ success, data, error }` response, self-contained (no shared utils)
-- **Admin guard** — check `getApp().isAdmin()` before sensitive operations; server-side re-verifies role
+- **Admin guard** — check `getApp().isAdmin()` before sensitive operations; server-side re-verifies role. Also check `needsLegalAcceptance()` and account status (`isApprovedUser()`) before allowing bookings.
 - **CSS token system** — `tokens.wxss` → `base.wxss` → `components.wxss` import chain; page WXSS for page-specific only
 - **ESLint** — airbnb-base config via `package.json`, run with `npm run lint`
 
@@ -80,7 +81,6 @@ Never return raw DB records to client (field whitelists only), never trust clien
 ### Code hygiene
 - Only lint suppression: `cloudfunctions/openapi/index.js:54` (`// eslint-disable-next-line`)
 - No TODO/FIXME/HACK in source (codebase is clean)
-- Current v1 code still has deprecated fields (phone, studentId, college, supervisor) — see baseline-v2 §21 for full gap list
 
 ## COMMANDS
 
@@ -102,7 +102,6 @@ tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
 
 - `miniprogramRoot` is `miniprogram/` — app files are NOT at repo root
 - `booking/form` is a 7-line stub that redirects to calendar tab; safe to remove
-- `confirmWaitlist` cloud function IS used by the app but missing from `cloudbaserc.json` — deploy manually via IDE
 - `legacy-wechat-demo/` is gitignored, reference only
 - LSP unavailable (no TypeScript in project)
 - All cloud functions are self-contained — no shared `utils/` directory among them

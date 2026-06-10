@@ -4,7 +4,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 
 ## OVERVIEW
 
-25 deployed business functions + 5 demo/utility. Every function: `index.main` handler, `wx-server-sdk`, inline `ok()`/`fail()` helpers. Auth functions verify `openid` from `wxContext`. Admin functions re-verify role.
+71 cloud functions. Every function: `index.main` handler, `wx-server-sdk`, inline `ok()`/`fail()` helpers. Auth functions verify `openid` from `wxContext`. Admin functions re-verify role.
 
 ## STRUCTURE
 
@@ -39,6 +39,50 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | `createRestrictedSlot` | Admin creates restricted slot (needs approval) |
 | `deleteRestrictedSlot` | Admin soft-deletes restricted slot |
 
+### Project Management
+| Function | Role |
+|----------|------|
+| `listProjects` | List projects (active/inactive) |
+| `createProject` | Admin creates project with name + abbreviation |
+| `updateProject` | Admin updates project name/abbreviation |
+| `searchProjects` | User searches projects (min 2 chars, max 5 results) |
+| `submitProjectApplication` | User submits new project proposal |
+| `reviewProjectApplication` | Admin approves/rejects project application |
+| `confirmApprovedProject` | User confirms final project info after admin approval |
+| `setProjectStatus` | Admin activates/deactivates a project |
+| `checkProjectSimilarity` | Check proposed name/abbr for duplicates |
+| `syncProjectDisplayCaches` | Update booking/slot display caches after project rename |
+| `listProjectApplications` | Admin lists pending project applications |
+| `requestProjectChange` | User requests project change (re-approval required) |
+
+### User Lifecycle
+| Function | Role |
+|----------|------|
+| `suspendUser` | Admin suspends user (cancels future bookings, blocks operations) |
+| `restoreUser` | Admin restores suspended user |
+| `deleteAccount` | User initiates account deletion workflow |
+
+### Privacy &amp; Legal
+| Function | Role |
+|----------|------|
+| `getLegalDocuments` | Return current agreement + privacy policy versions and text |
+| `acceptLegalDocuments` | Record user acceptance of current legal documents |
+| `submitPrivacyRequest` | User submits structured privacy request (query/correct/delete/withdraw/complaint) |
+| `listMyPrivacyRequests` | User views their privacy request status |
+| `listPrivacyRequests` | Admin lists pending privacy requests |
+| `processPrivacyRequest` | Admin processes a privacy request |
+
+### V2 Booking &amp; Review
+| Function | Role |
+|----------|------|
+| `createBookingV2` | Create booking with multi-segment model, requestId idempotency |
+| `cancelBookingV2` | Cancel booking with 12-hour rule, segments model |
+| `reviewBookingV2` | Admin reviews pending booking |
+| `reviewCancelV2` | Admin reviews cancellation request |
+| `submitRegistrationV2` | Submit registration with project association |
+| `reviewRegistrationV2` | Admin reviews registration application |
+| `confirmWaitlistV2` | Confirm waitlist → booking conversion |
+
 ### Data Queries
 | Function | Role | Access |
 |----------|------|--------|
@@ -54,26 +98,59 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | `listRegistrationReviews` | Pending registrations | Admin |
 | `listUsers` | All users | Admin |
 
-### Demo/Utility (not deployed via cloudbaserc.json)
-| Function | Purpose |
-|----------|---------|
-| `getServerDataDemo` | Boilerplate demo |
-| `getTempFileURL` | Convert cloud file IDs to temp URLs |
-| `openapi` | WeChat OpenAPI demo (template msg, wxacode) |
-| `wxContext` | Debug: return wx context info |
+### Data &amp; Calendar
+| Function | Role | Access |
+|----------|------|--------|
+| `getPublicCalendar` | Weekly public calendar with field whitelist | Public |
+| `getMyBookingDetail` | User's full booking detail with timeline | Self |
+| `getAdminBookingDetail` | Admin booking detail with current user name | Admin |
+| `getSettings` | Get system settings (hours, versions, service mode) | Public (limited) |
+
+### Settings &amp; Maintenance
+| Function | Role |
+|----------|------|
+| `updateSettings` | Admin updates working hours, agreement versions, service mode |
+| `scanSettingsVersion` | Detect rules version changes, trigger migration |
+
+### Background Tasks
+| Function | Role |
+|----------|------|
+| `expireBookingReviews` | Auto-timeout pending reviews past start time |
+| `expireCancelReviews` | Auto-reject cancel reviews past start time |
+| `reconcileWaitlists` | Process waitlist queue, handle timeouts and succession |
+| `processDeletionTasks` | Execute account deletion steps idempotently |
+| `generateDailyStats` | Generate anonymous daily usage statistics |
+| `cleanupRetentionData` | Enforce 30/90/365-day data retention policies |
+
+### Migration
+| Function | Role |
+|----------|------|
+| `migrateData` | v1→v2 data migration with backup (60s timeout) |
 
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Deployment config | `../cloudbaserc.json` | 25 functions, all Nodejs18.15, 15s timeout |
+| Deployment config | `../cloudbaserc.json` | 71 functions, all Nodejs18.15, 15s timeout (migrateData: 60s) |
 | User model &amp; auth | `login/index.js`, `submitRegistration/index.js` | Registration form fields, role assignment |
+| V2 user model &amp; auth | `submitRegistrationV2/index.js` | Registration with project association |
 | Booking conflict logic | `createBooking/index.js` | Maintenance/restriction/working-hour checks |
+| V2 booking logic | `createBookingV2/index.js` | Multi-segment model, requestId idempotency |
 | Cancel threshold | `cancelBooking/index.js` | 12-hour rule; `cancel_pending` vs direct cancel |
+| V2 cancel logic | `cancelBookingV2/index.js` | 12-hour rule, segments model |
 | Waitlist conversion | `confirmWaitlist/index.js` | Atomic confirm → booking flow |
 | Review audit trail | `reviewBooking/`, `reviewCancel/`, `reviewRegistration/` | All write to `review_logs` collection |
 | Calendar data assembly | `getCalendarBookings/index.js` | Public weekly view with field whitelist |
+| V2 public calendar | `getPublicCalendar/index.js` | Weekly view, strict field whitelist |
+| Booking detail | `getMyBookingDetail/index.js`, `getAdminBookingDetail/index.js` | User vs admin detail views |
 | Admin stats | `getAdminStats/index.js` | Per-user hours, monthly aggregation |
+| Project management | `createProject/`, `submitProjectApplication/`, `reviewProjectApplication/` | Full project lifecycle |
+| Privacy requests | `submitPrivacyRequest/`, `listPrivacyRequests/`, `processPrivacyRequest/` | Structured privacy workflow |
+| Legal documents | `getLegalDocuments/`, `acceptLegalDocuments/` | Agreement + privacy policy versioning |
+| User lifecycle | `suspendUser/`, `restoreUser/`, `deleteAccount/` | Suspension, restoration, deletion |
+| Settings | `getSettings/`, `updateSettings/`, `scanSettingsVersion/` | System configuration, version migration |
+| Background tasks | `expireBookingReviews/`, `reconcileWaitlists/`, `cleanupRetentionData/` | Scheduled maintenance jobs |
+| Data migration | `migrateData/index.js` | v1→v2 with backup, 60s timeout |
 
 ## CONVENTIONS
 
@@ -92,11 +169,11 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 - **Never** trust client time — use server `new Date()` for validation
 - **Never** log PII (openid, names, notes, reasons) in cloud function logs
 - **Never** skip content safety checks on user text input before DB write
+- **Never** skip content safety checks on user text (name, remark, reason, project name/abbr, etc.)
 - **Never** create shared utils — each function is intentionally self-contained
 
 ## NOTES
 
-- `confirmWaitlist` is present in code but NOT in `cloudbaserc.json` — deploy manually via IDE
-- `openapi` and `wxContext` are demo/debug functions, not used in production
-- Only lint suppression in codebase is at `openapi/index.js:54`
 - All functions use `wx-server-sdk` (`latest` or `~2.5.3`)
+- `migrateData` has a 60-second timeout — the only function exceeding the default 15s
+- Only lint suppression in codebase is at `openapi/index.js:54`
