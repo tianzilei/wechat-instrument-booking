@@ -39,6 +39,7 @@ project.private.config.json
 # CloudBase local artifacts
 .cloudbase/
 .tcb/
+.sisyphus/
 
 # Environment files
 .env
