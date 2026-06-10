@@ -1,37 +1,84 @@
-# 微信小程序示例
-微信小程序示例源码，欢迎扫描以下小程序码体验。
+# 仪器预约小程序
 
-> 提示：请使用微信开发者工具或微信客户端 6.7.2 及以上版本运行。
+一套基于微信小程序和微信云开发的仪器预约系统，支持公开周历查看、注册审核、特殊时段审批、候补、维护管理和使用统计。
 
-<img width="200" src="https://res.wx.qq.com/op_res/QqOF7ydl0dkpq-orpebXL-gBspr08VjoFOFGrWvKF9IULLhfT9XhnsSKlvc0gI8d">
+## 功能
 
-## 使用
+- 公开周历查看所有预约占用情况，未登录用户也可以浏览
+- 微信登录后提交注册申请，管理员审核通过后才能预约
+- 支持按小时预约，允许跨天，默认按未来 7 个自然日开放预约
+- 普通时段自动确认，夜间、周末、维护、受限时段进入审核
+- 支持取消预约、取消审核、候补转正和候补通知
+- 支持管理员维护时间、受限时段、用户管理和统计查看
+- 个人面板可查看我的预约记录、统计和状态信息
 
+## 技术栈
+
+- 微信小程序
+- 微信云开发 / CloudBase
+- 云函数
+- 原生 `WXML` / `WXSS` / `JS`
+
+## 目录结构
+
+```text
+.
+├── cloudfunctions/        # 云函数
+├── docs/                  # 业务设计、合规计划和 Style Guide
+├── miniprogram/           # 小程序前端
+├── project.config.json    # 微信开发者工具项目配置
+└── package.json           # 本地开发辅助依赖
 ```
-cd demo
-npm i
-cd miniprogram
-npm i
-```
-完成上述步骤后，使用微信开发者工具，点击【工具-构建npm】
 
-使用[微信开发者工具](https://developers.weixin.qq.com/miniprogram/dev/devtools/download.html)打开该示例代码，云开发环境搭建请参考[云开发示例说明](https://github.com/wechat-miniprogram/miniprogram-demo/blob/master/miniprogram/page/cloud/README.md)。
+## 快速开始
 
+1. 使用微信开发者工具打开仓库根目录。
+2. 在 `project.config.json` 中确认 `appid` 和云开发环境配置。
+3. 执行根目录依赖安装。
 
-## 贡献
-
-如果你有 bug 反馈或其他任何建议，欢迎提 issue 给我们。
-
-如果你愿意一起来完善小程序示例，欢迎通过 PR 的方式贡献代码。为了保证代码风格的统一，在编写代码之前，请在项目根目录运行以下命令安装依赖：
-
-```
+```bash
 npm install
 ```
-同时，确保你的代码可以通过 Lint 检查：
-```
-npm run lint
+
+4. 在微信开发者工具中构建 npm。
+5. 为云函数安装依赖并部署。
+
+### 云函数部署
+
+每个云函数目录下都有自己的 `package.json`，可以在微信开发者工具里逐个上传并部署，或使用 CloudBase CLI 批量部署。
+
+```bash
+tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
 ```
 
-## 截图
+### 本地预览
 
-<img width="375" src="https://res.wx.qq.com/op_res/0_vsSii5DaG-1hoXcqmBCT_tPShgSPKi3_FBVuVj1tu1ZdZD8lwYNrSQm3mdswI2">
+1. 打开微信开发者工具。
+2. 导入本仓库。
+3. 选择对应云环境。
+4. 运行 `miniprogram/app.json` 中定义的页面。
+
+## 设计与实现说明
+
+- 业务基线以 `docs/execution-baseline-v2.md` 为准
+- 视觉与组件规范以 `docs/style-guide.md` 为准
+- `docs/audit-compliance-optimization-plan.md` 用于审核合规参考
+- `docs/implementation-design.md` 保留为历史设计说明
+
+## 项目特性
+
+- 周历为主界面，强调按天分列、按小时分行的预约视图
+- 登录与注册分离，注册需管理员审核
+- 预约、取消和候补都按整单处理
+- 维护、受限、特殊时段会触发不同的审核和占用规则
+- 用户与管理员看到的信息分级展示
+
+## 注意事项
+
+- 该项目使用微信云开发能力，部分功能需要先配置云环境和数据库集合。
+- 预约、审核、候补和统计逻辑均依赖云函数，不建议直接修改前端绕过接口。
+- 提交到 GitHub 前，建议先检查是否已绑定真实的云环境配置。
+
+## 许可证
+
+MIT

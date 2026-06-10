@@ -1,17 +1,45 @@
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*.tmp
+*.temp
+*.log
+*.log.*
+*.pid
+*.seed
+*.stackdump
+*.local
 node_modules/
 miniprogram/node_modules/
 miniprogram/miniprogram_npm/
+cloudfunctions/**/node_modules/
+cloudfunctions/**/miniprogram_npm/
+cloudfunctions/**/.cache/
 legacy-wechat-demo/
+package-lock.json
+miniprogram/package-lock.json
+cloudfunctions/**/package-lock.json
+yarn.lock
+pnpm-lock.yaml
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage/
+dist/
+build/
+.cache/
+.tmp/
 
 # WeChat developer tool local/private settings
 project.private.config.json
-
-# Build and temporary output
-dist/
-build/
-.tmp/
-*.log
+.vscode/
+.idea/
 
 # CloudBase local artifacts
 .cloudbase/
+.tcb/
+
+# Environment files
+.env
+.env.*
