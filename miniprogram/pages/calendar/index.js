@@ -13,6 +13,7 @@ Page({
     weekStart: '',
     weekTitle: '',
     userHint: '未登录用户可查看占用情况',
+    serviceMode: 'normal',
     includeNight: false,
     days: [],
     hours: [],
@@ -71,21 +72,41 @@ Page({
 
   async loadCalendar() {
     try {
-      const data = await api.callFunction('getCalendarBookings', {
+      const data = await api.callFunction('getPublicCalendar', {
         weekStartDate: this.data.weekStart,
-        includeNight: this.data.includeNight,
       })
-      this.setData({
-        items: data.items || [],
-        maintenanceSlots: data.maintenanceSlots || [],
-        restrictedSlots: data.restrictedSlots || [],
+
+      const items = []
+      const maintenanceSlots = []
+      const restrictedSlots = []
+
+      ;(data.slots || []).forEach((slot) => {
+        if (slot.state === 'maintenance') {
+          maintenanceSlots.push({ startAt: slot.startAt, endAt: slot.endAt, reason: '', status: 'maintenance' })
+        } else if (slot.state === 'restricted') {
+          restrictedSlots.push({ startAt: slot.startAt, endAt: slot.endAt, reason: '', status: 'restricted' })
+        } else {
+          items.push({
+            type: 'booking',
+            bookingId: slot.publicRenderId,
+            status: slot.state === 'occupied' ? 'confirmed' : 'pending_review',
+            startAt: slot.startAt,
+            endAt: slot.endAt,
+            projectAbbr: slot.projectAbbr || '',
+            userName: '',
+          })
+        }
       })
+
+      const serviceMode = data.serviceMode || 'normal'
+      let userHint = this.data.userHint
+      if (serviceMode === 'maintenance' || serviceMode === 'rule_migrating') {
+        userHint = '系统维护中，暂不支持预约'
+      }
+
+      this.setData({ items, maintenanceSlots, restrictedSlots, userHint, serviceMode })
     } catch (err) {
-      this.setData({
-        items: [],
-        maintenanceSlots: [],
-        restrictedSlots: [],
-      })
+      this.setData({ items: [], maintenanceSlots: [], restrictedSlots: [] })
     }
   },
 
@@ -118,6 +139,11 @@ Page({
   onSelectRange(event) {
     if (!app.globalData.user) {
       wx.navigateTo({ url: '/pages/auth/login/index' })
+      return
+    }
+    const user = app.globalData.user
+    if (user.accountStatus && user.accountStatus !== 'active') {
+      wx.showToast({ title: '账号状态异常，暂不可预约', icon: 'none' })
       return
     }
     if (!app.isApprovedUser()) {
@@ -154,11 +180,19 @@ Page({
   async submitSheet(event) {
     const range = this.data.selectedRange
     if (!range) return
+
+    const serviceMode = this.data.serviceMode || 'normal'
+    if (serviceMode !== 'normal') {
+      wx.showToast({ title: '系统维护中', icon: 'none' })
+      return
+    }
+
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     wx.showLoading({ title: '提交中' })
     try {
-      await api.callFunction('createBooking', {
-        startAt: range.startAt.toISOString(),
-        endAt: range.endAt.toISOString(),
+      await api.callFunction('createBookingV2', {
+        requestId,
+        segments: [{ startAt: range.startAt.toISOString(), endAt: range.endAt.toISOString() }],
         remark: event.detail.remark || '',
       })
       wx.hideLoading()

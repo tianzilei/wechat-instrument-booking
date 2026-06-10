@@ -1,0 +1,26 @@
+.legal-page {
+  padding: 32rpx;
+}
+
+.legal-version {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  margin-bottom: 32rpx;
+}
+
+.legal-section {
+  margin-bottom: 24rpx;
+}
+
+.legal-heading {
+  font-size: var(--font-size-md);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: 12rpx;
+}
+
+.legal-text {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.8;
+  margin-bottom: 4rpx;
+}

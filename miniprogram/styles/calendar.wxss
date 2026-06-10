@@ -9,7 +9,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: 12rpx;
-  padding: 20rpx 24rpx 16rpx;
+  padding: 24rpx 24rpx 16rpx;
   border-bottom: 1rpx solid var(--color-divider);
   background: var(--color-surface);
 }
@@ -50,10 +50,10 @@
   width: 100%;
   min-height: var(--control-height-compact);
   padding: 0;
-  border: 1rpx solid var(--color-border);
+  border: 1rpx solid var(--color-primary);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-primary);
   font-size: var(--font-size-md);
   font-weight: 600;
   line-height: 1;
@@ -65,14 +65,14 @@
 
 .calendar-legend {
   width: 100%;
-  padding: 14rpx 0 16rpx;
+  padding: 12rpx 0 16rpx;
   background: var(--color-surface);
   white-space: nowrap;
 }
 
 .calendar-legend__inner {
   display: inline-flex;
-  gap: 22rpx;
+  gap: 24rpx;
   padding: 0 24rpx;
 }
 
@@ -87,7 +87,7 @@
 .legend-dot {
   width: 20rpx;
   height: 14rpx;
-  border-radius: 2rpx;
+  border-radius: 4rpx;
   border: 1rpx solid var(--color-border);
 }
 

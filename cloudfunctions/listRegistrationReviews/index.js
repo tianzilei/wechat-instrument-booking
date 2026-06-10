@@ -20,6 +20,21 @@ async function isAdmin(openid) {
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   if (!(await isAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
-  const res = await db.collection('users').where({ registrationStatus: 'pending' }).orderBy('updatedAt', 'asc').limit(100).get()
+  const res = await db.collection('users')
+    .where({ registrationStatus: 'pending' })
+    .field({
+      _id: true,
+      role: true,
+      registrationStatus: true,
+      name: true,
+      projectName: true,
+      projectAbbr: true,
+      rejectReason: true,
+      createdAt: true,
+      updatedAt: true,
+    })
+    .orderBy('updatedAt', 'asc')
+    .limit(100)
+    .get()
   return ok({ items: res.data })
 }

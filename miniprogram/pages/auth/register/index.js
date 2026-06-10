@@ -4,71 +4,127 @@ const api = require('../../../utils/api')
 Page({
   data: {
     loading: false,
+    canSubmit: false,
     form: {
       name: '',
-      phone: '',
-      studentId: '',
-      college: '',
-      supervisor: '',
+      agreed: false,
     },
+    projectMode: 'search',
+    projectSearch: '',
+    projectResults: [],
+    selectedProjectId: '',
+    selectedProjectName: '',
+    selectedProjectAbbr: '',
+    newProjectName: '',
+    newProjectAbbr: '',
+    searching: false,
   },
 
   onLoad() {
     const user = app.globalData.user || {}
-    this.setData({
-      form: {
-        name: user.name || '',
-        phone: user.phone || '',
-        studentId: user.studentId || '',
-        college: user.college || '',
-        supervisor: user.supervisor || '',
-      },
-    })
+    this.setData({ 'form.name': user.name || '' })
   },
 
   onInput(event) {
     const field = event.currentTarget.dataset.field
-    this.setData({
-      [`form.${field}`]: event.detail.value,
-    })
+    if (field === 'newProjectName' || field === 'newProjectAbbr') {
+      this.setData({ [field]: event.detail.value }, () => this.checkCanSubmit())
+    } else {
+      this.setData({ [`form.${field}`]: event.detail.value }, () => this.checkCanSubmit())
+    }
   },
 
-  validate() {
-    const { form } = this.data
-    const required = ['name', 'phone', 'studentId', 'college', 'supervisor']
-    const empty = required.find((field) => !form[field])
-    if (empty) {
-      wx.showToast({
-        title: '请完整填写申请信息',
-        icon: 'none',
-      })
-      return false
+  onProjectInput(event) {
+    const val = event.detail.value
+    this.setData({ projectSearch: val, selectedProjectId: '', selectedProjectName: '', selectedProjectAbbr: '' }, () => this.checkCanSubmit())
+    if (val.length >= 2) this.searchProjects(val)
+    else this.setData({ projectResults: [] })
+  },
+
+  async searchProjects(keyword) {
+    this.setData({ searching: true })
+    try {
+      const res = await api.callFunction('searchProjects', { keyword })
+      this.setData({ projectResults: res.items || [], searching: false })
+    } catch (err) {
+      this.setData({ projectResults: [], searching: false })
     }
-    if (!/^1\d{10}$/.test(form.phone)) {
-      wx.showToast({
-        title: '手机号格式不正确',
-        icon: 'none',
-      })
-      return false
-    }
-    return true
+  },
+
+  selectProject(event) {
+    const project = event.currentTarget.dataset.project
+    this.setData({
+      selectedProjectId: project._id,
+      selectedProjectName: project.name,
+      selectedProjectAbbr: project.abbr,
+      projectSearch: `${project.name}（${project.abbr}）`,
+      projectResults: [],
+    }, () => this.checkCanSubmit())
+  },
+
+  clearProject() {
+    this.setData({
+      selectedProjectId: '', selectedProjectName: '', selectedProjectAbbr: '',
+      projectSearch: '', projectResults: [],
+    }, () => this.checkCanSubmit())
+  },
+
+  switchToNewProject() {
+    this.setData({ projectMode: 'new', selectedProjectId: '', selectedProjectName: '', selectedProjectAbbr: '' }, () => this.checkCanSubmit())
+  },
+
+  switchToSearch() {
+    this.setData({ projectMode: 'search', newProjectName: '', newProjectAbbr: '' }, () => this.checkCanSubmit())
+  },
+
+  onAgreeChange() {
+    this.setData({ 'form.agreed': !this.data.form.agreed }, () => this.checkCanSubmit())
+  },
+
+  goAgreement() {
+    wx.navigateTo({ url: '/pages/legal/agreement/index' })
+  },
+
+  goPrivacy() {
+    wx.navigateTo({ url: '/pages/legal/privacy/index' })
+  },
+
+  checkCanSubmit() {
+    const { form, selectedProjectId, newProjectName, newProjectAbbr, projectMode } = this.data
+    let valid = !!(form.name && form.name.trim() && form.agreed)
+    if (projectMode === 'new') valid = valid && !!(newProjectName && newProjectName.trim() && newProjectAbbr && newProjectAbbr.trim())
+    else valid = valid && !!selectedProjectId
+    this.setData({ canSubmit: valid })
   },
 
   async submit() {
-    if (!this.validate()) return
+    if (!this.data.canSubmit) {
+      wx.showToast({ title: '请完整填写申请信息并同意协议', icon: 'none' })
+      return
+    }
     this.setData({ loading: true })
     try {
-      await api.callFunction('submitRegistration', this.data.form)
+      const { form, projectMode, selectedProjectId, newProjectName, newProjectAbbr } = this.data
+      if (projectMode === 'new') {
+        await api.callFunction('submitProjectApplication', {
+          proposedName: newProjectName.trim(),
+          proposedAbbr: newProjectAbbr.trim(),
+        })
+        wx.showToast({ title: '课题申请已提交，等待管理员审核', icon: 'none', duration: 2500 })
+      } else {
+        await api.callFunction('submitRegistrationV2', {
+          name: form.name.trim(),
+          projectId: selectedProjectId,
+          agreed: true,
+        })
+      }
       await app.refreshSession()
-      this.setData({ loading: false })
-      wx.showToast({
-        title: '已提交审核',
-        icon: 'success',
-      })
-      setTimeout(() => wx.navigateBack(), 500)
+      wx.showToast({ title: projectMode === 'new' ? '已提交课题申请' : '已提交注册审核', icon: 'success' })
+      setTimeout(() => wx.navigateBack(), 800)
     } catch (err) {
-      this.setData({ loading: false })
       api.showError(err)
+    } finally {
+      this.setData({ loading: false })
     }
   },
 })

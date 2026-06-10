@@ -25,6 +25,17 @@ exports.main = async (event) => {
   const startAt = new Date(event.startAt)
   const endAt = new Date(event.endAt)
   if (!(startAt < endAt)) return fail('INVALID_PARAMS', '时间参数错误')
+
+  if (event.reason) {
+    try {
+      const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.reason })
+      if (checkRes.result && checkRes.result.suggest === 'risky') {
+        return fail('CONTENT_UNSAFE', '受限说明包含违规信息，请修改后重试')
+      }
+    } catch (err) {
+      console.error('msgSecCheck error:', err.errCode || err.message)
+    }
+  }
   const res = await db.collection('restricted_slots').add({
     data: {
       startAt,
@@ -36,5 +47,10 @@ exports.main = async (event) => {
       updatedAt: db.serverDate(),
     },
   })
+
+  await db.collection('review_logs').add({
+    data: { targetType: 'restricted', targetId: res._id, action: 'create', reason: event.reason || '', reviewerId: admin._id, createdAt: db.serverDate() },
+  })
+
   return ok({ restrictedSlotId: res._id })
 }

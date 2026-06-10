@@ -25,10 +25,14 @@ App({
         data: {},
       })
       const result = res.result || {}
-      if (result.success) {
-        this.globalData.openid = result.data.openid
+      if (result.success && result.data && result.data.identified) {
         this.globalData.user = result.data.user
         this.globalData.hasLogin = true
+        this.globalData.needsLegalAcceptance = result.data.needsLegalAcceptance || false
+      } else {
+        this.globalData.user = null
+        this.globalData.hasLogin = false
+        this.globalData.needsLegalAcceptance = false
       }
       return result
     } catch (err) {
@@ -55,12 +59,18 @@ App({
 
   isApprovedUser() {
     const { user } = this.globalData
-    return user && user.registrationStatus === 'approved'
+    if (!user) return false
+    if (user.accountStatus && user.accountStatus !== 'active') return false
+    return user.registrationStatus === 'approved'
+  },
+
+  needsLegalAcceptance() {
+    return this.globalData.needsLegalAcceptance
   },
 
   globalData: {
     hasLogin: false,
-    openid: '',
+    needsLegalAcceptance: false,
     user: null,
   },
 })

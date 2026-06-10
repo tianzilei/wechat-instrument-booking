@@ -26,6 +26,13 @@ function isWeekend(date) {
   return day === 0 || day === 6
 }
 
+function getMinimumStartAt() {
+  const now = new Date()
+  now.setMinutes(0, 0, 0)
+  now.setHours(now.getHours() + 1)
+  return now
+}
+
 function getSpecialReasons(startAt, endAt, restrictedSlots) {
   const reasons = []
   if (isWeekend(startAt) || isWeekend(new Date(endAt.getTime() - 1))) reasons.push('weekend')
@@ -48,6 +55,9 @@ exports.main = async (event) => {
   const endAt = new Date(event.endAt)
   if (!(startAt < endAt) || !isWholeHour(startAt) || !isWholeHour(endAt)) return fail('INVALID_PARAMS', '预约时间必须为整点且结束晚于开始')
   if ((endAt - startAt) < 3600000) return fail('INVALID_PARAMS', '预约最短为 1 小时')
+
+  const minimumStartAt = getMinimumStartAt()
+  if (startAt < minimumStartAt) return fail('INVALID_SEGMENTS', '当前小时及过去时段不可预约')
 
   const now = new Date()
   const maxAdvance = new Date(now.getTime() + 7 * 24 * 3600000)
@@ -75,13 +85,24 @@ exports.main = async (event) => {
   const specialReasons = getSpecialReasons(startAt, endAt, restricted.data)
   const status = specialReasons.length > 0 ? 'pending_review' : 'confirmed'
   const bookingType = specialReasons.length > 0 ? 'special' : 'normal'
+
+  if (event.remark) {
+    try {
+      const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.remark })
+      if (checkRes.result && checkRes.result.suggest === 'risky') {
+        return fail('CONTENT_UNSAFE', '备注包含违规信息，请修改后重试')
+      }
+    } catch (err) {
+      console.error('msgSecCheck error:', err.errCode || err.message)
+    }
+  }
+
   const nowServer = db.serverDate()
   const res = await db.collection('bookings').add({
     data: {
       userId: user._id,
-      openid: OPENID,
       userName: user.name || '',
-      college: user.college || '',
+      projectAbbr: user.projectAbbr || '',
       startAt,
       endAt,
       occupiedSegments: [{ startAt, endAt, isWorkingHours: specialReasons.length === 0 }],

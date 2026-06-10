@@ -8,6 +8,7 @@ page {
   --color-text: #172321;
   --color-text-secondary: #566762;
   --color-text-muted: #74827e;
+  --color-text-disabled: #66736f;
   --color-text-inverse: #ffffff;
   --color-primary: #0f766e;
   --color-primary-pressed: #0b5f59;

@@ -1,0 +1,85 @@
+<view class="page legal-page">
+  <view class="surface-section">
+  <view class="page-intro">版本 1.0 · 2026年6月10日生效</view>
+
+    <view class="legal-section">
+      <view class="legal-heading">一、我们收集的信息</view>
+      <view class="legal-text">为提供仪器预约管理服务，我们仅收集以下必要信息：</view>
+      <view class="legal-text">1. 姓名：用于管理员核验用户身份和管理预约记录。</view>
+      <view class="legal-text">2. 课题名称：用于管理员核验所属课题组。</view>
+      <view class="legal-text">3. 课题缩写：用于周历公开占用展示，代替真实姓名以保护隐私。</view>
+      <view class="legal-text">4. 微信OpenID：作为账号技术标识，由微信云开发自动获取，不在小程序页面显示，不向其他用户公开。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">二、我们不收集的信息</view>
+      <view class="legal-text">本小程序明确不收集以下信息：</view>
+      <view class="legal-text">- 手机号、邮箱地址</view>
+      <view class="legal-text">- 学号、工号</view>
+      <view class="legal-text">- 学院、导师或负责人信息</view>
+      <view class="legal-text">- 微信昵称和头像</view>
+      <view class="legal-text">- 地理位置、通讯录、相册等设备敏感信息</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">三、信息用途</view>
+      <view class="legal-text">您提供的个人信息仅用于：</view>
+      <view class="legal-text">1. 用户身份标识与管理员审核。</view>
+      <view class="legal-text">2. 周历公开展示（仅课题缩写，不含姓名）。</view>
+      <view class="legal-text">3. 管理员进行预约管理和仪器维护。</view>
+      <view class="legal-text">4. 生成匿名化的使用统计数据。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">四、信息展示范围</view>
+      <view class="legal-text">1. 游客和未登录用户：只能看到周历中的课题缩写和占用状态，看不到姓名。</view>
+      <view class="legal-text">2. 普通登录用户：只能看到其他用户的课题缩写，看不到他人姓名和备注。</view>
+      <view class="legal-text">3. 管理员：因注册审核和仪器管理需要，可以查看用户姓名。</view>
+      <view class="legal-text">4. OpenID不在任何页面展示，不向任何用户返回。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">五、信息保存期限</view>
+      <view class="legal-text">1. 用户资料：保存至账号注销后删除。</view>
+      <view class="legal-text">2. 预约记录：保存365天后匿名化处理。</view>
+      <view class="legal-text">3. 匿名统计：长期保存，不含个人可识别信息。</view>
+      <view class="legal-text">4. 技术日志：保存30天后自动清理。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">六、数据安全措施</view>
+      <view class="legal-text">1. 所有数据通过微信云开发存储，由微信提供基础安全保护。</view>
+      <view class="legal-text">2. 客户端不直接读写数据库，所有操作通过云函数完成。</view>
+      <view class="legal-text">3. 管理员权限在云函数中验证，不依赖客户端标识。</view>
+      <view class="legal-text">4. 用户输入内容经过安全检测，防止违规信息入库。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">七、用户权利</view>
+      <view class="legal-text">您可以通过"我的 → 账号与隐私"行使以下权利：</view>
+      <view class="legal-text">1. 查询：查看您的个人资料和协议记录。</view>
+      <view class="legal-text">2. 更正：申请更正姓名等个人信息。</view>
+      <view class="legal-text">3. 删除：申请删除不再需要的数据。</view>
+      <view class="legal-text">4. 撤回同意：撤回对隐私政策的同意（将进入注销流程）。</view>
+      <view class="legal-text">5. 注销账号：永久删除您的账号和相关数据。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">八、信息共享与披露</view>
+      <view class="legal-text">1. 本小程序不出售、不交易、不向无关第三方提供用户个人信息。</view>
+      <view class="legal-text">2. 除法律法规要求外，不向任何第三方公开披露用户数据。</view>
+      <view class="legal-text">3. 管理员仅因管理需要查看用户姓名，不得用于其他目的。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">九、未成年人保护</view>
+      <view class="legal-text">本服务面向年满18周岁且具备实验室使用资格的用户。我们不向未成年人提供服务，也不收集未成年人的个人信息。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">十、联系方式与生效</view>
+      <view class="legal-text">如有隐私相关问题，请联系实验室管理员。</view>
+      <view class="legal-text">本隐私政策自2026年6月10日起生效。</view>
+    </view>
+  </view>
+</view>

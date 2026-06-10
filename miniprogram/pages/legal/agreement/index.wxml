@@ -1,0 +1,74 @@
+<view class="page legal-page">
+  <view class="surface-section">
+  <view class="page-intro">版本 1.0 · 2026年6月10日生效</view>
+
+    <view class="legal-section">
+      <view class="legal-heading">一、服务主体</view>
+      <view class="legal-text">本小程序（以下简称"本服务"）由仪器预约管理团队提供，用于实验室仪器预约管理。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">二、服务内容</view>
+      <view class="legal-text">本服务提供以下功能：</view>
+      <view class="legal-text">1. 公开周历查看仪器占用情况；</view>
+      <view class="legal-text">2. 用户注册与管理员审核；</view>
+      <view class="legal-text">3. 按小时预约仪器使用时段；</view>
+      <view class="legal-text">4. 预约取消、候补与管理；</view>
+      <view class="legal-text">5. 维护时间与受限时段管理；</view>
+      <view class="legal-text">6. 个人预约记录与使用统计。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">三、注册与审核规则</view>
+      <view class="legal-text">1. 用户须年满18周岁，具备相应实验室使用资格。</view>
+      <view class="legal-text">2. 注册时须填写真实姓名、课题名称和课题缩写。</view>
+      <view class="legal-text">3. 注册申请提交后由管理员审核，审核通过后方可预约仪器。</view>
+      <view class="legal-text">4. 管理员有权拒绝不符合要求的注册申请。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">四、预约与使用规则</view>
+      <view class="legal-text">1. 预约最小单位为1小时，所有时间必须为整点。</view>
+      <view class="legal-text">2. 可提前7个自然日预约，超出范围不可预约。</view>
+      <view class="legal-text">3. 当前小时及过去时段不可预约。</view>
+      <view class="legal-text">4. 非工作时间、周末和受限时段的预约需管理员审核。</view>
+      <view class="legal-text">5. 预约成功后请按时使用仪器，避免资源浪费。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">五、取消与候补规则</view>
+      <view class="legal-text">1. 距预约开始时间不少于12小时的取消请求直接生效。</view>
+      <view class="legal-text">2. 距开始不足12小时的取消需管理员审核。</view>
+      <view class="legal-text">3. 已占用时段可加入候补，候补成功后有确认期限。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">六、用户行为规范</view>
+      <view class="legal-text">1. 不得利用本服务从事违法违规活动。</view>
+      <view class="legal-text">2. 不得恶意占用预约时段或扰乱预约秩序。</view>
+      <view class="legal-text">3. 不得通过技术手段绕过预约限制或攻击系统。</view>
+      <view class="legal-text">4. 管理员有权暂停违规用户的账号。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">七、账号注销</view>
+      <view class="legal-text">用户可在"我的"页面申请注销账号。注销后：</view>
+      <view class="legal-text">1. 全部未来预约和候补将被取消。</view>
+      <view class="legal-text">2. 个人资料将被删除。</view>
+      <view class="legal-text">3. 历史预约将被匿名化处理。</view>
+      <view class="legal-text">4. 注销操作不可撤销。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">八、服务变更与免责</view>
+      <view class="legal-text">1. 本服务有权根据管理需要调整服务规则和功能，调整前将通过小程序公告通知。</view>
+      <view class="legal-text">2. 因系统维护、升级或不可抗力导致的服务中断，本服务不承担责任。</view>
+      <view class="legal-text">3. 用户因违反本协议或管理员规定导致的损失，由用户自行承担。</view>
+    </view>
+
+    <view class="legal-section">
+      <view class="legal-heading">九、联系方式</view>
+      <view class="legal-text">如有疑问，请联系实验室管理员。</view>
+    </view>
+  </view>
+</view>

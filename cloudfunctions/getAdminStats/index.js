@@ -52,7 +52,6 @@ exports.main = async () => {
       byUserMap[booking.userId] = {
         userId: booking.userId,
         name: booking.userName || '',
-        college: booking.college || '',
         hours: 0,
       }
     }

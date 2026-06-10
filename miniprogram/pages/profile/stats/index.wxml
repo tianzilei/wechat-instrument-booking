@@ -24,7 +24,7 @@
     <view class="section-title">近 12 个月</view>
     <empty-state wx:if="{{trend.length === 0}}" title="暂无趋势数据" />
     <view wx:else class="surface-section trend-table">
-      <view wx:for="{{trend}}" wx:key="month" class="trend-row">
+       <view wx:for="{{trend}}" wx:key="month" class="list-card trend-row">
         <view class="trend-month">{{item.month}}</view>
         <view class="trend-hours">{{item.hours}}h</view>
       </view>

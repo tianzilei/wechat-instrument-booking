@@ -56,6 +56,11 @@ Component({
     buildCellMap() {
       const cellMap = {}
       const hourTextMap = {}
+      const now = new Date()
+      const minimumStartAt = new Date(now)
+      minimumStartAt.setMinutes(0, 0, 0)
+      minimumStartAt.setHours(minimumStartAt.getHours() + 1)
+
       this.properties.hours.forEach((hour) => {
         hourTextMap[hour] = `${hour < 10 ? '0' : ''}${hour}:00`
       })
@@ -63,9 +68,29 @@ Component({
       this.properties.days.forEach((day) => {
         this.properties.hours.forEach((hour) => {
           const key = `${day.date}-${hour}`
+          const cellTime = new Date(`${day.date}T00:00:00`)
+          cellTime.setHours(hour, 0, 0, 0)
+          const isPast = cellTime < minimumStartAt
+
           const item = this.findCellItem(day.date, hour)
           if (item) {
-            cellMap[key] = item
+            if (isPast) {
+              cellMap[key] = {
+                className: 'calendar-cell--past',
+                text: '已结束',
+                subtext: '',
+                status: 'past',
+              }
+            } else {
+              cellMap[key] = item
+            }
+          } else if (isPast) {
+            cellMap[key] = {
+              className: 'calendar-cell--past',
+              text: '',
+              subtext: '',
+              status: 'past',
+            }
           } else {
             cellMap[key] = {
               className: getCellClass('available'),
@@ -108,8 +133,8 @@ Component({
       if (booking) {
         return {
           className: getCellClass(booking.status),
-          text: booking.displayName || (booking.status === 'pending_review' ? '待审核' : '已占用'),
-          subtext: booking.college || '',
+          text: booking.projectAbbr || (booking.status === 'pending_review' ? '待审核' : '已占用'),
+          subtext: booking.userName || '',
           status: booking.status,
           bookingId: booking.bookingId,
         }
@@ -139,6 +164,14 @@ Component({
         date,
         hour: Number(hour),
       }
+    },
+
+    isCellDisabled(cell) {
+      const key = `${cell.date}-${cell.hour}`
+      const cellData = this.data.cellMap[key]
+      if (!cellData) return true
+      const disabledStatuses = ['past', 'maintenance']
+      return disabledStatuses.includes(cellData.status)
     },
 
     getCellIndex(cell) {
@@ -191,6 +224,7 @@ Component({
     },
 
     toggleSelectedCell(cell) {
+      if (this.isCellDisabled(cell)) return
       const key = `${cell.date}-${cell.hour}`
       const selectedMap = { ...this.data.selectedMap }
       if (selectedMap[key]) {
@@ -207,6 +241,7 @@ Component({
     onTouchStart(event) {
       if (this.data.selecting) return
       const startCell = this.makeCell(event)
+      if (this.isCellDisabled(startCell)) return
       const startKey = `${startCell.date}-${startCell.hour}`
       const timer = setTimeout(() => {
         this.setData({
@@ -232,6 +267,8 @@ Component({
     onCellTap(event) {
       const cell = this.makeCell(event)
       const key = `${cell.date}-${cell.hour}`
+
+      if (this.isCellDisabled(cell)) return
       if (this.data.suppressNextTap && this.data.suppressTapKey === key) {
         this.setData({
           suppressNextTap: false,

@@ -1,0 +1,45 @@
+<view class="page">
+  <view class="page-intro">您可以提交隐私相关请求，管理员将尽快处理。</view>
+
+  <view wx:if="{{!showForm}}" class="section">
+    <button class="button button--primary" bindtap="showSubmitForm">提交新的隐私请求</button>
+  </view>
+
+  <view wx:if="{{showForm}}" class="surface-section">
+    <view class="section-title">选择请求类型</view>
+    <view class="type-grid">
+      <view
+        class="type-option {{selectedType === item.value ? 'type-option--selected' : ''}}"
+        wx:for="{{typeOptions}}"
+        wx:key="value"
+        data-type="{{item.value}}"
+        bindtap="selectType"
+      >{{item.label}}</view>
+    </view>
+    <view class="field">
+      <view class="field-label">补充说明（选填）</view>
+      <textarea class="input input--area" value="{{note}}" bindinput="onNoteInput" placeholder="请输入补充说明" maxlength="200" />
+    </view>
+    <view class="privacy-actions">
+      <button class="button button--secondary" bindtap="hideForm">取消</button>
+      <button class="button button--primary" loading="{{submitting}}" bindtap="submitRequest">提交</button>
+    </view>
+  </view>
+
+  <view wx:if="{{items.length > 0}}" class="section">
+    <view class="section-title">我的请求记录</view>
+    <view class="surface-section">
+      <view class="list-card" wx:for="{{items}}" wx:key="_id">
+        <view class="row-between">
+          <view>
+            <view class="nav-title">{{getTypeLabel(item.type)}}</view>
+            <view class="page-subtitle">{{item.createdAt ? item.createdAt.slice(0,10) : ''}} · {{getStatusLabel(item.status)}}</view>
+            <view wx:if="{{item.processNote}}" class="page-subtitle">回复：{{item.processNote}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <empty-state wx:elif="{{!showForm}}" title="暂无隐私请求记录" description="提交后在此查看处理状态" />
+</view>

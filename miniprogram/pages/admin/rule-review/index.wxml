@@ -1,0 +1,19 @@
+<view class="page">
+  <view class="page-intro">工作时间规则变更后，命中新规则的预约需复审确认。</view>
+
+  <view wx:if="{{items.length > 0}}" class="surface-section">
+    <view class="list-card" wx:for="{{items}}" wx:key="_id">
+      <view>
+        <view class="nav-title">{{item.userName || '未知用户'}}</view>
+        <view class="page-subtitle">{{item.timeText}}</view>
+        <view class="page-subtitle">状态：规则复审中</view>
+      </view>
+      <view class="review-actions">
+        <button class="button button--secondary button--compact" data-id="{{item._id}}" bindtap="approveRule">通过</button>
+        <button class="button button--danger button--compact" data-id="{{item._id}}" bindtap="rejectRule">拒绝</button>
+      </view>
+    </view>
+  </view>
+
+  <empty-state wx:else title="暂无待复审预约" description="当工作时间规则变更后，受影响的预约在此显示" />
+</view>

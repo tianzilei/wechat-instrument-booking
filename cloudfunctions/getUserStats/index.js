@@ -9,6 +9,10 @@ function ok(data) {
   return { success: true, data, error: null }
 }
 
+function fail(code, message) {
+  return { success: false, data: null, error: { code, message } }
+}
+
 function monthKey(date) {
   const d = new Date(date)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
@@ -23,8 +27,11 @@ function isWorking(date) {
 
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
+  const userRes = await db.collection('users').where({ openid: OPENID }).field({ _id: true }).limit(1).get()
+  const user = userRes.data[0]
+  if (!user) return fail('AUTH_REQUIRED', '请先登录')
   const res = await db.collection('bookings').where({
-    openid: OPENID,
+    userId: user._id,
     status: _.in(['confirmed', 'completed']),
   }).limit(1000).get()
 
@@ -52,11 +59,11 @@ exports.main = async () => {
   })
 
   const pending = await db.collection('bookings').where({
-    openid: OPENID,
+    userId: user._id,
     status: _.in(['pending_review', 'cancel_pending']),
   }).count()
   const cancelled = await db.collection('bookings').where({
-    openid: OPENID,
+    userId: user._id,
     status: 'cancelled',
   }).count()
 

@@ -1,0 +1,43 @@
+<view class="page">
+  <view class="page-intro">管理正式课题目录。课题只能停用，不能删除。</view>
+
+  <view class="section">
+    <button class="button button--primary" bindtap="showCreate">新建课题</button>
+  </view>
+
+  <view wx:if="{{showForm}}" class="surface-section">
+    <view class="section-title">{{editingId ? '编辑课题' : '新建课题'}}</view>
+    <view class="field">
+      <view class="field-label">课题名称</view>
+      <input class="input" value="{{formName}}" bindinput="onNameInput" placeholder="请输入课题名称" />
+    </view>
+    <view class="field">
+      <view class="field-label">课题缩写</view>
+      <input class="input" value="{{formAbbr}}" bindinput="onAbbrInput" placeholder="请输入唯一缩写" />
+    </view>
+    <view class="privacy-actions">
+      <button class="button button--secondary" bindtap="hideForm">取消</button>
+      <button class="button button--primary" loading="{{submitting}}" bindtap="submitForm">保存</button>
+    </view>
+  </view>
+
+  <view wx:if="{{items.length > 0}}" class="section">
+    <view class="section-title">启用中的课题（{{items.length}}）</view>
+    <view class="surface-section">
+      <view class="list-card" wx:for="{{items}}" wx:key="_id">
+        <view class="row-between">
+          <view>
+            <view class="nav-title">{{item.name}}</view>
+            <view class="page-subtitle">{{item.abbr}}</view>
+          </view>
+          <view class="project-actions">
+            <button class="button button--secondary button--compact" data-project="{{item}}" bindtap="editProject">编辑</button>
+            <button class="button button--danger button--compact" data-project="{{item}}" bindtap="deactivateProject">停用</button>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <empty-state wx:elif="{{!showForm}}" title="暂无课题" description="点击“新建课题”创建第一个课题" />
+</view>

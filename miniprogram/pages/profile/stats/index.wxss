@@ -8,7 +8,6 @@
   justify-content: space-between;
   align-items: center;
   min-height: 72rpx;
-  border-bottom: 1rpx solid var(--color-divider);
 }
 
 .trend-row:last-child {

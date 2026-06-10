@@ -2,7 +2,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20rpx;
+  gap: 24rpx;
   padding-top: 24rpx;
   padding-bottom: 24rpx;
 }
@@ -26,4 +26,8 @@
 .nav-title {
   font-size: var(--font-size-md);
   font-weight: 600;
+}
+
+.logout-text {
+  color: var(--color-danger);
 }

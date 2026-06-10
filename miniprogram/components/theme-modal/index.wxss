@@ -8,7 +8,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40rpx;
+  padding: 32rpx;
   background: var(--color-overlay);
 }
 
@@ -16,7 +16,7 @@
   width: 100%;
   max-width: 640rpx;
   max-height: 80vh;
-  padding: 28rpx 24rpx 24rpx;
+  padding: 24rpx 24rpx 24rpx;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -32,7 +32,7 @@
 }
 
 .theme-modal__content {
-  margin-top: 18rpx;
+  margin-top: 16rpx;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.6;
@@ -42,7 +42,7 @@
   width: 100%;
   min-height: 180rpx;
   margin-top: 24rpx;
-  padding: 18rpx 20rpx;
+  padding: 16rpx 24rpx;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -55,7 +55,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
-  margin-top: 28rpx;
+  margin-top: 24rpx;
 }
 
 .theme-modal__button {

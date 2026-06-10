@@ -1,0 +1,61 @@
+<view class="page">
+  <view class="page-intro">系统配置：工作时间、服务模式、协议版本、数据迁移。</view>
+
+  <view wx:if="{{settings}}" class="section">
+    <view class="surface-section">
+      <view class="list-card">
+        <view class="row-between">
+          <view>
+            <view class="nav-title">服务模式</view>
+            <view class="page-subtitle">{{settings.serviceMode === 'maintenance' ? '🔴 维护中' : settings.serviceMode === 'rule_migrating' ? '🟡 规则迁移中' : '🟢 正常'}}</view>
+          </view>
+          <button class="button button--secondary button--compact" bindtap="toggleServiceMode">{{settings.serviceMode === 'normal' ? '开启维护' : '恢复'}}</button>
+        </view>
+      </view>
+
+      <view class="list-card">
+        <view class="row-between">
+          <view>
+            <view class="nav-title">工作时间</view>
+            <view class="page-subtitle">{{settings.openStartHour}}:00 - {{settings.openEndHour}}:00</view>
+          </view>
+          <button class="button button--secondary button--compact" bindtap="showForm">修改</button>
+        </view>
+      </view>
+
+      <view class="list-card">
+        <view class="nav-title">协议版本</view>
+        <view class="page-subtitle">服务协议：v{{settings.serviceAgreementVersion}} · 隐私政策：v{{settings.privacyPolicyVersion}}</view>
+      </view>
+
+      <view class="list-card">
+        <view class="nav-title">提前预约天数</view>
+        <view class="page-subtitle">{{settings.maxAdvanceDays}} 天</view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:if="{{showForm}}" class="surface-section">
+    <view class="section-title">修改工作时间</view>
+    <view class="field">
+      <view class="field-label">开始时间（时）</view>
+      <input class="input" type="number" value="{{form.openStartHour}}" data-field="openStartHour" bindinput="onHourInput" />
+    </view>
+    <view class="field">
+      <view class="field-label">结束时间（时）</view>
+      <input class="input" type="number" value="{{form.openEndHour}}" data-field="openEndHour" bindinput="onHourInput" />
+    </view>
+    <view class="field">
+      <view class="field-label">最多提前预约天数</view>
+      <input class="input" type="number" value="{{form.maxAdvanceDays}}" data-field="maxAdvanceDays" bindinput="onDaysInput" />
+    </view>
+    <view class="privacy-actions">
+      <button class="button button--secondary" bindtap="hideForm">取消</button>
+      <button class="button button--primary" loading="{{loading}}" bindtap="saveHours">保存</button>
+    </view>
+  </view>
+
+  <view class="section">
+    <button class="button button--danger" bindtap="runMigration">执行 v1→v2 数据迁移（不可逆）</button>
+  </view>
+</view>

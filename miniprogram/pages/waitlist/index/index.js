@@ -31,7 +31,7 @@ Page({
 
   async confirmWaitlist(event) {
     try {
-      await api.callFunction('confirmWaitlist', {
+      await api.callFunction('confirmWaitlistV2', {
         waitlistId: event.currentTarget.dataset.id,
         action: event.currentTarget.dataset.action,
       })

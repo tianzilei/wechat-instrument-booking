@@ -11,41 +11,45 @@ function ok(data) {
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   const users = db.collection('users')
-  const now = db.serverDate()
   const existing = await users.where({ openid: OPENID }).limit(1).get()
 
   if (existing.data.length === 0) {
-    const addRes = await users.add({
-      data: {
-        openid: OPENID,
-        role: 'user',
-        registrationStatus: 'unsubmitted',
-        createdAt: now,
-        updatedAt: now,
-        lastLoginAt: now,
-      },
-    })
-    return ok({
-      openid: OPENID,
-      user: {
-        _id: addRes._id,
-        openid: OPENID,
-        role: 'user',
-        registrationStatus: 'unsubmitted',
-      },
-    })
+    return ok({ identified: false, user: null })
   }
 
   const user = existing.data[0]
+
+  const settingsRes = await db.collection('settings').doc('global').get()
+  const settings = settingsRes.data || {}
+  const currentAgreement = settings.serviceAgreementVersion || '1.0'
+  const currentPrivacy = settings.privacyPolicyVersion || '1.0'
+  const needsLegalAcceptance = (user.agreementVersion || '') !== currentAgreement || (user.privacyVersion || '') !== currentPrivacy
+
   await users.doc(user._id).update({
     data: {
-      lastLoginAt: now,
-      updatedAt: now,
+      lastLoginAt: db.serverDate(),
+      updatedAt: db.serverDate(),
     },
   })
 
+  const whitelist = {
+    _id: user._id,
+    role: user.role,
+    accountStatus: user.accountStatus || 'active',
+    registrationStatus: user.registrationStatus,
+    name: user.name,
+    projectId: user.projectId || '',
+    projectName: user.projectName || '',
+    projectAbbr: user.projectAbbr || '',
+    agreementVersion: user.agreementVersion || '',
+    privacyVersion: user.privacyVersion || '',
+  }
+
   return ok({
-    openid: OPENID,
-    user,
+    identified: true,
+    user: whitelist,
+    needsLegalAcceptance,
+    currentAgreementVersion: currentAgreement,
+    currentPrivacyVersion: currentPrivacy,
   })
 }

@@ -77,7 +77,7 @@ Page({
 
   async submitReview(bookingId, action, reason) {
     try {
-      await api.callFunction('reviewBooking', { bookingId, action, reason })
+      await api.callFunction('reviewBookingV2', { bookingId, action, reason })
       wx.showToast({ title: '已处理', icon: 'success' })
       this.loadItems()
     } catch (err) {

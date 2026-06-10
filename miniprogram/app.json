@@ -6,6 +6,7 @@
     "pages/booking/form/index",
     "pages/profile/bookings/index",
     "pages/profile/stats/index",
+    "pages/profile/privacy/index",
     "pages/waitlist/index/index",
     "pages/admin/user-review/index",
     "pages/admin/booking-review/index",
@@ -14,8 +15,15 @@
     "pages/admin/restricted/index",
     "pages/admin/users/index",
     "pages/admin/stats/index",
+    "pages/admin/projects/index",
+    "pages/admin/project-review/index",
+    "pages/admin/privacy-review/index",
+    "pages/admin/rule-review/index",
+    "pages/admin/maintenance-mode/index",
     "pages/profile/index/index",
-    "pages/admin/index/index"
+    "pages/admin/index/index",
+    "pages/legal/agreement/index",
+    "pages/legal/privacy/index"
   ],
   "window": {
     "navigationBarTitleText": "仪器预约",

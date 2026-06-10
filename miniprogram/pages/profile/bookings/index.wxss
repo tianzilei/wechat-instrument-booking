@@ -8,6 +8,6 @@
 }
 
 .booking-action {
-  margin-top: 18rpx;
+  margin-top: 16rpx;
   width: auto;
 }

@@ -34,6 +34,7 @@ function getCellClass(status) {
     maintenance: 'calendar-cell--maintenance',
     restricted: 'calendar-cell--restricted',
     selected: 'calendar-cell--selected',
+    past: 'calendar-cell--past',
   }
   return map[status] || 'calendar-cell--available'
 }

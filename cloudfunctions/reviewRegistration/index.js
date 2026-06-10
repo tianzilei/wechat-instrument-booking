@@ -25,6 +25,18 @@ exports.main = async (event) => {
   if (!event.userId || !['approve', 'reject'].includes(event.action)) return fail('INVALID_PARAMS', '参数错误')
   if (event.action === 'reject' && !event.reason) return fail('INVALID_PARAMS', '请填写拒绝原因')
 
+  // Content safety check on reject reason
+  if (event.action === 'reject' && event.reason) {
+    try {
+      const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.reason })
+      if (checkRes.result && checkRes.result.suggest === 'risky') {
+        return fail('CONTENT_UNSAFE', '拒绝原因包含违规信息，请修改后重试')
+      }
+    } catch (err) {
+      console.error('msgSecCheck error:', err.errCode || err.message)
+    }
+  }
+
   const status = event.action === 'approve' ? 'approved' : 'rejected'
   const now = db.serverDate()
   await db.collection('users').doc(event.userId).update({

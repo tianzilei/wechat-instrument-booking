@@ -58,7 +58,7 @@
 }
 
 .sheet__hint {
-  margin-top: 18rpx;
+  margin-top: 16rpx;
   padding: 16rpx;
   border-left: 4rpx solid currentColor;
   border-radius: 0;
@@ -90,7 +90,7 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  gap: 10rpx;
+  gap: 8rpx;
   width: 288rpx;
   max-width: 54vw;
 }
@@ -115,9 +115,9 @@
 }
 
 .sheet__action--secondary {
-  border: 1rpx solid var(--color-border-strong);
+  border: 1rpx solid var(--color-primary);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-primary);
 }
 
 .sheet__action--primary {

@@ -77,10 +77,7 @@ Page({
     const { bookingId } = event.detail.payload
     this.closeModal()
     try {
-      await api.callFunction('cancelBooking', {
-        bookingId,
-        reason: '用户主动取消',
-      })
+      await api.callFunction('cancelBookingV2', { bookingId, reason: '用户主动取消' })
       wx.showToast({ title: '已提交', icon: 'success' })
       this.loadBookings()
     } catch (err) {

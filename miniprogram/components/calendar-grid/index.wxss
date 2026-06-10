@@ -16,7 +16,7 @@
   flex-direction: column;
   align-items: stretch;
   gap: 12rpx;
-  padding: 14rpx 24rpx;
+  padding: 12rpx 24rpx;
   border-bottom: 1rpx solid var(--color-border);
   background: var(--color-surface);
   box-shadow: var(--shadow-popover);
@@ -120,11 +120,11 @@
 .calendar-day__weekend {
   align-self: flex-start;
   margin-top: 4rpx;
-  padding: 2rpx 6rpx;
+  padding: 4rpx 8rpx;
   border-radius: 4rpx;
   background: var(--color-warning-soft);
   color: var(--color-warning);
-  font-size: 18rpx;
+  font-size: 22rpx;
   line-height: 1.2;
 }
 
@@ -136,7 +136,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding-top: 10rpx;
+  padding-top: 8rpx;
   border-left: 1rpx solid var(--color-border);
   background: var(--color-surface-muted);
   color: var(--color-text-muted);
@@ -146,7 +146,7 @@
 .calendar-cell {
   position: relative;
   height: 96rpx;
-  padding: 10rpx 8rpx;
+  padding: 8rpx 8rpx;
   background: var(--color-surface);
   color: var(--color-text-secondary);
   overflow: hidden;
@@ -160,7 +160,7 @@
 
 .calendar-cell__sub {
   margin-top: 4rpx;
-  font-size: 20rpx;
+  font-size: 22rpx;
   line-height: 1.2;
 }
 
@@ -189,6 +189,11 @@
 .calendar-cell--restricted {
   background: var(--color-restricted-soft);
   color: var(--color-restricted);
+}
+
+.calendar-cell--past {
+  background: var(--color-surface-muted);
+  color: var(--color-text-disabled);
 }
 
 .calendar-cell--selected {
@@ -220,10 +225,10 @@
   position: absolute;
   right: 8rpx;
   bottom: 8rpx;
-  padding: 3rpx 8rpx;
+  padding: 4rpx 8rpx;
   border-radius: var(--radius-sm);
   background: var(--color-primary-selection-soft);
   color: var(--color-primary);
-  font-size: 18rpx;
+  font-size: 22rpx;
   line-height: 1.2;
 }

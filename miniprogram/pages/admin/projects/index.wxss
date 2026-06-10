@@ -1,0 +1,3 @@
+.privacy-actions { display: flex; gap: 16rpx; margin-top: 16rpx; }
+.privacy-actions button { flex: 1; }
+.project-actions { display: flex; gap: 8rpx; }

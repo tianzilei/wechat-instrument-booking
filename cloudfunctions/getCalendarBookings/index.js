@@ -23,7 +23,6 @@ exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const userRes = await db.collection('users').where({ openid: OPENID }).limit(1).get()
   const user = userRes.data[0]
-  const canSeeIdentity = !!user
   const isAdmin = user && user.role === 'admin'
   const weekStart = parseChinaDate(event.weekStartDate)
   const weekEnd = addDays(weekStart, 7)
@@ -39,24 +38,44 @@ exports.main = async (event) => {
     status: 'active',
     startAt: _.lt(weekEnd),
     endAt: _.gt(weekStart),
-  }).limit(100).get()
+  })
+  .field({
+    _id: true,
+    startAt: true,
+    endAt: true,
+    reason: true,
+    status: true,
+  })
+  .limit(100).get()
 
   const restrictedRes = await db.collection('restricted_slots').where({
     status: 'active',
     startAt: _.lt(weekEnd),
     endAt: _.gt(weekStart),
-  }).limit(100).get()
+  })
+  .field({
+    _id: true,
+    startAt: true,
+    endAt: true,
+    reason: true,
+    status: true,
+  })
+  .limit(100).get()
 
-  const items = bookingsRes.data.map((item) => ({
-    type: 'booking',
-    bookingId: item._id,
-    status: item.status,
-    startAt: item.startAt,
-    endAt: item.endAt,
-    displayName: canSeeIdentity ? item.userName : '',
-    college: canSeeIdentity ? item.college : '',
-    remark: isAdmin ? item.remark || '' : '',
-  }))
+  const items = bookingsRes.data.map((item) => {
+    const base = {
+      type: 'booking',
+      bookingId: item._id,
+      status: item.status,
+      startAt: item.startAt,
+      endAt: item.endAt,
+      projectAbbr: item.projectAbbr || '',
+    }
+    if (isAdmin) {
+      base.userName = item.userName || ''
+    }
+    return base
+  })
 
   return ok({
     weekStartDate: event.weekStartDate,

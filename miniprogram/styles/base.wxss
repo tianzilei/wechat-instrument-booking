@@ -57,7 +57,7 @@ textarea {
   align-items: flex-start;
   justify-content: space-between;
   gap: 24rpx;
-  padding-bottom: 20rpx;
+  padding-bottom: 24rpx;
 }
 
 .page-title {
@@ -67,7 +67,7 @@ textarea {
 }
 
 .page-subtitle {
-  margin-top: 6rpx;
+  margin-top: 8rpx;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.55;

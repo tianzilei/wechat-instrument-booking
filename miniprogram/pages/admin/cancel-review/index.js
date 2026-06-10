@@ -26,7 +26,7 @@ Page({
   async review(event) {
     const { id, action } = event.currentTarget.dataset
     try {
-      await api.callFunction('reviewCancel', { bookingId: id, action, reason: '' })
+      await api.callFunction('reviewCancelV2', { bookingId: id, action, reason: '' })
       wx.showToast({ title: '已处理', icon: 'success' })
       this.loadItems()
     } catch (err) {

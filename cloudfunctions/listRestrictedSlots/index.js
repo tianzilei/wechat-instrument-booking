@@ -9,6 +9,18 @@ function ok(data) {
 }
 
 exports.main = async () => {
-  const res = await db.collection('restricted_slots').where({ status: 'active' }).orderBy('startAt', 'desc').limit(100).get()
+  const res = await db.collection('restricted_slots')
+    .where({ status: 'active' })
+    .field({
+      _id: true,
+      startAt: true,
+      endAt: true,
+      reason: true,
+      status: true,
+      createdAt: true,
+    })
+    .orderBy('startAt', 'desc')
+    .limit(100)
+    .get()
   return ok({ items: res.data })
 }

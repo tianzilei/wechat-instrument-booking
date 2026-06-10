@@ -20,11 +20,16 @@ Page({
   applyUser() {
     const user = app.globalData.user
     const status = getRegistrationStatus(user ? user.registrationStatus : 'unsubmitted')
-    this.setData({
-      user,
-      statusText: user ? status.text : '未登录',
-      statusTone: user ? status.tone : 'muted',
-    })
+    let statusText = user ? status.text : '未登录'
+    let statusTone = user ? status.tone : 'muted'
+    if (user && user.accountStatus === 'suspended') {
+      statusText = '已暂停'
+      statusTone = 'danger'
+    } else if (user && user.accountStatus === 'project_reassignment_required') {
+      statusText = '需重新选课题'
+      statusTone = 'warning'
+    }
+    this.setData({ user, statusText, statusTone })
   },
 
   async loadStats() {
@@ -51,5 +56,65 @@ Page({
 
   goStats() {
     wx.navigateTo({ url: '/pages/profile/stats/index' })
+  },
+
+  goAgreement() {
+    wx.navigateTo({ url: '/pages/legal/agreement/index' })
+  },
+
+  goPrivacy() {
+    wx.navigateTo({ url: '/pages/legal/privacy/index' })
+  },
+
+  goPrivacyRequests() {
+    wx.navigateTo({ url: '/pages/profile/privacy/index' })
+  },
+
+  logout() {
+    wx.showModal({
+      title: '退出登录',
+      content: '退出后将以游客身份浏览，不影响已有预约记录。是否继续？',
+      confirmText: '退出',
+      confirmColor: '#e53e3e',
+      success: (res) => {
+        if (res.confirm) {
+          app.setUser(null)
+          wx.showToast({ title: '已退出', icon: 'none' })
+          setTimeout(() => wx.switchTab({ url: '/pages/calendar/index' }), 500)
+        }
+      },
+    })
+  },
+
+  deleteAccount() {
+    wx.showModal({
+      title: '注销账号',
+      content: '注销后将不可撤销：\n\n1. 取消全部未来预约和候补\n2. 删除个人资料和协议记录\n3. 历史预约将被匿名化处理\n\n是否继续？',
+      confirmText: '确认注销',
+      confirmColor: '#e53e3e',
+      success: (res) => {
+        if (!res.confirm) return
+        wx.showModal({
+          title: '二次确认',
+          content: '注销后无法恢复，确认删除账号吗？',
+          confirmText: '删除',
+          confirmColor: '#e53e3e',
+          success: async (res2) => {
+            if (!res2.confirm) return
+            wx.showLoading({ title: '注销中...' })
+            try {
+              await api.callFunction('deleteAccount')
+              wx.hideLoading()
+              app.setUser(null)
+              wx.showToast({ title: '已注销', icon: 'none' })
+              setTimeout(() => wx.switchTab({ url: '/pages/calendar/index' }), 800)
+            } catch (err) {
+              wx.hideLoading()
+              api.showError(err)
+            }
+          },
+        })
+      },
+    })
   },
 })

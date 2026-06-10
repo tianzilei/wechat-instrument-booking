@@ -27,6 +27,17 @@ exports.main = async (event) => {
   const endAt = new Date(event.endAt)
   if (!(startAt < endAt)) return fail('INVALID_PARAMS', '时间参数错误')
 
+  if (event.reason) {
+    try {
+      const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.reason })
+      if (checkRes.result && checkRes.result.suggest === 'risky') {
+        return fail('CONTENT_UNSAFE', '维护说明包含违规信息，请修改后重试')
+      }
+    } catch (err) {
+      console.error('msgSecCheck error:', err.errCode || err.message)
+    }
+  }
+
   const activeStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
   const conflictRes = await db.collection('bookings').where({
     status: _.in(activeStatuses),
@@ -55,6 +66,10 @@ exports.main = async (event) => {
       updatedAt: now,
     },
   })))
+
+  await db.collection('review_logs').add({
+    data: { targetType: 'maintenance', targetId: addRes._id, action: 'create', reason: event.reason || '', reviewerId: admin._id, createdAt: now },
+  })
 
   return ok({ maintenanceId: addRes._id, cancelledBookingIds })
 }
