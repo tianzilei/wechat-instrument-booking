@@ -1,6 +1,7 @@
 const app = getApp()
 const api = require('../../../utils/api')
 const { getRegistrationStatus } = require('../../../utils/status')
+const { setTabBarSelected } = require('../../../utils/tabbar')
 
 Page({
   data: {
@@ -11,6 +12,7 @@ Page({
   },
 
   onShow() {
+    setTabBarSelected(this, 1)
     this.applyUser()
     this.loadStats()
   },

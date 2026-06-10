@@ -1,6 +1,7 @@
 const app = getApp()
 const api = require('../../utils/api')
 const dateUtils = require('../../utils/date')
+const { setTabBarSelected } = require('../../utils/tabbar')
 
 function formatMonthDay(dateText) {
   const date = new Date(`${dateText}T00:00:00`)
@@ -37,6 +38,7 @@ Page({
   },
 
   onShow() {
+    setTabBarSelected(this, 0)
     this.refreshUserHint()
     this.loadCalendar()
   },

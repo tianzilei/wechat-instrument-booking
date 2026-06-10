@@ -12,6 +12,14 @@ Page({
     ],
     activeFilter: 'all',
     bookings: [],
+    modal: {
+      visible: false,
+      title: '',
+      content: '',
+      confirmText: '确认',
+      confirmTone: 'primary',
+      payload: {},
+    },
   },
 
   onShow() {
@@ -30,11 +38,14 @@ Page({
       })
       const bookings = (data.items || []).map((item) => {
         const status = getBookingStatus(item.status)
+        const isRejected = item.status === 'rejected'
         return {
           ...item,
           timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,
           statusText: status.text,
           statusTone: status.tone,
+          detailLabel: isRejected ? '拒绝原因' : '备注',
+          detailText: isRejected ? (item.reviewReason || '管理员未填写拒绝原因') : (item.remark || '无备注'),
           canCancel: item.status === 'confirmed' || item.status === 'pending_review',
         }
       })
@@ -46,22 +57,34 @@ Page({
 
   async cancelBooking(event) {
     const bookingId = event.currentTarget.dataset.id
-    wx.showModal({
-      title: '取消预约',
-      content: '开始前 12 小时内取消将进入管理员审核。',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          await api.callFunction('cancelBooking', {
-            bookingId,
-            reason: '用户主动取消',
-          })
-          wx.showToast({ title: '已提交', icon: 'success' })
-          this.loadBookings()
-        } catch (err) {
-          api.showError(err)
-        }
+    this.setData({
+      modal: {
+        visible: true,
+        title: '取消预约',
+        content: '开始前 12 小时内取消将进入管理员审核，审核通过前该时段仍会占用。',
+        confirmText: '确认取消',
+        confirmTone: 'danger',
+        payload: { bookingId },
       },
     })
+  },
+
+  closeModal() {
+    this.setData({ 'modal.visible': false })
+  },
+
+  async confirmModal(event) {
+    const { bookingId } = event.detail.payload
+    this.closeModal()
+    try {
+      await api.callFunction('cancelBooking', {
+        bookingId,
+        reason: '用户主动取消',
+      })
+      wx.showToast({ title: '已提交', icon: 'success' })
+      this.loadBookings()
+    } catch (err) {
+      api.showError(err)
+    }
   },
 })

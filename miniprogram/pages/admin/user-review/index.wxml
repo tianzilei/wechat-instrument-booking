@@ -1,12 +1,27 @@
 <view class="page">
   <empty-state wx:if="{{items.length === 0}}" title="暂无注册待审" />
-  <view wx:for="{{items}}" wx:key="_id" class="list-card review-card">
-    <view class="review-title">{{item.name}}</view>
-    <view class="page-subtitle">{{item.college}} · {{item.studentId}} · {{item.supervisor}}</view>
-    <view class="page-subtitle">{{item.phone}}</view>
-    <view class="review-actions">
-      <button class="button button--primary" data-id="{{item._id}}" data-action="approve" bindtap="review">通过</button>
-      <button class="button button--danger" data-id="{{item._id}}" data-action="reject" bindtap="review">拒绝</button>
+  <view wx:if="{{items.length > 0}}" class="surface-section">
+    <view wx:for="{{items}}" wx:key="_id" class="list-card review-card">
+      <view class="review-title">{{item.name}}</view>
+      <view class="page-subtitle">{{item.college}} · {{item.studentId}} · {{item.supervisor}}</view>
+      <view class="page-subtitle">{{item.phone}}</view>
+      <view class="review-actions">
+        <button class="button button--primary button--compact" data-id="{{item._id}}" data-action="approve" bindtap="review">通过</button>
+        <button class="button button--danger button--compact" data-id="{{item._id}}" data-action="reject" bindtap="review">拒绝</button>
+      </view>
     </view>
   </view>
+
+  <theme-modal
+    visible="{{modal.visible}}"
+    title="{{modal.title}}"
+    content="{{modal.content}}"
+    show-input="{{modal.showInput}}"
+    placeholder="{{modal.placeholder}}"
+    confirm-text="{{modal.confirmText}}"
+    confirm-tone="{{modal.confirmTone}}"
+    payload="{{modal.payload}}"
+    bind:cancel="closeModal"
+    bind:confirm="confirmModal"
+  />
 </view>

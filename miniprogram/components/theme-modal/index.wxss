@@ -1,0 +1,94 @@
+.theme-modal-mask {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40rpx;
+  background: var(--color-overlay);
+}
+
+.theme-modal {
+  width: 100%;
+  max-width: 640rpx;
+  max-height: 80vh;
+  padding: 28rpx 24rpx 24rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+}
+
+.theme-modal__title {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.theme-modal__content {
+  margin-top: 18rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.6;
+}
+
+.theme-modal__textarea {
+  width: 100%;
+  min-height: 180rpx;
+  margin-top: 24rpx;
+  padding: 18rpx 20rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  line-height: 1.4;
+}
+
+.theme-modal__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+  margin-top: 28rpx;
+}
+
+.theme-modal__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
+  padding: 0 12rpx;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-md);
+  font-weight: 700;
+  line-height: 1;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.theme-modal__button--secondary {
+  border: 1rpx solid var(--color-border-strong);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.theme-modal__button--primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.theme-modal__button--danger {
+  border: 1rpx solid var(--color-danger);
+  background: var(--color-surface);
+  color: var(--color-danger);
+}

@@ -1,12 +1,7 @@
 <view class="page">
-  <view class="page-header">
-    <view>
-      <view class="page-title">微信登录</view>
-      <view class="page-subtitle">登录后可提交注册申请，通过后预约仪器。</view>
-    </view>
-  </view>
+  <view class="page-intro">登录仅用于识别预约账号；注册审核通过后才能预约仪器。</view>
 
-  <view class="list-card">
+  <view class="surface-section login-summary">
     <view class="row-between">
       <view>
         <view class="login-name">{{user.name || '未登录用户'}}</view>

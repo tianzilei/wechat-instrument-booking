@@ -1,9 +1,18 @@
-<scroll-view class="calendar-scroll" scroll-x scroll-y>
+<view wx:if="{{selecting}}" class="multi-select-bar">
+  <view class="multi-select-bar__text">选择模式 · 已选 {{selectedCount}} 小时</view>
+  <view class="multi-select-bar__actions">
+    <button class="multi-select-bar__button multi-select-bar__button--ghost" bindtap="cancelMultiSelect">退出选择</button>
+    <button class="multi-select-bar__button multi-select-bar__button--primary" bindtap="confirmMultiSelect">确认</button>
+  </view>
+</view>
+
+<scroll-view class="calendar-scroll {{selecting ? 'calendar-scroll--selecting' : ''}}" scroll-x scroll-y>
   <view class="calendar-grid" style="grid-template-columns: 88rpx repeat({{days.length}}, 144rpx);">
     <view class="calendar-corner"></view>
-    <view wx:for="{{days}}" wx:key="date" class="calendar-day {{item.isWeekend ? 'calendar-day--weekend' : ''}}">
+    <view wx:for="{{days}}" wx:key="date" class="calendar-day">
       <view class="calendar-day__label">{{item.label}}</view>
       <view class="calendar-day__date">{{item.displayDate}}</view>
+      <view wx:if="{{item.isWeekend}}" class="calendar-day__weekend">周末</view>
     </view>
 
     <block wx:for="{{hours}}" wx:key="hour" wx:for-item="hour">
@@ -16,13 +25,12 @@
         data-date="{{day.date}}"
         data-hour="{{hour}}"
         bindtouchstart="onTouchStart"
-        bindtouchmove="onTouchMove"
         bindtouchend="onTouchEnd"
         bindtap="onCellTap"
       >
         <view class="calendar-cell__text">{{cellMap[day.date + '-' + hour] ? cellMap[day.date + '-' + hour].text : ''}}</view>
         <view wx:if="{{cellMap[day.date + '-' + hour] && cellMap[day.date + '-' + hour].subtext}}" class="calendar-cell__sub">{{cellMap[day.date + '-' + hour].subtext}}</view>
-        <view wx:if="{{selectedMap[day.date + '-' + hour]}}" class="calendar-cell__select-mark">选中</view>
+        <view wx:if="{{selectedMap[day.date + '-' + hour]}}" class="calendar-cell__select-mark">已选</view>
       </view>
     </block>
   </view>

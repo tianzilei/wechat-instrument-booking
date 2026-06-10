@@ -21,21 +21,25 @@
   <view class="section">
     <view class="section-title">用户时长</view>
     <empty-state wx:if="{{stats.byUser.length === 0}}" title="暂无用户统计" />
-    <view wx:for="{{stats.byUser}}" wx:key="userId" class="list-card stat-row">
-      <view>
-        <view class="stat-name">{{item.name}}</view>
-        <view class="page-subtitle">{{item.college}}</view>
+    <view wx:if="{{stats.byUser.length > 0}}" class="surface-section">
+      <view wx:for="{{stats.byUser}}" wx:key="userId" class="list-card stat-row">
+        <view>
+          <view class="stat-name">{{item.name}}</view>
+          <view class="page-subtitle">{{item.college}}</view>
+        </view>
+        <view class="stat-hours">{{item.hours}}h</view>
       </view>
-      <view class="stat-hours">{{item.hours}}h</view>
     </view>
   </view>
 
   <view class="section">
     <view class="section-title">月份统计</view>
     <empty-state wx:if="{{stats.byMonth.length === 0}}" title="暂无月份统计" />
-    <view wx:for="{{stats.byMonth}}" wx:key="month" class="list-card stat-row">
-      <view class="stat-name">{{item.month}}</view>
-      <view class="stat-hours">{{item.hours}}h</view>
+    <view wx:if="{{stats.byMonth.length > 0}}" class="surface-section">
+      <view wx:for="{{stats.byMonth}}" wx:key="month" class="list-card stat-row">
+        <view class="stat-name">{{item.month}}</view>
+        <view class="stat-hours">{{item.hours}}h</view>
+      </view>
     </view>
   </view>
 </view>

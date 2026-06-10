@@ -1,9 +1,14 @@
+.trend-table {
+  padding-right: var(--page-gutter);
+  padding-left: var(--page-gutter);
+}
+
 .trend-row {
-  display: grid;
-  grid-template-columns: 120rpx 1fr 72rpx;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 16rpx;
-  margin-bottom: 18rpx;
+  min-height: 72rpx;
+  border-bottom: 1rpx solid var(--color-divider);
 }
 
 .trend-row:last-child {
@@ -16,14 +21,7 @@
   font-size: var(--font-size-sm);
 }
 
-.trend-bar {
-  height: 18rpx;
-  border-radius: 999rpx;
-  background: var(--color-surface-muted);
-}
-
-.trend-bar__fill {
-  height: 18rpx;
-  border-radius: 999rpx;
-  background: var(--color-primary);
+.trend-hours {
+  color: var(--color-text);
+  font-weight: 600;
 }

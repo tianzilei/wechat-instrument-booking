@@ -1,23 +1,25 @@
 @import "../../styles/components.wxss";
 
 .empty-state {
-  padding: 64rpx 32rpx;
+  padding: 56rpx 24rpx;
   text-align: center;
 }
 
 .empty-state__title {
   color: var(--color-text);
   font-size: var(--font-size-md);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .empty-state__desc {
   margin-top: 10rpx;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+  line-height: 1.55;
 }
 
 .empty-state__button {
   margin: 28rpx auto 0;
   width: 280rpx;
+  max-width: 100%;
 }

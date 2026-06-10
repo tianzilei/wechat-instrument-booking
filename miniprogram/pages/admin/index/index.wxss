@@ -1,15 +1,28 @@
+.admin-summary__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 88rpx;
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.admin-summary__row:last-child {
+  border-bottom: 0;
+}
+
+.admin-summary__value {
+  color: var(--color-primary);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
 .admin-nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16rpx;
+  min-height: 96rpx;
 }
 
 .admin-nav__title {
-  font-weight: 800;
-}
-
-.admin-nav__arrow {
-  color: var(--color-text-muted);
-  font-size: 48rpx;
+  font-weight: 600;
 }

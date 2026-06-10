@@ -1,7 +1,70 @@
 .calendar-scroll {
   width: 100%;
   height: calc(100vh - 260rpx);
-  background: var(--color-bg);
+  background: var(--color-surface);
+}
+
+.calendar-scroll--selecting {
+  height: calc(100vh - 352rpx);
+}
+
+.multi-select-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12rpx;
+  padding: 14rpx 24rpx;
+  border-bottom: 1rpx solid var(--color-border);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-popover);
+}
+
+.multi-select-bar__text {
+  width: 100%;
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.multi-select-bar__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12rpx;
+  width: 100%;
+}
+
+.multi-select-bar__button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--control-height-compact);
+  padding: 0;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.multi-select-bar__button--ghost {
+  border: 1rpx solid var(--color-primary);
+  background: var(--color-surface);
+  color: var(--color-primary);
+}
+
+.multi-select-bar__button--primary {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
 }
 
 .calendar-grid {
@@ -23,17 +86,17 @@
   position: sticky;
   left: 0;
   z-index: 4;
-  height: 92rpx;
+  height: 104rpx;
   border-top: 1rpx solid var(--color-border);
   border-left: 1rpx solid var(--color-border);
-  background: var(--color-bg);
+  background: var(--color-surface-muted);
 }
 
 .calendar-day {
   position: sticky;
   top: 0;
   z-index: 3;
-  height: 92rpx;
+  height: 104rpx;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -42,20 +105,27 @@
   background: var(--color-surface);
 }
 
-.calendar-day--weekend {
-  background: var(--color-surface-muted);
-}
-
 .calendar-day__label {
   color: var(--color-text);
   font-size: var(--font-size-sm);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .calendar-day__date {
   margin-top: 4rpx;
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
+}
+
+.calendar-day__weekend {
+  align-self: flex-start;
+  margin-top: 4rpx;
+  padding: 2rpx 6rpx;
+  border-radius: 4rpx;
+  background: var(--color-warning-soft);
+  color: var(--color-warning);
+  font-size: 18rpx;
+  line-height: 1.2;
 }
 
 .calendar-hour {
@@ -68,7 +138,7 @@
   justify-content: center;
   padding-top: 10rpx;
   border-left: 1rpx solid var(--color-border);
-  background: var(--color-bg);
+  background: var(--color-surface-muted);
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
 }
@@ -80,7 +150,6 @@
   background: var(--color-surface);
   color: var(--color-text-secondary);
   overflow: hidden;
-  transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
 }
 
 .calendar-cell__text {
@@ -106,19 +175,14 @@
 }
 
 .calendar-cell--pending {
-  border: 1rpx dashed var(--color-warning);
-  background: var(--color-warning-soft);
-  color: var(--color-warning);
+  border: 1rpx dashed var(--color-accent);
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
 }
 
 .calendar-cell--maintenance {
-  background: repeating-linear-gradient(
-    135deg,
-    var(--color-maintenance-soft),
-    var(--color-maintenance-soft) 10rpx,
-    #d5dce5 10rpx,
-    #d5dce5 20rpx
-  );
+  border-left: 5rpx solid var(--color-maintenance);
+  background: var(--color-maintenance-soft);
   color: var(--color-maintenance);
 }
 
@@ -128,17 +192,17 @@
 }
 
 .calendar-cell--selected {
-  border: 2rpx solid var(--color-accent);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
+  border: 2rpx solid var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
 }
 
 .calendar-cell--selecting {
   z-index: 1;
-  border: 2rpx solid var(--color-accent);
-  background: var(--color-accent-soft);
-  color: var(--color-accent);
-  box-shadow: inset 0 0 0 2rpx rgba(37, 99, 235, 0.18);
+  border: 2rpx solid var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  box-shadow: inset 0 0 0 2rpx var(--color-primary-selection);
 }
 
 .calendar-cell--selecting::after {
@@ -149,7 +213,7 @@
   width: 14rpx;
   height: 14rpx;
   border-radius: 50%;
-  background: var(--color-accent);
+  background: var(--color-primary);
 }
 
 .calendar-cell__select-mark {
@@ -158,8 +222,8 @@
   bottom: 8rpx;
   padding: 3rpx 8rpx;
   border-radius: var(--radius-sm);
-  background: rgba(37, 99, 235, 0.12);
-  color: var(--color-accent);
+  background: var(--color-primary-selection-soft);
+  color: var(--color-primary);
   font-size: 18rpx;
   line-height: 1.2;
 }

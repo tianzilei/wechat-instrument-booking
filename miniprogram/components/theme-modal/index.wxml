@@ -1,0 +1,18 @@
+<view wx:if="{{visible}}" class="theme-modal-mask" catchtap="onCancel">
+  <view class="theme-modal" catchtap="noop">
+    <view class="theme-modal__title">{{title}}</view>
+    <view wx:if="{{content}}" class="theme-modal__content">{{content}}</view>
+    <textarea
+      wx:if="{{showInput}}"
+      class="theme-modal__textarea"
+      placeholder="{{placeholder}}"
+      maxlength="{{maxlength}}"
+      value="{{value}}"
+      bindinput="onInput"
+    ></textarea>
+    <view class="theme-modal__actions">
+      <button class="theme-modal__button theme-modal__button--secondary" bindtap="onCancel">{{cancelText}}</button>
+      <button class="theme-modal__button theme-modal__button--{{confirmTone}}" bindtap="onConfirm">{{confirmText}}</button>
+    </view>
+  </view>
+</view>

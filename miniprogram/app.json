@@ -19,14 +19,14 @@
   ],
   "window": {
     "navigationBarTitleText": "仪器预约",
-    "navigationBarBackgroundColor": "#0f766e",
-    "navigationBarTextStyle": "white",
-    "backgroundColor": "#f7f8fa",
+    "navigationBarBackgroundColor": "#ffffff",
+    "navigationBarTextStyle": "black",
+    "backgroundColor": "#f4f7f7",
     "backgroundTextStyle": "dark"
   },
   "tabBar": {
     "custom": true,
-    "color": "#526170",
+    "color": "#566762",
     "selectedColor": "#0f766e",
     "backgroundColor": "#ffffff",
     "borderStyle": "black",

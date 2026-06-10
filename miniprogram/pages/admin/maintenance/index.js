@@ -9,6 +9,14 @@ Page({
       reason: '',
     },
     items: [],
+    modal: {
+      visible: false,
+      title: '',
+      content: '',
+      confirmText: '确认',
+      confirmTone: 'primary',
+      payload: {},
+    },
   },
 
   onShow() {
@@ -31,25 +39,37 @@ Page({
       wx.showToast({ title: '请填写开始和结束时间', icon: 'none' })
       return
     }
-    wx.showModal({
-      title: '确认维护',
-      content: '若维护时间与已有预约冲突，系统将自动取消冲突预约并通知用户。',
-      success: async (res) => {
-        if (!res.confirm) return
-        try {
-          await api.callFunction('createMaintenance', {
-            startAt: this.parseDate(form.startAt).toISOString(),
-            endAt: this.parseDate(form.endAt).toISOString(),
-            reason: form.reason,
-          })
-          wx.showToast({ title: '已新增', icon: 'success' })
-          this.setData({ form: { startAt: '', endAt: '', reason: '' } })
-          this.loadItems()
-        } catch (err) {
-          api.showError(err)
-        }
+    this.setData({
+      modal: {
+        visible: true,
+        title: '确认维护',
+        content: '若维护时间与已有预约冲突，系统将自动取消冲突预约并通知用户。',
+        confirmText: '新增维护',
+        confirmTone: 'danger',
+        payload: { form: { ...form } },
       },
     })
+  },
+
+  closeModal() {
+    this.setData({ 'modal.visible': false })
+  },
+
+  async confirmModal(event) {
+    const { form } = event.detail.payload
+    this.closeModal()
+    try {
+      await api.callFunction('createMaintenance', {
+        startAt: this.parseDate(form.startAt).toISOString(),
+        endAt: this.parseDate(form.endAt).toISOString(),
+        reason: form.reason,
+      })
+      wx.showToast({ title: '已新增', icon: 'success' })
+      this.setData({ form: { startAt: '', endAt: '', reason: '' } })
+      this.loadItems()
+    } catch (err) {
+      api.showError(err)
+    }
   },
 
   async loadItems() {

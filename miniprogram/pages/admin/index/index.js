@@ -1,5 +1,6 @@
 const app = getApp()
 const api = require('../../../utils/api')
+const { setTabBarSelected } = require('../../../utils/tabbar')
 
 Page({
   data: {
@@ -17,6 +18,7 @@ Page({
   },
 
   onShow() {
+    setTabBarSelected(this, 2)
     this.setData({ isAdmin: app.isAdmin() })
     if (app.isAdmin()) this.loadDashboard()
   },

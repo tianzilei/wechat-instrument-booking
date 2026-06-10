@@ -1,9 +1,25 @@
 const api = require('../../../utils/api')
 const dateUtils = require('../../../utils/date')
 
+const SPECIAL_RULE_LABELS = {
+  night: '非工作时间',
+  weekend: '周末',
+  restricted: '受限时段',
+}
+
 Page({
   data: {
     items: [],
+    modal: {
+      visible: false,
+      title: '',
+      content: '',
+      showInput: false,
+      placeholder: '',
+      confirmText: '确认',
+      confirmTone: 'primary',
+      payload: {},
+    },
   },
 
   onShow() {
@@ -16,7 +32,7 @@ Page({
       const items = (data.items || []).map((item) => ({
         ...item,
         timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,
-        reasonText: (item.specialReasons || []).join('、') || '特殊时段',
+        ruleText: (item.specialReasons || []).map((reason) => SPECIAL_RULE_LABELS[reason] || reason).join('、') || '特殊审核规则',
       }))
       this.setData({ items })
     } catch (err) {
@@ -27,17 +43,36 @@ Page({
   review(event) {
     const { id, action } = event.currentTarget.dataset
     if (action === 'reject') {
-      wx.showModal({
-        title: '拒绝原因',
-        editable: true,
-        placeholderText: '请输入拒绝原因',
-        success: (res) => {
-          if (res.confirm) this.submitReview(id, action, res.content || '')
+      this.setData({
+        modal: {
+          visible: true,
+          title: '拒绝预约申请',
+          content: '请填写拒绝原因，用户会在预约记录中看到该说明。',
+          showInput: true,
+          placeholder: '请输入拒绝原因',
+          confirmText: '拒绝',
+          confirmTone: 'danger',
+          payload: { id, action },
         },
       })
       return
     }
     this.submitReview(id, action, '')
+  },
+
+  closeModal() {
+    this.setData({ 'modal.visible': false })
+  },
+
+  confirmModal(event) {
+    const { id, action } = event.detail.payload
+    const reason = event.detail.value || ''
+    if (!reason) {
+      wx.showToast({ title: '请填写拒绝原因', icon: 'none' })
+      return
+    }
+    this.closeModal()
+    this.submitReview(id, action, reason)
   },
 
   async submitReview(bookingId, action, reason) {

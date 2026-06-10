@@ -5,28 +5,28 @@
   bottom: 0;
   z-index: 1000;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  min-height: 104rpx;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  min-height: 100rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  border-top: 1rpx solid #d8dee6;
-  background: #ffffff;
+  border-top: 1rpx solid var(--color-border);
+  background: var(--color-surface);
 }
 
 .tab-bar__item {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 104rpx;
-  color: #526170;
+  min-height: 100rpx;
+  color: var(--color-text-secondary);
 }
 
 .tab-bar__item--active {
-  color: #0f766e;
+  color: var(--color-primary);
 }
 
 .tab-bar__text {
-  font-size: 34rpx;
-  font-weight: 700;
+  font-size: 28rpx;
+  font-weight: 600;
   line-height: 1;
   text-align: center;
 }

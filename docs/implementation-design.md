@@ -1,5 +1,7 @@
 # 仪器预约小程序实现前设计产物
 
+> **文档状态：v1 历史设计，仅用于理解现有代码。** 其中手机号、学号、学院、导师、连续拖动预约、单段 `startAt/endAt`、公开身份和用户维度统计等内容已经废弃。后续实现必须以 [`execution-baseline-v2.md`](./execution-baseline-v2.md) 为最高业务依据，以 [`style-guide.md`](./style-guide.md) 为视觉依据。
+
 版本：v1.0  
 技术栈：微信小程序 + 微信云开发  
 业务对象：单台仪器预约  
@@ -457,7 +459,7 @@ miniprogram/
 | `remark` | string | 否 | 备注 |
 | `status` | string | 是 | 预约状态 |
 | `bookingType` | string | 是 | `normal` / `special` |
-| `specialReasons` | Array | 否 | `night` / `weekend` / `restricted` |
+| `specialReasons` | Array | 否 | 系统判定的需审核规则：`night` / `weekend` / `restricted`，不是用户填写的预约原因 |
 | `cancelReason` | string | 否 | 取消原因 |
 | `cancelRequestedAt` | Date | 否 | 取消申请时间 |
 | `cancelReviewReason` | string | 否 | 取消审核原因 |
@@ -1659,8 +1661,8 @@ data: {
 | 区域 | 内容 |
 | --- | --- |
 | 主信息 | 申请人、学院、时间范围 |
-| 状态原因 | 夜间/周末/受限/12 小时内取消 |
-| 备注 | 用户填写内容 |
+| 需审核规则 | 夜间/周末/受限/12 小时内取消，由系统自动判定 |
+| 用户备注 | 用户预约时填写的备注；预约不要求填写原因 |
 | 操作 | 通过、拒绝 |
 
 审核操作：

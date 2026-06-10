@@ -1,27 +1,28 @@
 <view class="calendar-shell">
   <view class="calendar-toolbar">
-    <view>
-      <view class="calendar-week-title">{{weekTitle}}</view>
-    </view>
+    <view class="calendar-week-title">{{weekTitle}}</view>
     <view class="calendar-user-hint">{{userHint}}</view>
-    <view class="calendar-actions">
-      <button class="calendar-action" bindtap="prevWeek">上周</button>
-      <button class="calendar-action" bindtap="nextWeek">下周</button>
+    <view class="calendar-control-row">
+      <view class="calendar-actions">
+        <button class="calendar-action" bindtap="prevWeek">上周</button>
+        <button class="calendar-action" bindtap="nextWeek">下周</button>
+      </view>
+      <view class="segmented calendar-mode">
+        <view class="segmented-item {{!includeNight ? 'segmented-item--active' : ''}}" bindtap="showWorktime">工作时间</view>
+        <view class="segmented-item {{includeNight ? 'segmented-item--active' : ''}}" bindtap="showFullDay">全天</view>
+      </view>
     </view>
   </view>
 
-  <view class="calendar-legend">
-    <view class="legend-item"><view class="legend-dot legend-dot--available"></view>可预约</view>
-    <view class="legend-item"><view class="legend-dot legend-dot--booked"></view>已预约</view>
-    <view class="legend-item"><view class="legend-dot legend-dot--pending"></view>待审核</view>
-    <view class="legend-item"><view class="legend-dot legend-dot--maintenance"></view>维护</view>
-    <view class="legend-item"><view class="legend-dot legend-dot--restricted"></view>受限</view>
-  </view>
-
-  <view class="segmented calendar-mode">
-    <view class="segmented-item {{!includeNight ? 'segmented-item--active' : ''}}" bindtap="showWorktime">工作时间</view>
-    <view class="segmented-item {{includeNight ? 'segmented-item--active' : ''}}" bindtap="showFullDay">全天</view>
-  </view>
+  <scroll-view class="calendar-legend" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="calendar-legend__inner">
+      <view class="legend-item"><view class="legend-dot legend-dot--available"></view>可预约</view>
+      <view class="legend-item"><view class="legend-dot legend-dot--booked"></view>已预约</view>
+      <view class="legend-item"><view class="legend-dot legend-dot--pending"></view>待审核</view>
+      <view class="legend-item"><view class="legend-dot legend-dot--maintenance"></view>维护</view>
+      <view class="legend-item"><view class="legend-dot legend-dot--restricted"></view>受限</view>
+    </view>
+  </scroll-view>
 
   <calendar-grid
     days="{{days}}"

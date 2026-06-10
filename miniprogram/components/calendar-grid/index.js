@@ -36,9 +36,11 @@ Component({
     longPressTimer: null,
     selecting: false,
     startCell: null,
-    currentCell: null,
     gridRect: null,
     selectedMap: {},
+    selectedCount: 0,
+    suppressNextTap: false,
+    suppressTapKey: '',
   },
 
   lifetimes: {
@@ -158,6 +160,18 @@ Component({
       }
     },
 
+    getSelectedCells() {
+      return Object.keys(this.data.selectedMap)
+        .map((key) => {
+          const dividerIndex = key.lastIndexOf('-')
+          return {
+            date: key.slice(0, dividerIndex),
+            hour: Number(key.slice(dividerIndex + 1)),
+          }
+        })
+        .sort((a, b) => this.getCellIndex(a) - this.getCellIndex(b))
+    },
+
     updateSelectedMap(startCell, endCell) {
       if (!startCell || !endCell) return
       const startIndex = this.getCellIndex(startCell)
@@ -170,64 +184,112 @@ Component({
         const cell = this.getCellByIndex(index)
         if (cell) selectedMap[`${cell.date}-${cell.hour}`] = true
       }
-      this.setData({ selectedMap })
+      this.setData({
+        selectedMap,
+        selectedCount: Object.keys(selectedMap).length,
+      })
+    },
+
+    toggleSelectedCell(cell) {
+      const key = `${cell.date}-${cell.hour}`
+      const selectedMap = { ...this.data.selectedMap }
+      if (selectedMap[key]) {
+        delete selectedMap[key]
+      } else {
+        selectedMap[key] = true
+      }
+      this.setData({
+        selectedMap,
+        selectedCount: Object.keys(selectedMap).length,
+      })
     },
 
     onTouchStart(event) {
+      if (this.data.selecting) return
       const startCell = this.makeCell(event)
+      const startKey = `${startCell.date}-${startCell.hour}`
       const timer = setTimeout(() => {
         this.setData({
           selecting: true,
           startCell,
-          currentCell: startCell,
+          suppressNextTap: true,
+          suppressTapKey: startKey,
         }, () => this.updateSelectedMap(startCell, startCell))
         wx.vibrateShort({ type: 'light' })
       }, 350)
-      this.setData({ longPressTimer: timer, startCell, selectedMap: {} })
+      this.setData({ longPressTimer: timer, startCell, selectedMap: {}, selectedCount: 0 })
     },
 
-    onTouchMove(event) {
-      if (!this.data.selecting || !this.data.gridRect) return
-      const touch = event.touches && event.touches[0]
-      if (!touch) return
-      const x = touch.clientX - this.data.gridRect.left - 24 - 88
-      const y = touch.clientY - this.data.gridRect.top - 92
-      const col = Math.floor(x / 144)
-      const row = Math.floor(y / 96)
-      if (col < 0 || row < 0 || col >= this.properties.days.length || row >= this.properties.hours.length) return
-      const currentCell = {
-        date: this.properties.days[col].date,
-        hour: this.properties.hours[row],
-      }
-      this.setData({ currentCell }, () => this.updateSelectedMap(this.data.startCell, currentCell))
-    },
-
-    onTouchEnd(event) {
+    onTouchEnd() {
       if (this.data.longPressTimer) {
         clearTimeout(this.data.longPressTimer)
       }
-      if (this.data.selecting) {
-        const endCell = this.data.currentCell || this.makeCell(event)
-        this.triggerEvent('selectrange', {
-          startCell: this.data.startCell,
-          endCell,
-        })
-      }
       this.setData({
-        selecting: false,
         longPressTimer: null,
-        currentCell: null,
-        selectedMap: {},
       })
     },
 
     onCellTap(event) {
-      if (this.data.selecting) return
       const cell = this.makeCell(event)
+      const key = `${cell.date}-${cell.hour}`
+      if (this.data.suppressNextTap && this.data.suppressTapKey === key) {
+        this.setData({
+          suppressNextTap: false,
+          suppressTapKey: '',
+        })
+        return
+      }
+      if (this.data.suppressNextTap) {
+        this.setData({
+          suppressNextTap: false,
+          suppressTapKey: '',
+        })
+      }
+      if (this.data.selecting) {
+        this.toggleSelectedCell(cell)
+        return
+      }
       this.triggerEvent('selectrange', {
         startCell: cell,
         endCell: cell,
       })
+    },
+
+    cancelMultiSelect() {
+      this.setData({
+        selecting: false,
+        startCell: null,
+        selectedMap: {},
+        selectedCount: 0,
+        suppressNextTap: false,
+        suppressTapKey: '',
+      })
+    },
+
+    confirmMultiSelect() {
+      const selectedCells = this.getSelectedCells()
+      if (selectedCells.length === 0) {
+        wx.showToast({
+          title: '请先选择时间',
+          icon: 'none',
+        })
+        return
+      }
+      const indexes = selectedCells.map((cell) => this.getCellIndex(cell))
+      const isContinuous = indexes.every((index, position) => position === 0 || index === indexes[position - 1] + 1)
+      if (!isContinuous) {
+        wx.showToast({
+          title: '请选择连续时间段',
+          icon: 'none',
+        })
+        return
+      }
+      this.triggerEvent('selectrange', {
+        startCell: selectedCells[0],
+        endCell: selectedCells[selectedCells.length - 1],
+        selectedCells,
+      })
+      this.cancelMultiSelect()
     },
   },
 })

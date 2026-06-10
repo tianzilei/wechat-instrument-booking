@@ -42,7 +42,10 @@ Component({
     },
 
     switchTab(event) {
-      const { path } = event.currentTarget.dataset
+      const { index, path } = event.currentTarget.dataset
+      this.setData({
+        selected: Number(index),
+      })
       wx.switchTab({ url: path })
     },
   },

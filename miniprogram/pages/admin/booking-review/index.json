@@ -2,6 +2,7 @@
   "navigationBarTitleText": "预约审核",
   "usingComponents": {
     "empty-state": "../../../components/empty-state/index",
-    "status-tag": "../../../components/status-tag/index"
+    "status-tag": "../../../components/status-tag/index",
+    "theme-modal": "../../../components/theme-modal/index"
   }
 }

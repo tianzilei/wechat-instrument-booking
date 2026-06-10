@@ -1,22 +1,18 @@
 <view class="page">
-  <view class="page-header">
-    <view>
-      <view class="page-title">我的</view>
-      <view class="page-subtitle">预约记录、候补与使用统计</view>
-    </view>
-    <status-tag text="{{statusText}}" tone="{{statusTone}}" />
-  </view>
-
-  <view wx:if="{{!user}}" class="list-card">
+  <view wx:if="{{!user}}" class="surface-section">
     <empty-state title="请先登录" description="登录后可提交注册申请并查看个人预约记录。" action-text="去登录" bind:action="goLogin" />
   </view>
 
   <block wx:else>
-    <view class="list-card">
-      <view class="profile-name">{{user.name || '未填写姓名'}}</view>
-      <view class="page-subtitle">{{user.college || '未填写学院'}} · {{user.supervisor || '未填写负责人'}}</view>
+    <view class="surface-section profile-summary">
+      <view>
+        <view class="profile-name">{{user.name || '未填写姓名'}}</view>
+        <view class="page-subtitle">{{user.college || '未填写学院'}} · {{user.supervisor || '未填写负责人'}}</view>
+      </view>
+      <status-tag text="{{statusText}}" tone="{{statusTone}}" />
     </view>
 
+    <view class="section-title profile-section-title">预约统计</view>
     <view class="section stat-grid">
       <view class="stat-card">
         <view class="stat-value">{{stats.totalHours || 0}}</view>
@@ -37,26 +33,26 @@
     </view>
 
     <view class="section">
-      <view class="list-card nav-row" bindtap="goBookings">
-        <view>
-          <view class="nav-title">我的预约</view>
-          <view class="page-subtitle">待开始、历史、取消记录</view>
+      <view class="section-title">预约与账号</view>
+      <view class="surface-section">
+        <view class="list-card nav-row" bindtap="goBookings">
+          <view>
+            <view class="nav-title">我的预约</view>
+            <view class="page-subtitle">待开始、历史、取消记录</view>
+          </view>
         </view>
-        <view class="nav-arrow">›</view>
-      </view>
-      <view class="list-card nav-row" bindtap="goWaitlist">
-        <view>
-          <view class="nav-title">我的候补</view>
-          <view class="page-subtitle">候补中与待确认记录</view>
+        <view class="list-card nav-row" bindtap="goWaitlist">
+          <view>
+            <view class="nav-title">我的候补</view>
+            <view class="page-subtitle">候补中与待确认记录</view>
+          </view>
         </view>
-        <view class="nav-arrow">›</view>
-      </view>
-      <view class="list-card nav-row" bindtap="goStats">
-        <view>
-          <view class="nav-title">个人统计</view>
-          <view class="page-subtitle">工作时间与非工作时间统计</view>
+        <view class="list-card nav-row" bindtap="goStats">
+          <view>
+            <view class="nav-title">个人统计</view>
+            <view class="page-subtitle">工作时间与非工作时间统计</view>
+          </view>
         </view>
-        <view class="nav-arrow">›</view>
       </view>
     </view>
   </block>

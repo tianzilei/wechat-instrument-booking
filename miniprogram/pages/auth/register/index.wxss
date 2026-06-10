@@ -1,1 +1,8 @@
+.register-form {
+  padding-top: 24rpx;
+  padding-bottom: 4rpx;
+}
 
+.register-submit {
+  margin-top: 24rpx;
+}

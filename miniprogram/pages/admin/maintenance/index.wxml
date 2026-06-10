@@ -1,5 +1,5 @@
 <view class="page">
-  <view class="list-card">
+  <view class="surface-section admin-form-section">
     <view class="section-title">新增维护时间</view>
     <view class="field">
       <view class="field-label">开始时间</view>
@@ -19,9 +19,22 @@
   <view class="section">
     <view class="section-title">维护列表</view>
     <empty-state wx:if="{{items.length === 0}}" title="暂无维护时间" />
-    <view wx:for="{{items}}" wx:key="_id" class="list-card slot-card">
-      <view class="slot-time">{{item.timeText}}</view>
-      <view class="page-subtitle">{{item.reason || '无原因'}}</view>
+    <view wx:if="{{items.length > 0}}" class="surface-section">
+      <view wx:for="{{items}}" wx:key="_id" class="list-card slot-card">
+        <view class="slot-time">{{item.timeText}}</view>
+        <view class="page-subtitle">{{item.reason || '无原因'}}</view>
+      </view>
     </view>
   </view>
+
+  <theme-modal
+    visible="{{modal.visible}}"
+    title="{{modal.title}}"
+    content="{{modal.content}}"
+    confirm-text="{{modal.confirmText}}"
+    confirm-tone="{{modal.confirmTone}}"
+    payload="{{modal.payload}}"
+    bind:cancel="closeModal"
+    bind:confirm="confirmModal"
+  />
 </view>

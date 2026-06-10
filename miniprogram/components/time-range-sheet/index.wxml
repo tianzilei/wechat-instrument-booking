@@ -1,13 +1,16 @@
 <view wx:if="{{visible}}" class="sheet-mask" bindtap="onClose">
   <view class="sheet" catchtap="noop">
-    <view class="sheet__handle"></view>
-    <view class="sheet__title">{{title}}</view>
-    <view class="sheet__time">{{timeText}}</view>
-    <view wx:if="{{hint}}" class="sheet__hint sheet__hint--{{hintTone}}">{{hint}}</view>
-    <textarea class="textarea sheet__textarea" placeholder="备注，最多 200 字" maxlength="200" value="{{remark}}" bindinput="onRemarkInput"></textarea>
-    <view class="sheet__actions">
-      <button class="button button--secondary" bindtap="onClose">取消</button>
-      <button class="button {{disabled ? 'button--disabled' : primaryClass}}" disabled="{{disabled}}" bindtap="onSubmit">{{submitText}}</button>
+    <view class="sheet__header">
+      <view class="sheet__title">{{title}}</view>
+      <view class="sheet__actions">
+        <button class="sheet__action sheet__action--secondary" bindtap="onClose">取消</button>
+        <button class="sheet__action sheet__action--primary {{disabled ? 'sheet__action--disabled' : ''}}" disabled="{{disabled}}" bindtap="onSubmit">{{submitText}}</button>
+      </view>
+    </view>
+    <view class="sheet__content">
+      <view class="sheet__time">{{timeText}}</view>
+      <view wx:if="{{hint}}" class="sheet__hint sheet__hint--{{hintTone}}">{{hint}}</view>
+      <textarea class="textarea sheet__textarea" placeholder="备注（选填，最多 100 字）" maxlength="100" value="{{remark}}" bindinput="onRemarkInput"></textarea>
     </view>
   </view>
 </view>

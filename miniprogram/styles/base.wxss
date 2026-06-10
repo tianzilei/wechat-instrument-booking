@@ -16,11 +16,17 @@ textarea {
 }
 
 button {
+  max-width: 100%;
+  min-width: 0;
   margin: 0;
   padding: 0;
   border-radius: var(--radius-md);
   font-size: var(--font-size-md);
   line-height: 1;
+  overflow: hidden;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 button::after {
@@ -35,7 +41,10 @@ textarea {
 
 .page {
   min-height: 100vh;
-  padding: 24rpx 24rpx calc(144rpx + env(safe-area-inset-bottom));
+  width: 100%;
+  max-width: 960rpx;
+  margin: 0 auto;
+  padding: 24rpx var(--page-gutter) calc(132rpx + env(safe-area-inset-bottom));
 }
 
 .page--flush {
@@ -48,19 +57,20 @@ textarea {
   align-items: flex-start;
   justify-content: space-between;
   gap: 24rpx;
-  padding-bottom: 24rpx;
+  padding-bottom: 20rpx;
 }
 
 .page-title {
-  font-size: var(--font-size-xl);
+  font-size: var(--font-size-lg);
   font-weight: 700;
   line-height: var(--line-tight);
 }
 
 .page-subtitle {
-  margin-top: 8rpx;
+  margin-top: 6rpx;
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
+  line-height: 1.55;
 }
 
 .section {
@@ -76,6 +86,13 @@ textarea {
 
 .muted {
   color: var(--color-text-muted);
+}
+
+.page-intro {
+  margin-bottom: 24rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
 }
 
 .safe-bottom {

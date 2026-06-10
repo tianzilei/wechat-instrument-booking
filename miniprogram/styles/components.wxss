@@ -5,9 +5,21 @@
 }
 
 .list-card {
-  padding: 24rpx;
-  border: 1rpx solid var(--color-border);
-  border-radius: var(--radius-md);
+  padding: 24rpx 0;
+  border-bottom: 1rpx solid var(--color-divider);
+  background: var(--color-surface);
+}
+
+.list-card:first-child {
+  border-top: 1rpx solid var(--color-divider);
+}
+
+.surface-section {
+  margin-right: -24rpx;
+  margin-left: -24rpx;
+  padding: 0 var(--page-gutter);
+  border-top: 1rpx solid var(--color-divider);
+  border-bottom: 1rpx solid var(--color-divider);
   background: var(--color-surface);
 }
 
@@ -27,10 +39,18 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 80rpx;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  min-height: var(--control-height);
   padding: 0 28rpx;
   border-radius: var(--radius-md);
   font-weight: 600;
+  overflow: hidden;
+  line-height: 1;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .button--primary {
@@ -39,9 +59,9 @@
 }
 
 .button--secondary {
-  border: 1rpx solid var(--color-border-strong);
+  border: 1rpx solid var(--color-primary);
   background: var(--color-surface);
-  color: var(--color-text);
+  color: var(--color-primary);
 }
 
 .button--danger {
@@ -60,20 +80,27 @@
   color: var(--color-text-muted);
 }
 
+.button--compact {
+  min-height: var(--control-height-compact);
+  padding-right: 20rpx;
+  padding-left: 20rpx;
+  font-size: var(--font-size-sm);
+}
+
 .field {
   margin-bottom: 24rpx;
 }
 
 .field-label {
   margin-bottom: 10rpx;
-  color: var(--color-text-secondary);
+  color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 600;
 }
 
 .input {
-  min-height: 88rpx;
-  padding: 0 24rpx;
+  min-height: var(--control-height);
+  padding: 0 20rpx;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -81,7 +108,7 @@
 
 .textarea {
   min-height: 160rpx;
-  padding: 20rpx 24rpx;
+  padding: 20rpx;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -95,7 +122,7 @@
 
 .segmented {
   display: flex;
-  padding: 6rpx;
+  padding: 4rpx;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-muted);
@@ -109,23 +136,24 @@
   justify-content: center;
   border-radius: var(--radius-sm);
   color: var(--color-text-secondary);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-md);
 }
 
 .segmented-item--active {
-  background: var(--color-surface);
+  background: var(--color-primary-soft);
   color: var(--color-primary);
-  font-weight: 700;
+  font-weight: 600;
 }
 
 .stat-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
 }
 
 .stat-card {
-  padding: 24rpx;
+  min-height: 144rpx;
+  padding: 20rpx;
   border: 1rpx solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
@@ -133,7 +161,7 @@
 
 .stat-value {
   font-size: var(--font-size-xl);
-  font-weight: 800;
+  font-weight: 700;
   line-height: var(--line-tight);
 }
 
@@ -148,7 +176,7 @@
   align-items: center;
   height: 40rpx;
   padding: 0 12rpx;
-  border: 1rpx solid transparent;
+  border: 1rpx solid currentColor;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   line-height: 1;

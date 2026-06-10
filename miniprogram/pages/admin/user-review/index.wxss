@@ -1,14 +1,14 @@
 .review-card {
-  margin-bottom: 16rpx;
+  margin-bottom: 0;
 }
 
 .review-title {
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .review-actions {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16rpx;
   margin-top: 18rpx;
 }

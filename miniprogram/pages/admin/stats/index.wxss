@@ -2,14 +2,15 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16rpx;
+  min-height: 72rpx;
+  margin-bottom: 0;
 }
 
 .stat-name {
-  font-weight: 800;
+  font-weight: 600;
 }
 
 .stat-hours {
   color: var(--color-primary);
-  font-weight: 800;
+  font-weight: 600;
 }

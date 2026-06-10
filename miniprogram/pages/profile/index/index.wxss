@@ -1,21 +1,29 @@
+.profile-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20rpx;
+  padding-top: 24rpx;
+  padding-bottom: 24rpx;
+}
+
 .profile-name {
-  font-size: var(--font-size-xl);
-  font-weight: 800;
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.profile-section-title {
+  margin-top: 24rpx;
 }
 
 .nav-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 16rpx;
+  min-height: 96rpx;
 }
 
 .nav-title {
   font-size: var(--font-size-md);
-  font-weight: 800;
-}
-
-.nav-arrow {
-  color: var(--color-text-muted);
-  font-size: 48rpx;
+  font-weight: 600;
 }
