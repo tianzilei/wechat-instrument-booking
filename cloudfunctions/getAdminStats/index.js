@@ -37,7 +37,6 @@ exports.main = async () => {
     status: _.in(['confirmed', 'completed']),
   }).limit(1000).get()
 
-  const byUserMap = {}
   const byMonthMap = {}
   let totalHours = 0
   let workingHours = 0
@@ -48,15 +47,6 @@ exports.main = async () => {
     if (isWorking(booking.startAt)) workingHours += hours
     else nonWorkingHours += hours
 
-    if (!byUserMap[booking.userId]) {
-      byUserMap[booking.userId] = {
-        userId: booking.userId,
-        name: booking.userName || '',
-        hours: 0,
-      }
-    }
-    byUserMap[booking.userId].hours += hours
-
     const month = monthKey(booking.startAt)
     byMonthMap[month] = (byMonthMap[month] || 0) + hours
   })
@@ -65,8 +55,8 @@ exports.main = async () => {
     totalHours,
     workingHours,
     nonWorkingHours,
-    byUser: Object.values(byUserMap).sort((a, b) => b.hours - a.hours),
     byMonth: Object.keys(byMonthMap).sort().map((month) => ({ month, hours: byMonthMap[month] })),
     byTimeType: { workingHours, nonWorkingHours },
+    monthCount: Object.keys(byMonthMap).length,
   })
 }

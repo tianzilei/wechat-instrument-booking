@@ -57,4 +57,4 @@ pages/admin/
 - **Never** perform review actions inline in list rows — always navigate to detail first (v2 target)
 - **Never** skip server-side role re-verification in cloud functions
 - **Never** expose reviewed-by admin name to non-admin users in review results
-- **Never** show personal stats (name, project) in admin stats page (v2 target — current code still has user-dimension stats)
+- **Never** show personal stats (name, project, user rankings) in admin stats page; v2 admin stats are monthly + working/non-working totals only

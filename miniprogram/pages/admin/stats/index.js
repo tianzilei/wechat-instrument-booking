@@ -3,8 +3,8 @@ const api = require('../../../utils/api')
 Page({
   data: {
     stats: {
-      byUser: [],
       byMonth: [],
+      byTimeType: { workingHours: 0, nonWorkingHours: 0 },
     },
   },
 
@@ -17,13 +17,18 @@ Page({
       const stats = await api.callFunction('getAdminStats')
       this.setData({
         stats: {
-          byUser: [],
           byMonth: [],
+          byTimeType: { workingHours: 0, nonWorkingHours: 0 },
           ...stats,
         },
       })
     } catch (err) {
-      this.setData({ stats: { byUser: [], byMonth: [] } })
+      this.setData({
+        stats: {
+          byMonth: [],
+          byTimeType: { workingHours: 0, nonWorkingHours: 0 },
+        },
+      })
     }
   },
 })

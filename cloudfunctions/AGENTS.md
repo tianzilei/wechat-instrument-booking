@@ -92,7 +92,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | `listMyBookings` | User's bookings (filterable) | Self |
 | `getUserStats` | User's usage statistics | Self |
 | `getAdminDashboard` | Dashboard counts | Admin |
-| `getAdminStats` | Detailed usage statistics | Admin |
+| `getAdminStats` | Detailed usage statistics (monthly + working/non-working hours only) | Admin |
 | `listBookingReviews` | Pending booking reviews | Admin |
 | `listCancelReviews` | Pending cancel reviews | Admin |
 | `listRegistrationReviews` | Pending registrations | Admin |
@@ -143,7 +143,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | Calendar data assembly | `getCalendarBookings/index.js` | Public weekly view with field whitelist |
 | V2 public calendar | `getPublicCalendar/index.js` | Weekly view, strict field whitelist |
 | Booking detail | `getMyBookingDetail/index.js`, `getAdminBookingDetail/index.js` | User vs admin detail views |
-| Admin stats | `getAdminStats/index.js` | Per-user hours, monthly aggregation |
+| Admin stats | `getAdminStats/index.js` | Monthly aggregation + working/non-working hour totals |
 | Project management | `createProject/`, `submitProjectApplication/`, `reviewProjectApplication/` | Full project lifecycle |
 | Privacy requests | `submitPrivacyRequest/`, `listPrivacyRequests/`, `processPrivacyRequest/` | Structured privacy workflow |
 | Legal documents | `getLegalDocuments/`, `acceptLegalDocuments/` | Agreement + privacy policy versioning |

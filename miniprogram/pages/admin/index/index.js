@@ -17,7 +17,7 @@ Page({
       { title: '用户管理', desc: '查看用户与预约情况', url: '/pages/admin/users/index' },
       { title: '维护时间', desc: '设置绝对不可预约时段', url: '/pages/admin/maintenance/index' },
       { title: '受限时段', desc: '设置需要审核的单次时段', url: '/pages/admin/restricted/index' },
-      { title: '使用统计', desc: '查看用户、月份和时间类型统计', url: '/pages/admin/stats/index' },
+      { title: '使用统计', desc: '查看月份和时间类型统计', url: '/pages/admin/stats/index' },
       { title: '系统设置', desc: '服务模式、工作时间、数据迁移', url: '/pages/admin/maintenance-mode/index' },
     ],
   },
