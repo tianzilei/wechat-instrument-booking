@@ -14,7 +14,43 @@ exports.main = async () => {
   const existing = await users.where({ openid: OPENID }).limit(1).get()
 
   if (existing.data.length === 0) {
-    return ok({ identified: false, user: null })
+    const now = db.serverDate()
+    const res = await users.add({
+      data: {
+        openid: OPENID,
+        role: 'user',
+        registrationStatus: 'unsubmitted',
+        accountStatus: 'active',
+        name: '',
+        projectId: '',
+        projectName: '',
+        projectAbbr: '',
+        agreementVersion: '',
+        agreementAcceptedAt: null,
+        privacyVersion: '',
+        privacyAcceptedAt: null,
+        rejectReason: '',
+        lastLoginAt: now,
+        createdAt: now,
+        updatedAt: now,
+      },
+    })
+    return ok({
+      identified: true,
+      user: {
+        _id: res._id,
+        role: 'user',
+        accountStatus: 'active',
+        registrationStatus: 'unsubmitted',
+        name: '',
+        projectId: '',
+        projectName: '',
+        projectAbbr: '',
+        agreementVersion: '',
+        privacyVersion: '',
+      },
+      needsLegalAcceptance: true,
+    })
   }
 
   const user = existing.data[0]
