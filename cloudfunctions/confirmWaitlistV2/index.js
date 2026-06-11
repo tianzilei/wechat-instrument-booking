@@ -27,6 +27,10 @@ exports.main = async (event) => {
 
   if (waitlist.status !== 'confirming') return fail('STATE_CHANGED', '候补尚未进入确认状态')
 
+  if (waitlist.convertedBookingId) {
+    return ok({ waitlistId: event.waitlistId, status: 'converted', bookingId: waitlist.convertedBookingId, duplicateRequest: true })
+  }
+
   const segments = waitlist.segments || waitlist.occupiedSegments || [{ startAt: waitlist.startAt, endAt: waitlist.endAt }]
   const now = new Date()
   for (const s of segments) {

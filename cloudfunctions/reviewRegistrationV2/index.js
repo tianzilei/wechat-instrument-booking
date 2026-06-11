@@ -21,8 +21,8 @@ exports.main = async (event) => {
 
   if (!event.applicationId || !['approve', 'reject'].includes(event.action)) return fail('INVALID_PARAMS', '参数错误')
   const ref = db.collection('registration_applications').doc(event.applicationId)
-  const app = (await ref.get()).data
-  if (!app || app.status !== 'pending') return fail('STATE_CHANGED', '申请状态已变化')
+  const application = (await ref.get()).data
+  if (!application || application.status !== 'pending') return fail('STATE_CHANGED', '申请状态已变化')
 
   const now = db.serverDate()
   if (event.action === 'reject') {
@@ -46,15 +46,15 @@ exports.main = async (event) => {
 
   await ref.update({ data: { status: 'approved', reviewedBy: admin._id, reviewedAt: now, updatedAt: now } })
 
-  await db.collection('users').doc(app.userId).update({
+  await db.collection('users').doc(application.userId).update({
     data: {
-      name: app.nameSnapshot,
-      projectId: app.projectId,
-      projectName: app.projectNameSnapshot || '',
-      projectAbbr: app.projectAbbrSnapshot || '',
+      name: application.nameSnapshot,
+      projectId: application.projectId,
+      projectName: application.projectNameSnapshot || '',
+      projectAbbr: application.projectAbbrSnapshot || '',
       registrationStatus: 'approved',
-      agreementVersion: app.agreementVersion,
-      privacyVersion: app.privacyVersion,
+      agreementVersion: application.agreementVersion,
+      privacyVersion: application.privacyVersion,
       updatedAt: now,
     },
   })
