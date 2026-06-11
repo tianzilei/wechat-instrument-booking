@@ -28,7 +28,7 @@
 
 ```text
 .
-├── cloudfunctions/        # 71 个目录，其中 67 个业务函数由 cloudbaserc.json 部署
+├── cloudfunctions/        # 64 个云函数，全部由 cloudbaserc.json 部署
 ├── docs/                  # 业务基线、部署运维、Style Guide、审核合规计划
 ├── miniprogram/           # 小程序前端
 │   ├── pages/

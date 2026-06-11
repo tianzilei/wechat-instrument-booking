@@ -4,7 +4,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 
 ## OVERVIEW
 
-71 cloud functions. Every function: `index.main` handler, `wx-server-sdk`, inline `ok()`/`fail()` helpers. Auth functions verify `openid` from `wxContext`. Admin functions re-verify role.
+64 cloud functions. Every function: `index.main` handler, `wx-server-sdk`, inline `ok()`/`fail()` helpers. Auth functions verify `openid` from `wxContext`. Admin functions re-verify role.
 
 ## STRUCTURE
 
@@ -12,22 +12,21 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | Function | Role |
 |----------|------|
 | `login` | First login creates user doc; returns profile + role |
-| `submitRegistration` | Submit registration form for admin approval |
-| `reviewRegistration` | Admin approve/reject registration |
+| `submitRegistrationV2` | Submit registration form for admin approval |
+| `reviewRegistrationV2` | Admin approve/reject registration |
 
 ### Booking Lifecycle
 | Function | Role |
 |----------|------|
-| `createBooking` | Create booking; auto-confirm normal, flag special for review |
-| `cancelBooking` | Cancel; near-term (&lt;12h) enters `cancel_pending` |
-| `reviewBooking` | Admin approve/reject pending booking |
-| `reviewCancel` | Admin approve/reject cancellation |
+| `createBookingV2` | Create booking; auto-confirm normal, flag special for review |
+| `cancelBookingV2` | Cancel; near-term (&lt;12h) enters `cancel_pending` |
+| `reviewBookingV2` | Admin approve/reject pending booking |
+| `reviewCancelV2` | Admin approve/reject cancellation |
 
 ### Waitlist
 | Function | Role |
 |----------|------|
-| `joinWaitlist` | Join waitlist for occupied slot |
-| `cancelWaitlist` | Cancel own waitlist |
+| `confirmWaitlistV2` | Confirm/decline available slot; converts to booking |
 | `confirmWaitlist` | Confirm/decline available slot; converts to booking |
 | `listMyWaitlists` | User's waitlist entries |
 
