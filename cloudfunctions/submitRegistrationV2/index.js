@@ -64,5 +64,16 @@ exports.main = async (event) => {
       createdAt: now, updatedAt: now,
     },
   })
+
+  await db.collection('users').doc(user._id).update({
+    data: {
+      agreementVersion,
+      agreementAcceptedAt: now,
+      privacyVersion,
+      privacyAcceptedAt: now,
+      updatedAt: now,
+    },
+  })
+
   return ok({ applicationId: res._id, status: 'pending' })
 }
