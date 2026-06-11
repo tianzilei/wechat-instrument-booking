@@ -48,8 +48,8 @@ exports.main = async (event) => {
   while (hasMore) {
     const batch = await db.collection('bookings').where({
       status: _.in(activeStatuses),
-      startAt: _.lt(endAt),
-      endAt: _.gt(startAt),
+      firstStartAt: _.lt(endAt),
+      lastEndAt: _.gt(startAt),
     }).skip(skip).limit(1000).get()
     allConflicts = allConflicts.concat(batch.data)
     if (batch.data.length < 1000) hasMore = false
@@ -73,7 +73,7 @@ exports.main = async (event) => {
   await Promise.all(cancelledBookingIds.map((bookingId) => db.collection('bookings').doc(bookingId).update({
     data: {
       status: 'cancelled',
-      cancelReason: 'maintenance_cancelled',
+      cancellationNote: 'maintenance_cancelled',
       updatedAt: now,
     },
   })))

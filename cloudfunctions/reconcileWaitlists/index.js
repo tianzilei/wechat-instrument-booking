@@ -66,8 +66,8 @@ exports.main = async () => {
 async function checkSegmentConflict(segments) {
   const conditions = segments.map((s) => ({
     status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']),
-    startAt: _.lt(new Date(s.endAt)),
-    endAt: _.gt(new Date(s.startAt)),
+    firstStartAt: _.lt(new Date(s.endAt)),
+    lastEndAt: _.gt(new Date(s.startAt)),
   }))
   const query = conditions.length === 1
     ? conditions[0]

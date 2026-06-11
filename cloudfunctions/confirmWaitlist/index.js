@@ -18,8 +18,8 @@ function fail(code, message) {
 async function checkConflict(segments) {
   const conditions = segments.map((s) => ({
     status: _.in(ACTIVE_STATUSES),
-    startAt: _.lt(new Date(s.endAt)),
-    endAt: _.gt(new Date(s.startAt)),
+    firstStartAt: _.lt(new Date(s.endAt)),
+    lastEndAt: _.gt(new Date(s.startAt)),
   }))
   if (conditions.length === 0) return false
   if (conditions.length === 1) {

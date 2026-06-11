@@ -92,12 +92,17 @@ function anyMaintenanceConflict(segments, maintenanceSlots) {
 }
 
 async function anyBookingConflict(segments, excludeBookingId) {
-  const conditions = segments.map((s) => ({
+  const v2Conditions = segments.map((s) => ({
+    firstStartAt: _.lt(s.endAt),
+    lastEndAt: _.gt(s.startAt),
+  }))
+  const v1Conditions = segments.map((s) => ({
     startAt: _.lt(s.endAt),
     endAt: _.gt(s.startAt),
   }))
-  if (conditions.length === 0) return false
-  const timeFilter = conditions.length === 1 ? conditions[0] : _.or(conditions)
+  const allConditions = [...v2Conditions, ...v1Conditions]
+  if (allConditions.length === 0) return false
+  const timeFilter = allConditions.length === 1 ? allConditions[0] : _.or(allConditions)
   const query = { status: _.in(ACTIVE_STATUSES), _id: excludeBookingId ? _.neq(excludeBookingId) : _.exists(true), ...timeFilter }
   const res = await db.collection('bookings').where(query).limit(1).get()
   return res.data.length > 0
