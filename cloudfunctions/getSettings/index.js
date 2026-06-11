@@ -9,8 +9,11 @@ function ok(data) {
 }
 
 exports.main = async () => {
-  const res = await db.collection('settings').doc('global').get()
-  const doc = res.data
+  let doc = null
+  try {
+    const res = await db.collection('settings').doc('global').get()
+    doc = res.data
+  } catch (err) {}
   return ok(doc ? {
     timezone: doc.timezone || 'Asia/Shanghai',
     openStartHour: doc.openStartHour || 9,

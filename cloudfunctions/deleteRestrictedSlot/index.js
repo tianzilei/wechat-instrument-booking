@@ -13,6 +13,7 @@ function fail(code, message) {
 }
 
 async function getAdmin(openid) {
+  if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
@@ -22,6 +23,7 @@ exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const admin = await getAdmin(OPENID)
   if (!admin) return fail('PERMISSION_DENIED', '无权限操作')
+  if (!event.restrictedSlotId) return fail('INVALID_PARAMS', '参数错误')
   await db.collection('restricted_slots').doc(event.restrictedSlotId).update({
     data: { status: 'deleted', updatedAt: db.serverDate() },
   })

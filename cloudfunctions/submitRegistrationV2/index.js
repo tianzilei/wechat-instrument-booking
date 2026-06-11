@@ -25,8 +25,11 @@ exports.main = async (event) => {
   const project = projectRes.data
   if (!project || project.status !== 'active') return fail('PROJECT_INACTIVE', '课题不可用')
 
-  const settingsRes = await db.collection('settings').doc('global').get()
-  const settings = settingsRes.data || {}
+  let settings = {}
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    settings = settingsRes.data || {}
+  } catch (err) {}
   const agreementVersion = settings.serviceAgreementVersion || '1.0'
   const privacyVersion = settings.privacyPolicyVersion || '1.0'
 
@@ -43,6 +46,7 @@ exports.main = async (event) => {
     }
   } catch (err) {
     console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
   }
 
   const now = db.serverDate()

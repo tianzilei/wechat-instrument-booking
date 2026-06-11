@@ -8,6 +8,7 @@ function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
 async function getAdmin(openid) {
+  if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
@@ -30,6 +31,7 @@ exports.main = async (event) => {
       }
     } catch (err) {
       console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
     }
   }
 
@@ -46,6 +48,9 @@ exports.main = async (event) => {
     })
   } else {
     const previousStatus = booking.previousStatus || 'confirmed'
+    if (!['confirmed', 'pending_review'].includes(previousStatus)) {
+      return fail('STATE_CHANGED', '预约状态异常')
+    }
     await db.collection('bookings').doc(event.bookingId).update({
       data: { status: previousStatus, previousStatus: '', updatedAt: now },
     })

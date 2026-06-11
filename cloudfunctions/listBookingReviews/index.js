@@ -13,6 +13,7 @@ function fail(code, message) {
 }
 
 async function isAdmin(openid) {
+  if (!openid) return false
   const user = (await db.collection('users').where({ openid }).limit(1).get()).data[0]
   return user && user.role === 'admin'
 }

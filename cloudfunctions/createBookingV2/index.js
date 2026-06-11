@@ -122,6 +122,7 @@ exports.main = async (event) => {
   if (user.accountStatus && user.accountStatus !== 'active') return fail('ACCOUNT_SUSPENDED', '账号状态异常')
 
   if (!event.requestId || !event.segments || !Array.isArray(event.segments)) return fail('INVALID_PARAMS', '参数错误')
+  if (event.segments.length > 10) return fail('INVALID_SEGMENTS', '单次最多预约 10 个时段')
 
   const existing = await db.collection('bookings').where({ requestId: event.requestId }).limit(1).get()
   if (existing.data.length > 0) {
@@ -147,12 +148,12 @@ exports.main = async (event) => {
     if (s.startAt < weekStart || s.endAt > weekEnd) return fail('INVALID_SEGMENTS', '所有时段必须处于同一自然周')
   }
 
-  const maintenance = await db.collection('maintenance_slots').where({ status: 'active' }).limit(100).get()
+  const maintenance = await db.collection('maintenance_slots').where({ status: 'active' }).limit(1000).get()
   if (anyMaintenanceConflict(normalized, maintenance.data)) return fail('MAINTENANCE_CONFLICT', '任一时段命中维护')
 
   if (await anyBookingConflict(normalized)) return fail('BOOKING_CONFLICT', '任一时段发生占用冲突')
 
-  const restricted = await db.collection('restricted_slots').where({ status: 'active' }).limit(100).get()
+  const restricted = await db.collection('restricted_slots').where({ status: 'active' }).limit(1000).get()
 
   let openStartHour = 9
   let openEndHour = 18
@@ -176,6 +177,7 @@ exports.main = async (event) => {
   const durationHours = normalized.reduce((sum, s) => sum + (s.endAt - s.startAt) / 3600000, 0)
 
   if (event.remark) {
+    if (event.remark.length > 500) return fail('INVALID_PARAMS', '备注不超过 500 字')
     try {
       const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.remark })
       if (checkRes.result && checkRes.result.suggest === 'risky') {
@@ -183,6 +185,7 @@ exports.main = async (event) => {
       }
     } catch (err) {
       console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
     }
   }
 

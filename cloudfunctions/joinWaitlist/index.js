@@ -27,6 +27,7 @@ exports.main = async (event) => {
   if (startAt < minimumStartAt) return fail('INVALID_SEGMENTS', '当前小时及过去时段不可候补')
 
   if (event.remark) {
+    if (event.remark.length > 500) return fail('INVALID_PARAMS', '备注不超过 500 字')
     try {
       const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.remark })
       if (checkRes.result && checkRes.result.suggest === 'risky') {
@@ -34,6 +35,7 @@ exports.main = async (event) => {
       }
     } catch (err) {
       console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
     }
   }
 

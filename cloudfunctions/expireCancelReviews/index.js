@@ -15,6 +15,10 @@ exports.main = async () => {
   for (const booking of pending.data) {
     results.processed += 1
     const previousStatus = booking.previousStatus || 'confirmed'
+    if (!['confirmed', 'pending_review'].includes(previousStatus)) {
+      results.processed -= 1
+      continue
+    }
     await db.collection('bookings').doc(booking._id).update({
       data: {
         status: previousStatus,

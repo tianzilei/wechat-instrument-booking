@@ -6,7 +6,11 @@ const db = cloud.database()
 const _ = db.command
 
 exports.main = async () => {
-  const settings = (await db.collection('settings').doc('global').get()).data
+  let settings = null
+  try {
+    const res = await db.collection('settings').doc('global').get()
+    settings = res.data
+  } catch (err) {}
   if (!settings) return { success: true, data: { migrated: false, reason: 'no_settings' } }
 
   if (settings.processedRulesVersion >= settings.rulesVersion) {

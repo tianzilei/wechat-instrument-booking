@@ -18,6 +18,7 @@ exports.main = async (event) => {
   if (!event.type || !VALID_TYPES.includes(event.type)) return fail('INVALID_PARAMS', '无效的请求类型')
 
   if (event.note) {
+    if (event.note.length > 500) return fail('INVALID_PARAMS', '补充说明不超过 500 字')
     try {
       const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.note })
       if (checkRes.result && checkRes.result.suggest === 'risky') {
@@ -25,6 +26,7 @@ exports.main = async (event) => {
       }
     } catch (err) {
       console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
     }
   }
 

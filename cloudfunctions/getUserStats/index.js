@@ -18,11 +18,11 @@ function monthKey(date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function isWorking(date) {
+function isWorking(date, openStart, openEnd) {
   const d = new Date(date)
   const day = d.getDay()
   const hour = d.getHours()
-  return day !== 0 && day !== 6 && hour >= 9 && hour < 18
+  return day !== 0 && day !== 6 && hour >= openStart && hour < openEnd
 }
 
 exports.main = async () => {
@@ -30,6 +30,16 @@ exports.main = async () => {
   const userRes = await db.collection('users').where({ openid: OPENID }).field({ _id: true }).limit(1).get()
   const user = userRes.data[0]
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
+
+  let openStartHour = 9
+  let openEndHour = 18
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    const settings = settingsRes.data || {}
+    openStartHour = settings.openStartHour || 9
+    openEndHour = settings.openEndHour || 18
+  } catch (err) {}
+
   const res = await db.collection('bookings').where({
     userId: user._id,
     status: _.in(['confirmed', 'completed']),
@@ -52,7 +62,7 @@ exports.main = async () => {
     totalHours += hours
     if (new Date(booking.startAt) >= weekStart) weekHours += hours
     if (new Date(booking.startAt) >= monthStart) monthHours += hours
-    if (isWorking(booking.startAt)) workingHours += hours
+    if (isWorking(booking.startAt, openStartHour, openEndHour)) workingHours += hours
     else nonWorkingHours += hours
     const key = monthKey(booking.startAt)
     monthlyMap[key] = (monthlyMap[key] || 0) + hours

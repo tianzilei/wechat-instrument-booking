@@ -18,14 +18,15 @@ function monthKey(date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
-function isWorking(date) {
+function isWorking(date, openStart, openEnd) {
   const d = new Date(date)
   const day = d.getDay()
   const hour = d.getHours()
-  return day !== 0 && day !== 6 && hour >= 9 && hour < 18
+  return day !== 0 && day !== 6 && hour >= openStart && hour < openEnd
 }
 
 async function isAdmin(openid) {
+  if (!openid) return false
   const user = (await db.collection('users').where({ openid }).limit(1).get()).data[0]
   return user && user.role === 'admin'
 }
@@ -33,6 +34,16 @@ async function isAdmin(openid) {
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   if (!(await isAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
+
+  let openStartHour = 9
+  let openEndHour = 18
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    const settings = settingsRes.data || {}
+    openStartHour = settings.openStartHour || 9
+    openEndHour = settings.openEndHour || 18
+  } catch (err) {}
+
   const res = await db.collection('bookings').where({
     status: _.in(['confirmed', 'completed']),
   }).limit(1000).get()
@@ -44,7 +55,7 @@ exports.main = async () => {
   res.data.forEach((booking) => {
     const hours = booking.durationHours || ((new Date(booking.endAt) - new Date(booking.startAt)) / 3600000)
     totalHours += hours
-    if (isWorking(booking.startAt)) workingHours += hours
+    if (isWorking(booking.startAt, openStartHour, openEndHour)) workingHours += hours
     else nonWorkingHours += hours
 
     const month = monthKey(booking.startAt)

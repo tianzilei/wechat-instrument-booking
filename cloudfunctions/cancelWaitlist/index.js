@@ -17,6 +17,7 @@ exports.main = async (event) => {
   const userRes = await db.collection('users').where({ openid: OPENID }).field({ _id: true }).limit(1).get()
   const user = userRes.data[0]
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
+  if (!event.waitlistId) return fail('INVALID_PARAMS', '参数错误')
   const ref = db.collection('waitlists').doc(event.waitlistId)
   const waitlist = (await ref.get()).data
   if (!waitlist || waitlist.userId !== user._id) return fail('PERMISSION_DENIED', '无权限操作')

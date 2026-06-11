@@ -18,6 +18,7 @@ exports.main = async () => {
   const userRes = await db.collection('users').where({ openid: OPENID }).limit(1).get()
   const user = userRes.data[0]
   if (!user) return fail('NOT_FOUND', '用户不存在')
+  if (user.role === 'admin') return fail('PERMISSION_DENIED', '管理员不能注销账号')
 
   const now = db.serverDate()
   const activeBookingStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
@@ -74,6 +75,11 @@ exports.main = async () => {
   }
 
   await db.collection('users').doc(user._id).remove()
+
+  try {
+    await db.collection('review_logs').where({ reviewerId: user._id }).remove()
+    await db.collection('review_logs').where({ targetId: user._id }).remove()
+  } catch (err) {}
 
   return ok({ deleted: true, cancellations })
 }

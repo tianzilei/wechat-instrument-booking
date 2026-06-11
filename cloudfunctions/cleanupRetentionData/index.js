@@ -25,7 +25,7 @@ exports.main = async () => {
   const yearAgo = new Date(now.getTime() - 365 * 24 * 3600000)
   const oldBookings = await db.collection('bookings').where({
     createdAt: _.lt(yearAgo),
-  }).limit(100).get()
+  }).limit(500).get()
   let anonymizedBookings = 0
   for (const b of oldBookings.data) {
     await db.collection('bookings').doc(b._id).update({
@@ -45,7 +45,7 @@ exports.main = async () => {
 
   const oldReviews = await db.collection('review_logs').where({
     createdAt: _.lt(yearAgo),
-  }).limit(100).get()
+  }).limit(500).get()
   let deletedReviews = 0
   for (const r of oldReviews.data) {
     await db.collection('review_logs').doc(r._id).update({

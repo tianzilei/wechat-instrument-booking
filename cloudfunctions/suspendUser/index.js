@@ -9,6 +9,7 @@ function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
 async function getAdmin(openid) {
+  if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
@@ -20,6 +21,7 @@ exports.main = async (event) => {
   if (!admin) return fail('PERMISSION_DENIED', '无权限操作')
 
   if (!event.userId || !event.reason) return fail('INVALID_PARAMS', '缺少用户ID或暂停原因')
+  if (event.reason.length > 500) return fail('INVALID_PARAMS', '暂停原因不超过 500 字')
 
   try {
     const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.reason })
@@ -28,6 +30,7 @@ exports.main = async (event) => {
     }
   } catch (err) {
     console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
   }
 
   const userRef = db.collection('users').doc(event.userId)
@@ -66,7 +69,7 @@ exports.main = async (event) => {
     data: {
       userId: event.userId,
       type: 'account_suspended',
-      summary: `账号已于 ${new Date().toISOString().slice(0, 10)} 暂停：${event.reason}`,
+      summary: `账号已于 ${new Date().toISOString().slice(0, 10)} 暂停`,
       readAt: null,
       createdAt: now,
     },

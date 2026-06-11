@@ -5,7 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 
 exports.main = async (event) => {
-  if (!event.projectId) return { success: true, data: { synced: 0 } }
+  if (!event.projectId || typeof event.projectId !== 'string') return { success: true, data: { synced: 0 } }
 
   const project = (await db.collection('projects').doc(event.projectId).field({ abbr: true, displayVersion: true }).get()).data
   if (!project) return { success: true, data: { synced: 0 } }

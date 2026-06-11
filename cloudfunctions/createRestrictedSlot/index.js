@@ -13,6 +13,7 @@ function fail(code, message) {
 }
 
 async function getAdmin(openid) {
+  if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
@@ -27,6 +28,7 @@ exports.main = async (event) => {
   if (!(startAt < endAt)) return fail('INVALID_PARAMS', '时间参数错误')
 
   if (event.reason) {
+    if (event.reason.length > 500) return fail('INVALID_PARAMS', '受限原因不超过 500 字')
     try {
       const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.reason })
       if (checkRes.result && checkRes.result.suggest === 'risky') {
@@ -34,6 +36,7 @@ exports.main = async (event) => {
       }
     } catch (err) {
       console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
     }
   }
   const res = await db.collection('restricted_slots').add({

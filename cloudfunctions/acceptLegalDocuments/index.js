@@ -13,8 +13,11 @@ exports.main = async () => {
   const user = userRes.data[0]
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
 
-  const settingsRes = await db.collection('settings').doc('global').get()
-  const settings = settingsRes.data || {}
+  let settings = {}
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    settings = settingsRes.data || {}
+  } catch (err) {}
   const now = db.serverDate()
 
   await db.collection('users').doc(user._id).update({

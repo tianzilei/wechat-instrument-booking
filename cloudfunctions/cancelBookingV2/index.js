@@ -15,7 +15,10 @@ exports.main = async (event) => {
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
 
   if (!event.bookingId) return fail('INVALID_PARAMS', '参数错误')
-  const booking = (await db.collection('bookings').doc(event.bookingId).get()).data
+  const bookingRes = await db.collection('bookings').doc(event.bookingId).field({
+    userId: true, status: true, segments: true, previousStatus: true,
+  }).get()
+  const booking = bookingRes.data
   if (!booking || booking.userId !== user._id) return fail('PERMISSION_DENIED', '只能取消自己的预约')
   if (!['confirmed', 'pending_review'].includes(booking.status)) return fail('STATE_CHANGED', '当前状态不可取消')
 
@@ -24,13 +27,14 @@ exports.main = async (event) => {
   if (futureActive.length === 0) return fail('STATE_CHANGED', '无未开始的有效时段')
 
   if (event.reason) {
+    if (event.reason.length > 500) return fail('INVALID_PARAMS', '取消原因不超过 500 字')
     try {
-      const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.reason })
       if (checkRes.result && checkRes.result.suggest === 'risky') {
         return fail('CONTENT_UNSAFE', '取消说明包含违规信息')
       }
     } catch (err) {
       console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
     }
   }
 

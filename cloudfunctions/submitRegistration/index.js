@@ -35,6 +35,7 @@ exports.main = async (event) => {
   } catch (err) {
     // If security API fails, log error code only (not content) and continue
     console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
   }
 
   const users = db.collection('users')

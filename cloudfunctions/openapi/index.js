@@ -60,6 +60,6 @@ exports.main = async (event) => {
     case 'getWXACode': {
       return getWXACode(event)
     }
-    default: break
+    default: return { error: 'unknown action' }
   }
 }

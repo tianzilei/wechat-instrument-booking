@@ -9,6 +9,7 @@ function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
 async function getAdmin(openid) {
+  if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
@@ -37,13 +38,14 @@ exports.main = async (event) => {
         }
       } catch (err) {
         console.error('msgSecCheck error:', err.errCode || err.message)
+      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
       }
     }
 
     const members = await db.collection('users').where({
       projectId: event.projectId,
       accountStatus: 'active',
-    }).get()
+    }).limit(500).get()
     await Promise.all(members.data.map((m) => db.collection('users').doc(m._id).update({
       data: { accountStatus: 'project_reassignment_required', updatedAt: now },
     })))
@@ -52,7 +54,7 @@ exports.main = async (event) => {
     const bookings = await db.collection('bookings').where({
       projectId: event.projectId,
       status: _.in(['pending_review', 'confirmed', 'cancel_pending']),
-    }).get()
+    }).limit(500).get()
     await Promise.all(bookings.data.map((b) => db.collection('bookings').doc(b._id).update({
       data: { status: 'cancelled', cancellationNote: 'project_inactive', updatedAt: now },
     })))

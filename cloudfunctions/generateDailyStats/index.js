@@ -21,8 +21,14 @@ exports.main = async () => {
   let cancelCount = 0
   let maintenanceHours = 0
 
-  const OPEN_START = 9
-  const OPEN_END = 18
+  let openStart = 9
+  let openEnd = 18
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    const settings = settingsRes.data || {}
+    openStart = settings.openStartHour || 9
+    openEnd = settings.openEndHour || 18
+  } catch (err) {}
 
   for (const b of bookings.data) {
     const segments = b.segments || [{ startAt: b.startAt, endAt: b.endAt }]
@@ -31,7 +37,7 @@ exports.main = async () => {
       const h = (new Date(s.endAt) - new Date(s.startAt)) / 3600000
       const startH = new Date(s.startAt).getHours()
       const day = new Date(s.startAt).getDay()
-      if (day === 0 || day === 6 || startH < OPEN_START || startH >= OPEN_END) {
+      if (day === 0 || day === 6 || startH < openStart || startH >= openEnd) {
         nonWorkingHours += h
       } else {
         workingHours += h

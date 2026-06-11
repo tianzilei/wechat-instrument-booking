@@ -9,6 +9,7 @@ function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
 async function getAdmin(openid) {
+  if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
@@ -18,6 +19,15 @@ exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const admin = await getAdmin(OPENID)
   if (!admin) return fail('PERMISSION_DENIED', '无权限操作')
+
+  let settings = null
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    settings = settingsRes.data
+  } catch (err) {}
+  if (settings && settings.processedRulesVersion >= settings.rulesVersion) {
+    return fail('ALREADY_MIGRATED', '数据已是最新版本，无需迁移')
+  }
 
   const results = {}
   const now = db.serverDate()
@@ -44,7 +54,7 @@ exports.main = async (event) => {
 
   const futureBookings = await db.collection('bookings').where({
     status: _.in(['pending_review', 'confirmed', 'cancel_pending']),
-  }).get()
+  }).limit(500).get()
   results.futureBookingsCancelled = futureBookings.data.length
   for (const b of futureBookings.data) {
     await db.collection('bookings').doc(b._id).update({
@@ -54,7 +64,7 @@ exports.main = async (event) => {
 
   const activeWaitlists = await db.collection('waitlists').where({
     status: _.nin(['cancelled', 'expired']),
-  }).get()
+  }).limit(500).get()
   results.waitlistsCancelled = activeWaitlists.data.length
   for (const w of activeWaitlists.data) {
     await db.collection('waitlists').doc(w._id).update({
