@@ -6,26 +6,26 @@
   z-index: 1000;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  min-height: var(--tab-bar-height);
+  min-height: 100rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  border-top: 1rpx solid var(--color-border);
-  background: var(--color-surface);
+  border-top: 1rpx solid #d5dedd;
+  background: #ffffff;
 }
 
 .tab-bar__item {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: var(--tab-bar-height);
-  color: var(--color-text-secondary);
+  min-height: 100rpx;
+  color: #566762;
 }
 
 .tab-bar__item--active {
-  color: var(--color-primary);
+  color: #0f766e;
 }
 
 .tab-bar__text {
-  font-size: var(--font-size-md);
+  font-size: 28rpx;
   font-weight: 600;
   line-height: 1;
   text-align: center;
