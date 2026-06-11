@@ -1,14 +1,41 @@
 <view class="page legal-page">
   <view class="surface-section">
-  <view class="page-intro">版本 1.0 · 2026年6月10日生效</view>
+  <view class="page-intro">版本 2.0 · 2026年6月11日生效</view>
 
     <view class="legal-section">
       <view class="legal-heading">一、我们收集的信息</view>
       <view class="legal-text">为提供仪器预约管理服务，我们仅收集以下必要信息：</view>
-      <view class="legal-text">1. 姓名：用于管理员核验用户身份和管理预约记录。</view>
-      <view class="legal-text">2. 课题名称：用于管理员核验所属课题组。</view>
-      <view class="legal-text">3. 课题缩写：用于周历公开占用展示，代替真实姓名以保护隐私。</view>
-      <view class="legal-text">4. 微信OpenID：作为账号技术标识，由微信云开发自动获取，不在小程序页面显示，不向其他用户公开。</view>
+
+      <view class="legal-text" style="font-weight:600;margin-top:16rpx">1. 用户主动提供</view>
+      <view class="legal-text">• 真实姓名：用于管理员核验用户身份和管理预约记录。</view>
+      <view class="legal-text">• 所属课题、课题名称、课题缩写：用于课题归属管理和周历公开展示。</view>
+      <view class="legal-text">• 预约日期、开始/结束时间：用于创建和管理仪器预约。</view>
+      <view class="legal-text">• 预约备注（选填，最多 500 字）：用于预约说明，不对外公开。</view>
+      <view class="legal-text">• 隐私请求类型和补充说明：用于处理您的隐私相关诉求。</view>
+      <view class="legal-text">• 协议及隐私政策同意操作：用于记录您的授权同意。</view>
+
+      <view class="legal-text" style="font-weight:600;margin-top:16rpx">2. 微信自动提供</view>
+      <view class="legal-text">• 微信 OpenID：作为账号技术标识，由微信云开发自动获取，不在小程序页面显示，不向其他用户公开。</view>
+      <view class="legal-text">• CloudBase 用户追踪标识：由云开发基础设施自动记录，用于服务运维。</view>
+      <view class="legal-text">本小程序不获取您的微信昵称、头像或微信密码。</view>
+
+      <view class="legal-text" style="font-weight:600;margin-top:16rpx">3. 系统自动生成</view>
+      <view class="legal-text">• 用户内部 ID、角色（普通用户/管理员）、注册状态及账号状态。</view>
+      <view class="legal-text">• 登录时间、记录创建时间和最后更新时间。</view>
+      <view class="legal-text">• 协议版本号及同意时间。</view>
+      <view class="legal-text">• 预约时段、时长、状态、特殊审核原因（夜间、周末、受限时段）。</view>
+      <view class="legal-text">• 随机请求 ID（用于防重复提交）和预约排期键。</view>
+      <view class="legal-text">• 取消状态和取消说明。</view>
+      <view class="legal-text">• 审核人内部 ID、审核结果和审核时间。</view>
+      <view class="legal-text">• 匿名使用统计，包括使用小时数、取消次数、维护小时数。</view>
+      <view class="legal-text">• 云函数请求 ID、执行时间、错误码等技术日志（保存 30 天后自动清理）。</view>
+
+      <view class="legal-text" style="font-weight:600;margin-top:16rpx">4. 管理员填写或产生</view>
+      <view class="legal-text">• 注册、预约、取消、课题申请的拒绝原因。</view>
+      <view class="legal-text">• 维护时段、受限时段及原因说明。</view>
+      <view class="legal-text">• 用户暂停原因。</view>
+      <view class="legal-text">• 隐私请求处理说明。</view>
+      <view class="legal-text">• 课题名称、缩写和启停记录。</view>
     </view>
 
     <view class="legal-section">
@@ -18,32 +45,37 @@
       <view class="legal-text">- 学号、工号</view>
       <view class="legal-text">- 学院、导师或负责人信息</view>
       <view class="legal-text">- 微信昵称和头像</view>
-      <view class="legal-text">- 地理位置、通讯录、相册等设备敏感信息</view>
+      <view class="legal-text">- 位置、通讯录、相册、摄像头、麦克风等设备敏感信息</view>
+      <view class="legal-text">- 微信密码</view>
     </view>
 
     <view class="legal-section">
       <view class="legal-heading">三、信息用途</view>
-      <view class="legal-text">您提供的个人信息仅用于：</view>
+      <view class="legal-text">您的个人信息仅用于以下目的：</view>
       <view class="legal-text">1. 用户身份标识与管理员审核。</view>
-      <view class="legal-text">2. 周历公开展示（仅课题缩写，不含姓名）。</view>
+      <view class="legal-text">2. 周历公开展示（仅课题缩写和占用状态，不含姓名、备注或 OpenID）。</view>
       <view class="legal-text">3. 管理员进行预约管理和仪器维护。</view>
       <view class="legal-text">4. 生成匿名化的使用统计数据。</view>
+      <view class="legal-text">5. 处理您的隐私相关请求。</view>
+      <view class="legal-text">6. 记录协议同意状态以满足合规要求。</view>
     </view>
 
     <view class="legal-section">
       <view class="legal-heading">四、信息展示范围</view>
       <view class="legal-text">1. 游客和未登录用户：只能看到周历中的课题缩写和占用状态，看不到姓名。</view>
-      <view class="legal-text">2. 普通登录用户：只能看到其他用户的课题缩写，看不到他人姓名和备注。</view>
+      <view class="legal-text">2. 普通登录用户：只能看到其他用户的课题缩写，看不到他人姓名、备注或 OpenID。</view>
       <view class="legal-text">3. 管理员：因注册审核和仪器管理需要，可以查看用户姓名。</view>
-      <view class="legal-text">4. OpenID不在任何页面展示，不向任何用户返回。</view>
+      <view class="legal-text">4. OpenID 不在任何页面展示，不向任何用户返回。</view>
     </view>
 
     <view class="legal-section">
       <view class="legal-heading">五、信息保存期限</view>
       <view class="legal-text">1. 用户资料：保存至账号注销后删除。</view>
-      <view class="legal-text">2. 预约记录：保存365天后匿名化处理。</view>
+      <view class="legal-text">2. 预约记录：保存 365 天后匿名化处理。</view>
       <view class="legal-text">3. 匿名统计：长期保存，不含个人可识别信息。</view>
-      <view class="legal-text">4. 技术日志：保存30天后自动清理。</view>
+      <view class="legal-text">4. 技术日志：保存 30 天后自动清理。</view>
+      <view class="legal-text">5. 隐私请求记录：保存至处理完成后 90 天。</view>
+      <view class="legal-text">6. 审核日志：保存 365 天后清理。</view>
     </view>
 
     <view class="legal-section">
@@ -51,17 +83,20 @@
       <view class="legal-text">1. 所有数据通过微信云开发存储，由微信提供基础安全保护。</view>
       <view class="legal-text">2. 客户端不直接读写数据库，所有操作通过云函数完成。</view>
       <view class="legal-text">3. 管理员权限在云函数中验证，不依赖客户端标识。</view>
-      <view class="legal-text">4. 用户输入内容经过安全检测，防止违规信息入库。</view>
+      <view class="legal-text">4. 用户输入内容经过微信内容安全接口检查，通过后才保存。</view>
+      <view class="legal-text">5. 公开接口采用字段白名单，不返回原始数据库记录。</view>
+      <view class="legal-text">6. 服务器时间用于所有时间校验，不信任客户端时间。</view>
     </view>
 
     <view class="legal-section">
       <view class="legal-heading">七、用户权利</view>
-      <view class="legal-text">您可以通过"我的 → 账号与隐私"行使以下权利：</view>
+      <view class="legal-text">您可以通过"我的 → 隐私请求"行使以下权利：</view>
       <view class="legal-text">1. 查询：查看您的个人资料和协议记录。</view>
       <view class="legal-text">2. 更正：申请更正姓名等个人信息。</view>
       <view class="legal-text">3. 删除：申请删除不再需要的数据。</view>
       <view class="legal-text">4. 撤回同意：撤回对隐私政策的同意（将进入注销流程）。</view>
       <view class="legal-text">5. 注销账号：永久删除您的账号和相关数据。</view>
+      <view class="legal-text">6. 投诉建议：对数据处理提出投诉或建议。</view>
     </view>
 
     <view class="legal-section">
@@ -79,7 +114,7 @@
     <view class="legal-section">
       <view class="legal-heading">十、联系方式与生效</view>
       <view class="legal-text">如有隐私相关问题，请联系实验室管理员。</view>
-      <view class="legal-text">本隐私政策自2026年6月10日起生效。</view>
+      <view class="legal-text">本隐私政策自2026年6月11日起生效。</view>
     </view>
   </view>
 </view>

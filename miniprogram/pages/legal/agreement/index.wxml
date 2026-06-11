@@ -1,6 +1,6 @@
 <view class="page legal-page">
   <view class="surface-section">
-  <view class="page-intro">版本 1.0 · 2026年6月10日生效</view>
+  <view class="page-intro">版本 2.0 · 2026年6月11日生效</view>
 
     <view class="legal-section">
       <view class="legal-heading">一、服务主体</view>
@@ -15,15 +15,17 @@
       <view class="legal-text">3. 按小时预约仪器使用时段；</view>
       <view class="legal-text">4. 预约取消、候补与管理；</view>
       <view class="legal-text">5. 维护时间与受限时段管理；</view>
-      <view class="legal-text">6. 个人预约记录与使用统计。</view>
+      <view class="legal-text">6. 个人预约记录与使用统计；</view>
+      <view class="legal-text">7. 隐私请求提交与处理。</view>
     </view>
 
     <view class="legal-section">
       <view class="legal-heading">三、注册与审核规则</view>
       <view class="legal-text">1. 用户须年满18周岁，具备相应实验室使用资格。</view>
-      <view class="legal-text">2. 注册时须填写真实姓名、课题名称和课题缩写。</view>
+      <view class="legal-text">2. 注册时须填写真实姓名，并选择所属课题或提交新课题申请。</view>
       <view class="legal-text">3. 注册申请提交后由管理员审核，审核通过后方可预约仪器。</view>
       <view class="legal-text">4. 管理员有权拒绝不符合要求的注册申请。</view>
+      <view class="legal-text">5. 注册时需同意用户服务协议和隐私政策。</view>
     </view>
 
     <view class="legal-section">
@@ -31,15 +33,18 @@
       <view class="legal-text">1. 预约最小单位为1小时，所有时间必须为整点。</view>
       <view class="legal-text">2. 可提前7个自然日预约，超出范围不可预约。</view>
       <view class="legal-text">3. 当前小时及过去时段不可预约。</view>
-      <view class="legal-text">4. 非工作时间、周末和受限时段的预约需管理员审核。</view>
-      <view class="legal-text">5. 预约成功后请按时使用仪器，避免资源浪费。</view>
+      <view class="legal-text">4. 同一预约单支持多个不连续时段选择。</view>
+      <view class="legal-text">5. 非工作时间、周末和受限时段的预约需管理员审核。</view>
+      <view class="legal-text">6. 预约成功后请按时使用仪器，避免资源浪费。</view>
+      <view class="legal-text">7. 预约备注为选填项，最多 500 字，不对外公开。</view>
     </view>
 
     <view class="legal-section">
       <view class="legal-heading">五、取消与候补规则</view>
       <view class="legal-text">1. 距预约开始时间不少于12小时的取消请求直接生效。</view>
-      <view class="legal-text">2. 距开始不足12小时的取消需管理员审核。</view>
+      <view class="legal-text">2. 距开始不足12小时的取消需管理员审核，审核通过前该时段仍会占用。</view>
       <view class="legal-text">3. 已占用时段可加入候补，候补成功后有确认期限。</view>
+      <view class="legal-text">4. 取消原因为选填项，最多 500 字。</view>
     </view>
 
     <view class="legal-section">
@@ -47,7 +52,8 @@
       <view class="legal-text">1. 不得利用本服务从事违法违规活动。</view>
       <view class="legal-text">2. 不得恶意占用预约时段或扰乱预约秩序。</view>
       <view class="legal-text">3. 不得通过技术手段绕过预约限制或攻击系统。</view>
-      <view class="legal-text">4. 管理员有权暂停违规用户的账号。</view>
+      <view class="legal-text">4. 不得在预约备注中填写违规内容，系统会自动检测。</view>
+      <view class="legal-text">5. 管理员有权暂停违规用户的账号。</view>
     </view>
 
     <view class="legal-section">
@@ -56,7 +62,8 @@
       <view class="legal-text">1. 全部未来预约和候补将被取消。</view>
       <view class="legal-text">2. 个人资料将被删除。</view>
       <view class="legal-text">3. 历史预约将被匿名化处理。</view>
-      <view class="legal-text">4. 注销操作不可撤销。</view>
+      <view class="legal-text">4. 审核日志中的个人信息将被清除。</view>
+      <view class="legal-text">5. 注销操作不可撤销。</view>
     </view>
 
     <view class="legal-section">
@@ -69,6 +76,7 @@
     <view class="legal-section">
       <view class="legal-heading">九、联系方式</view>
       <view class="legal-text">如有疑问，请联系实验室管理员。</view>
+      <view class="legal-text">本用户服务协议自2026年6月11日起生效。</view>
     </view>
   </view>
 </view>
