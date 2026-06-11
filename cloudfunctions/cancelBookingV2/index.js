@@ -14,6 +14,7 @@ exports.main = async (event) => {
   const user = userRes.data[0]
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
 
+  if (!event.bookingId) return fail('INVALID_PARAMS', '参数错误')
   const booking = (await db.collection('bookings').doc(event.bookingId).get()).data
   if (!booking || booking.userId !== user._id) return fail('PERMISSION_DENIED', '只能取消自己的预约')
   if (!['confirmed', 'pending_review'].includes(booking.status)) return fail('STATE_CHANGED', '当前状态不可取消')

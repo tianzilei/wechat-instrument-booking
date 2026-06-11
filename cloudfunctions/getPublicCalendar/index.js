@@ -8,8 +8,7 @@ const _ = db.command
 function ok(data) { return { success: true, data, error: null } }
 
 function parseChinaDate(dateStr) {
-  const d = new Date(`${dateStr}T00:00:00+08:00`)
-  return new Date(d.getTime() - d.getTimezoneOffset() * 60000)
+  return new Date(`${dateStr}T00:00:00+08:00`)
 }
 
 function addDays(date, days) {

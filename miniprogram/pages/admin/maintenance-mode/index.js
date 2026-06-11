@@ -63,7 +63,10 @@ Page({
         try {
           const result = await api.callFunction('migrateData')
           wx.hideLoading()
-          wx.showModal({ title: '迁移完成', content: JSON.stringify(result, null, 2), showCancel: false })
+          const summary = result.migrated
+            ? `规则版本 ${result.rulesVersion}，${result.affectedBookings} 条预约需复审`
+            : result.reason || '无需迁移'
+          wx.showModal({ title: '迁移完成', content: summary, showCancel: false })
         } catch (err) { wx.hideLoading(); api.showError(err) }
       },
     })

@@ -44,29 +44,40 @@ exports.main = async () => {
   let cursor = 0
   let affected = 0
 
-  const batch = await db.collection('bookings').where({
-    status: 'confirmed',
-    firstStartAt: db.command.gt(new Date()),
-  }).skip(cursor).limit(50).get()
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('bookings').where({
+      status: 'confirmed',
+      firstStartAt: db.command.gt(new Date()),
+    }).skip(cursor).limit(50).get()
 
-  for (const booking of batch.data) {
-    const segments = booking.segments || [{ startAt: booking.startAt, endAt: booking.endAt }]
-    const hitNewRule = segments.some((s) => {
-      const d = new Date(s.startAt)
-      if (d.getDay() === 0 || d.getDay() === 6) return true
-      if (d.getHours() < OPEN_START_HOUR || d.getHours() >= OPEN_END_HOUR) return true
-      return restricted.data.some((r) => s.startAt < r.endAt && s.endAt > r.startAt)
-    })
-    if (hitNewRule) {
-      await db.collection('bookings').doc(booking._id).update({
-        data: {
-          status: 'rule_review_pending',
-          previousStatus: booking.status,
-          updatedAt: now,
-        },
-      })
-      affected += 1
+    if (batch.data.length === 0) {
+      hasMore = false
+      break
     }
+
+    for (const booking of batch.data) {
+      const segments = booking.segments || [{ startAt: booking.startAt, endAt: booking.endAt }]
+      const hitNewRule = segments.some((s) => {
+        const d = new Date(s.startAt)
+        if (d.getDay() === 0 || d.getDay() === 6) return true
+        if (d.getHours() < OPEN_START_HOUR || d.getHours() >= OPEN_END_HOUR) return true
+        return restricted.data.some((r) => s.startAt < r.endAt && s.endAt > r.startAt)
+      })
+      if (hitNewRule) {
+        await db.collection('bookings').doc(booking._id).update({
+          data: {
+            status: 'rule_review_pending',
+            previousStatus: booking.status,
+            updatedAt: now,
+          },
+        })
+        affected += 1
+      }
+    }
+
+    cursor += batch.data.length
+    if (batch.data.length < 50) hasMore = false
   }
 
   await db.collection('rule_migration_tasks').doc(taskRes._id).update({

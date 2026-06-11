@@ -20,7 +20,7 @@ exports.main = async () => {
   if (!user) return fail('NOT_FOUND', '用户不存在')
 
   const now = db.serverDate()
-  const activeBookingStatuses = ['pending_review', 'confirmed', 'cancel_pending']
+  const activeBookingStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
   const activeWaitlistStatuses = ['waitlisted', 'waitlist_confirming']
 
   const cancellations = []
@@ -64,6 +64,10 @@ exports.main = async () => {
         userId: '',
         userName: '',
         projectAbbr: '',
+        projectAbbrDisplayCache: '',
+        remark: '',
+        reviewReason: '',
+        cancellationNote: '',
         updatedAt: now,
       },
     })))

@@ -12,8 +12,7 @@ exports.main = async () => {
 
   const bookings = await db.collection('bookings').where({
     status: 'confirmed',
-    lastEndAt: _.gte(yesterday),
-    lastEndAt: _.lt(today),
+    lastEndAt: _.and(_.gte(yesterday), _.lt(today)),
   }).limit(1000).get()
 
   let totalHours = 0
@@ -43,15 +42,13 @@ exports.main = async () => {
 
   const cancelled = await db.collection('bookings').where({
     status: 'cancelled',
-    updatedAt: _.gte(yesterday),
-    updatedAt: _.lt(today),
+    updatedAt: _.and(_.gte(yesterday), _.lt(today)),
   }).count()
   cancelCount = cancelled.total
 
   const maintenance = await db.collection('maintenance_slots').where({
     status: 'active',
-    startAt: _.gte(yesterday),
-    startAt: _.lt(today),
+    startAt: _.and(_.gte(yesterday), _.lt(today)),
   }).limit(100).get()
   maintenanceHours = maintenance.data.reduce((sum, m) => sum + (new Date(m.endAt) - new Date(m.startAt)) / 3600000, 0)
 

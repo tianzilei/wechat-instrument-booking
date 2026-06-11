@@ -19,8 +19,13 @@ exports.main = async () => {
 
   const user = existing.data[0]
 
-  const settingsRes = await db.collection('settings').doc('global').get()
-  const settings = settingsRes.data || {}
+  let settings = {}
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    settings = settingsRes.data || {}
+  } catch (err) {
+    settings = {}
+  }
   const currentAgreement = settings.serviceAgreementVersion || '1.0'
   const currentPrivacy = settings.privacyPolicyVersion || '1.0'
   const needsLegalAcceptance = (user.agreementVersion || '') !== currentAgreement || (user.privacyVersion || '') !== currentPrivacy

@@ -6,11 +6,9 @@ const db = cloud.database()
 const _ = db.command
 
 const ACTIVE_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
-const OPEN_START_HOUR = 9
-const OPEN_END_HOUR = 18
 
 function ok(data) { return { success: true, data, error: null } }
-function fail(code, message) { return { success: false, data, error: { code, message } } }
+function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
 function isWholeHour(date) {
   return date.getMinutes() === 0 && date.getSeconds() === 0 && date.getMilliseconds() === 0
@@ -70,13 +68,13 @@ function makeScheduleKey(segments) {
   return data
 }
 
-function getSpecialReasons(segments, restrictedSlots) {
+function getSpecialReasons(segments, restrictedSlots, openStartHour, openEndHour) {
   const reasons = new Set()
   for (const s of segments) {
     if (isWeekend(s.startAt) || isWeekend(new Date(s.endAt.getTime() - 1))) reasons.add('weekend')
     const startHour = s.startAt.getHours()
     const endHour = s.endAt.getHours()
-    if (startHour < OPEN_START_HOUR || endHour > OPEN_END_HOUR || endHour <= OPEN_START_HOUR) reasons.add('night')
+    if (startHour < openStartHour || endHour > openEndHour) reasons.add('night')
     for (const r of restrictedSlots) {
       if (s.startAt < r.endAt && s.endAt > r.startAt) reasons.add('restricted')
     }
@@ -155,7 +153,17 @@ exports.main = async (event) => {
   if (await anyBookingConflict(normalized)) return fail('BOOKING_CONFLICT', '任一时段发生占用冲突')
 
   const restricted = await db.collection('restricted_slots').where({ status: 'active' }).limit(100).get()
-  const specialReasons = getSpecialReasons(normalized, restricted.data)
+
+  let openStartHour = 9
+  let openEndHour = 18
+  try {
+    const settingsRes = await db.collection('settings').doc('global').get()
+    const settings = settingsRes.data || {}
+    openStartHour = settings.openStartHour || 9
+    openEndHour = settings.openEndHour || 18
+  } catch (err) {}
+
+  const specialReasons = getSpecialReasons(normalized, restricted.data, openStartHour, openEndHour)
   const status = specialReasons.length > 0 ? 'pending_review' : 'confirmed'
   const bookingType = specialReasons.length > 0 ? 'special' : 'normal'
   const scheduleKey = makeScheduleKey(normalized)

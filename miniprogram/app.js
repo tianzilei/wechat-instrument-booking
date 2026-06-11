@@ -50,6 +50,9 @@ App({
   setUser(user) {
     this.globalData.user = user
     this.globalData.hasLogin = !!user
+    if (!user) {
+      this.globalData.needsLegalAcceptance = false
+    }
   },
 
   isAdmin() {

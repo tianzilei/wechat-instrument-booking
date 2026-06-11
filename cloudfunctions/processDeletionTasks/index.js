@@ -50,7 +50,7 @@ exports.main = async () => {
       }
 
       if (!task.anonymizedBookings) {
-        const history = await db.collection('bookings').where({ userId }).limit(200).get()
+        const history = await db.collection('bookings').where({ userId }).limit(500).get()
         await Promise.all(history.data.map((b) => db.collection('bookings').doc(b._id).update({
           data: {
             userId: '',

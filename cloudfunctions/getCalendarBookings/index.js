@@ -32,6 +32,8 @@ exports.main = async (event) => {
     status: _.in(activeStatuses),
     startAt: _.lt(weekEnd),
     endAt: _.gt(weekStart),
+  }).field({
+    _id: true, status: true, startAt: true, endAt: true, projectAbbr: true, userName: true,
   }).limit(100).get()
 
   const maintenanceRes = await db.collection('maintenance_slots').where({
