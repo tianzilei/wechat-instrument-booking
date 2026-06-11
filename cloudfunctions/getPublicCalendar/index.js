@@ -20,38 +20,68 @@ function addDays(date, days) {
 exports.main = async (event) => {
   const weekStart = parseChinaDate(event.weekStartDate)
   const weekEnd = addDays(weekStart, 7)
-  const activeStatuses = ['pending_review', 'confirmed', 'cancel_pending']
+  const activeStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
 
-  const bookingsRes = await db.collection('bookings').where({
-    status: _.in(activeStatuses),
-    startAt: _.lt(weekEnd),
-    endAt: _.gt(weekStart),
-  }).field({
-    _id: true, status: true, startAt: true, endAt: true, projectAbbr: true,
-  }).limit(100).get()
-
-  const maintenanceRes = await db.collection('maintenance_slots').where({
-    status: 'active',
-    startAt: _.lt(weekEnd),
-    endAt: _.gt(weekStart),
-  }).field({ _id: true, startAt: true, endAt: true, status: true }).limit(100).get()
-
-  const restrictedRes = await db.collection('restricted_slots').where({
-    status: 'active',
-    startAt: _.lt(weekEnd),
-    endAt: _.gt(weekStart),
-  }).field({ _id: true, startAt: true, endAt: true, status: true }).limit(100).get()
-
-  const settingsRes = await db.collection('settings').doc('global').get()
+  // V2 bookings use firstStartAt/lastEndAt and segments; keep a separate query for legacy records.
+  const [bookingsRes, legacyBookingsRes, maintenanceRes, restrictedRes, settingsRes] = await Promise.all([
+    db.collection('bookings').where({
+      status: _.in(activeStatuses),
+      firstStartAt: _.lt(weekEnd),
+      lastEndAt: _.gt(weekStart),
+    }).field({
+      _id: true,
+      status: true,
+      segments: true,
+      firstStartAt: true,
+      lastEndAt: true,
+      projectAbbrDisplayCache: true,
+    }).limit(100).get(),
+    db.collection('bookings').where({
+      status: _.in(activeStatuses),
+      startAt: _.lt(weekEnd),
+      endAt: _.gt(weekStart),
+    }).field({
+      _id: true, status: true, startAt: true, endAt: true, projectAbbr: true,
+    }).limit(100).get(),
+    db.collection('maintenance_slots').where({
+      status: 'active',
+      startAt: _.lt(weekEnd),
+      endAt: _.gt(weekStart),
+    }).field({ _id: true, startAt: true, endAt: true, status: true }).limit(100).get(),
+    db.collection('restricted_slots').where({
+      status: 'active',
+      startAt: _.lt(weekEnd),
+      endAt: _.gt(weekStart),
+    }).field({ _id: true, startAt: true, endAt: true, status: true }).limit(100).get(),
+    db.collection('settings').doc('global').get(),
+  ])
   const settings = settingsRes.data || {}
 
-  const slots = bookingsRes.data.map((item) => ({
-    startAt: item.startAt,
-    endAt: item.endAt,
-    state: item.status === 'confirmed' ? 'occupied' : 'pending',
-    projectAbbr: item.projectAbbr || '',
-    publicRenderId: item._id,
-  }))
+  const slots = []
+  bookingsRes.data.forEach((item) => {
+    const segments = Array.isArray(item.segments) && item.segments.length > 0
+      ? item.segments.filter((segment) => segment.state !== 'cancelled')
+      : [{ startAt: item.firstStartAt, endAt: item.lastEndAt }]
+    segments.forEach((segment, index) => {
+      slots.push({
+        startAt: segment.startAt,
+        endAt: segment.endAt,
+        state: item.status === 'confirmed' ? 'occupied' : 'pending',
+        projectAbbr: item.projectAbbrDisplayCache || '',
+        publicRenderId: `${item._id}:${index}`,
+      })
+    })
+  })
+
+  legacyBookingsRes.data.forEach((item) => {
+    slots.push({
+      startAt: item.startAt,
+      endAt: item.endAt,
+      state: item.status === 'confirmed' ? 'occupied' : 'pending',
+      projectAbbr: item.projectAbbr || '',
+      publicRenderId: item._id,
+    })
+  })
 
   maintenanceRes.data.forEach((item) => {
     slots.push({

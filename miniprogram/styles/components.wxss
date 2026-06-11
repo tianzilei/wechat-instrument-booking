@@ -174,12 +174,12 @@
 .status-tag {
   display: inline-flex;
   align-items: center;
-  height: 40rpx;
-  padding: 0 12rpx;
+  min-height: 40rpx;
+  padding: 4rpx 12rpx;
   border: 1rpx solid currentColor;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
-  line-height: 1;
+  line-height: 1.2;
 }
 
 .status-tag--success {
@@ -210,4 +210,15 @@
   border-color: var(--color-past);
   background: var(--color-past-soft);
   color: var(--color-past);
+}
+
+.tab-bar-scrim {
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 999;
+  height: calc(var(--tab-bar-height) + env(safe-area-inset-bottom));
+  pointer-events: none;
+  background-color: var(--color-surface);
 }

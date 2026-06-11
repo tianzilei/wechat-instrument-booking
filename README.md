@@ -28,8 +28,8 @@
 
 ```text
 .
-├── cloudfunctions/        # 71 个云函数
-├── docs/                  # 业务基线 v2、Style Guide、审核合规计划
+├── cloudfunctions/        # 71 个目录，其中 67 个业务函数由 cloudbaserc.json 部署
+├── docs/                  # 业务基线、部署运维、Style Guide、审核合规计划
 ├── miniprogram/           # 小程序前端
 │   ├── pages/
 │   │   ├── calendar/      # 周历主界面，公开查看 + 预约入口
@@ -67,7 +67,13 @@ npm install
 
 ```bash
 tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
+
+# 按 cloudbaserc.json 批量覆盖部署全部 67 个业务函数
+tcb fn deploy --all --force -e <env-id>
 ```
+
+首次部署、生产更新、管理员初始化、数据库集合和索引配置，请按
+[`docs/deployment-and-operations.md`](docs/deployment-and-operations.md) 执行。
 
 ### 本地预览
 
@@ -83,6 +89,7 @@ tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
 - 业务基线以 `docs/execution-baseline-v2.md` 为准
 - 视觉与组件规范以 `docs/style-guide.md` 为准
 - `docs/audit-compliance-optimization-plan.md` 用于审核合规参考
+- 部署、管理员和数据库运维以 `docs/deployment-and-operations.md` 为准
 - `docs/implementation-design.md` 保留为历史设计说明
 
 ## 项目特性
@@ -99,6 +106,8 @@ tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
 
 - 该项目使用微信云开发能力，部分功能需要先配置云环境和数据库集合。
 - 预约、审核、候补和统计逻辑均依赖云函数，不建议直接修改前端绕过接口。
+- 管理员角色必须在 `users` 集合中由受信任的运维人员手动授予，前端不能自助获得管理员权限。
+- `tcb fn invoke` 没有小程序用户的微信 `OPENID` 上下文，不能代替管理员在小程序内执行受保护操作。
 - 提交到 GitHub 前，建议先检查是否已绑定真实的云环境配置。
 
 ## 许可证

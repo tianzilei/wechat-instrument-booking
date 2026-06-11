@@ -6,7 +6,7 @@
   z-index: 1000;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  min-height: 100rpx;
+  min-height: var(--tab-bar-height);
   padding-bottom: env(safe-area-inset-bottom);
   border-top: 1rpx solid var(--color-border);
   background: var(--color-surface);
@@ -16,7 +16,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 100rpx;
+  min-height: var(--tab-bar-height);
   color: var(--color-text-secondary);
 }
 

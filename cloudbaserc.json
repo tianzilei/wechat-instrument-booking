@@ -67,7 +67,7 @@
     { "name": "getLegalDocuments", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "requestProjectChange", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "confirmWaitlistV2", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
-    { "name": "migrateData", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 60 },
+    { "name": "exportOperationalData", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 60 },
     { "name": "setProjectStatus", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "confirmWaitlist", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 }
   ]

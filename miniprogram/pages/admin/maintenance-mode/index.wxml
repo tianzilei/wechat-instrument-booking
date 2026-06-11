@@ -1,25 +1,25 @@
 <view class="page">
-  <view class="page-intro">系统配置：工作时间、服务模式、协议版本、数据迁移。</view>
+  <view class="page-intro">系统配置：工作时间、服务模式、协议版本与运营数据导出。</view>
 
   <view wx:if="{{settings}}" class="section">
     <view class="surface-section">
       <view class="list-card">
-        <view class="row-between">
-          <view>
+        <view class="row-between settings-row">
+          <view class="settings-copy">
             <view class="nav-title">服务模式</view>
-            <view class="page-subtitle">{{settings.serviceMode === 'maintenance' ? '🔴 维护中' : settings.serviceMode === 'rule_migrating' ? '🟡 规则迁移中' : '🟢 正常'}}</view>
+            <view class="page-subtitle">{{settings.serviceMode === 'maintenance' ? '维护中' : settings.serviceMode === 'rule_migrating' ? '规则迁移中' : '正常'}}</view>
           </view>
-          <button class="button button--secondary button--compact" bindtap="toggleServiceMode">{{settings.serviceMode === 'normal' ? '开启维护' : '恢复'}}</button>
+          <button class="button button--secondary button--compact settings-action" bindtap="toggleServiceMode">{{settings.serviceMode === 'normal' ? '开启维护' : '恢复'}}</button>
         </view>
       </view>
 
       <view class="list-card">
-        <view class="row-between">
-          <view>
+        <view class="row-between settings-row">
+          <view class="settings-copy">
             <view class="nav-title">工作时间</view>
             <view class="page-subtitle">{{settings.openStartHour}}:00 - {{settings.openEndHour}}:00</view>
           </view>
-          <button class="button button--secondary button--compact" bindtap="showForm">修改</button>
+          <button class="button button--secondary button--compact settings-action" bindtap="showForm">修改</button>
         </view>
       </view>
 
@@ -55,7 +55,13 @@
     </view>
   </view>
 
-  <view class="section">
-    <button class="button button--danger" bindtap="runMigration">执行 v1→v2 数据迁移（不可逆）</button>
+  <view class="section surface-section export-section">
+    <view class="row-between settings-row">
+      <view class="settings-copy">
+        <view class="nav-title">运营数据导出</view>
+        <view class="page-subtitle">导出脱敏 JSON，不含姓名、openid、备注、隐私请求和审核日志。</view>
+      </view>
+      <button class="button button--secondary button--compact settings-action" loading="{{exporting}}" disabled="{{exporting}}" bindtap="exportData">导出</button>
+    </view>
   </view>
 </view>

@@ -4,6 +4,7 @@ Page({
   data: {
     settings: null,
     loading: false,
+    exporting: false,
     form: { openStartHour: 9, openEndHour: 18, maxAdvanceDays: 7 },
     showForm: false,
   },
@@ -53,22 +54,34 @@ Page({
     this.setData({ loading: false })
   },
 
-  async runMigration() {
-    wx.showModal({
-      title: '执行数据迁移', content: '将清除旧字段、匿名化历史记录。此操作不可逆！',
-      confirmText: '执行', confirmColor: '#A43B32',
-      success: async (res) => {
-        if (!res.confirm) return
-        wx.showLoading({ title: '迁移中...' })
-        try {
-          const result = await api.callFunction('migrateData')
-          wx.hideLoading()
-          const summary = result.migrated
-            ? `规则版本 ${result.rulesVersion}，${result.affectedBookings} 条预约需复审`
-            : result.reason || '无需迁移'
-          wx.showModal({ title: '迁移完成', content: summary, showCancel: false })
-        } catch (err) { wx.hideLoading(); api.showError(err) }
-      },
-    })
+  async exportData() {
+    if (this.data.exporting) return
+    this.setData({ exporting: true })
+    wx.showLoading({ title: '正在导出' })
+    try {
+      const result = await api.callFunction('exportOperationalData')
+      const download = await new Promise((resolve, reject) => {
+        wx.cloud.downloadFile({
+          fileID: result.fileId,
+          success: resolve,
+          fail: reject,
+        })
+      })
+      wx.hideLoading()
+      if (typeof wx.shareFileMessage === 'function') {
+        wx.shareFileMessage({
+          filePath: download.tempFilePath,
+          fileName: result.fileName,
+          fail: () => wx.setClipboardData({ data: result.tempFileURL }),
+        })
+      } else {
+        wx.setClipboardData({ data: result.tempFileURL })
+      }
+    } catch (err) {
+      wx.hideLoading()
+      api.showError(err)
+    } finally {
+      this.setData({ exporting: false })
+    }
   },
 })

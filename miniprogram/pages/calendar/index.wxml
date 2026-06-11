@@ -1,4 +1,5 @@
 <view class="calendar-shell">
+  <view class="tab-bar-scrim"></view>
   <view class="calendar-toolbar">
     <view class="calendar-week-title">{{weekTitle}}</view>
     <view class="calendar-user-hint">{{userHint}}</view>

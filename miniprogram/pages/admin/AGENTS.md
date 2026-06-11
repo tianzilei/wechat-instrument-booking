@@ -33,7 +33,7 @@ pages/admin/
 | `booking-review/` | `listBookingReviews`, `reviewBookingV2` | List + approve/reject with reason modal |
 | `cancel-review/` | `listCancelReviews`, `reviewCancelV2` | List + approve/reject |
 | `maintenance/` | `createMaintenance`, `listMaintenanceSlots` | Create form + list with delete |
-| `maintenance-mode/` | `getSettings`, `updateSettings` | Toggle + status display |
+| `maintenance-mode/` | `getSettings`, `updateSettings`, `exportOperationalData` | Toggle, working hours, anonymized export |
 | `privacy-review/` | `listPrivacyRequests`, `processPrivacyRequest` | List + process with status flow |
 | `project-review/` | `listProjectApplications`, `reviewProjectApplication` | List + approve/reject |
 | `projects/` | `listProjects`, `createProject`, `updateProject`, `setProjectStatus` | List + create/edit/activate/deactivate |

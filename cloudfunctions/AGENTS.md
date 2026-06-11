@@ -111,6 +111,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 |----------|------|
 | `updateSettings` | Admin updates working hours, agreement versions, service mode |
 | `scanSettingsVersion` | Detect rules version changes, trigger migration |
+| `exportOperationalData` | Admin exports anonymized operational data to a temporary cloud file |
 
 ### Background Tasks
 | Function | Role |
@@ -122,16 +123,11 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | `generateDailyStats` | Generate anonymous daily usage statistics |
 | `cleanupRetentionData` | Enforce 30/90/365-day data retention policies |
 
-### Migration
-| Function | Role |
-|----------|------|
-| `migrateData` | v1→v2 data migration with backup (60s timeout) |
-
 ## WHERE TO LOOK
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Deployment config | `../cloudbaserc.json` | 71 functions, all Nodejs18.15, 15s timeout (migrateData: 60s) |
+| Deployment config | `../cloudbaserc.json` | 67 deployed functions, Nodejs18.15, exportOperationalData uses 60s timeout |
 | User model &amp; auth | `login/index.js`, `submitRegistration/index.js` | Registration form fields, role assignment |
 | V2 user model &amp; auth | `submitRegistrationV2/index.js` | Registration with project association |
 | Booking conflict logic | `createBooking/index.js` | Maintenance/restriction/working-hour checks |
@@ -150,7 +146,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | User lifecycle | `suspendUser/`, `restoreUser/`, `deleteAccount/` | Suspension, restoration, deletion |
 | Settings | `getSettings/`, `updateSettings/`, `scanSettingsVersion/` | System configuration, version migration |
 | Background tasks | `expireBookingReviews/`, `reconcileWaitlists/`, `cleanupRetentionData/` | Scheduled maintenance jobs |
-| Data migration | `migrateData/index.js` | v1→v2 with backup, 60s timeout |
+| Operational export | `exportOperationalData/index.js` | Admin-only anonymized JSON export, 60s timeout |
 
 ## CONVENTIONS
 
@@ -175,5 +171,5 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 ## NOTES
 
 - All functions use `wx-server-sdk` (`latest` or `~2.5.3`)
-- `migrateData` has a 60-second timeout — the only function exceeding the default 15s
+- `exportOperationalData` has a 60-second timeout — the only function exceeding the default 15s
 - Only lint suppression in codebase is at `openapi/index.js:54`
