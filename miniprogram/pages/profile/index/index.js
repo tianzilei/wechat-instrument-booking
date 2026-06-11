@@ -30,7 +30,7 @@ Page({
       statusText = '需重新选课题'
       statusTone = 'warning'
     }
-    const needRegister = !!user && user.registrationStatus !== 'approved'
+    const needRegister = !!user && user.role !== 'admin' && user.registrationStatus !== 'approved'
     this.setData({ user, statusText, statusTone, needRegister })
   },
 
