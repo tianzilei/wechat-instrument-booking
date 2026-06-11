@@ -20,13 +20,16 @@ Page({
   applyUser() {
     const user = app.globalData.user || {}
     const status = getRegistrationStatus(user.registrationStatus || 'unsubmitted')
+    const isLoggedIn = !!user._id
+    const needsLegal = app.needsLegalAcceptance()
+    const regStatus = user.registrationStatus || 'unsubmitted'
     this.setData({
       user,
-      hasLogin: !!user._id,
-      needsLegalAcceptance: app.needsLegalAcceptance(),
+      hasLogin: isLoggedIn,
+      needsLegalAcceptance: needsLegal,
       statusText: status.text,
       statusTone: status.tone,
-      showRegister: user.registrationStatus !== 'approved' && !app.needsLegalAcceptance(),
+      showRegister: isLoggedIn && !needsLegal && regStatus !== 'approved',
     })
   },
 
