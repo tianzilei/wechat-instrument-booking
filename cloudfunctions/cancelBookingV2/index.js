@@ -29,6 +29,7 @@ exports.main = async (event) => {
   if (event.reason) {
     if (event.reason.length > 500) return fail('INVALID_PARAMS', '取消原因不超过 500 字')
     try {
+      const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.reason })
       if (checkRes.result && checkRes.result.suggest === 'risky') {
         return fail('CONTENT_UNSAFE', '取消说明包含违规信息')
       }

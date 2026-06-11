@@ -59,6 +59,8 @@ exports.main = async () => {
             remark: '',
             reviewReason: '',
             cancellationNote: '',
+            cancelReason: '',
+            terminationReasonCode: '',
             updatedAt: db.serverDate(),
           },
         })))

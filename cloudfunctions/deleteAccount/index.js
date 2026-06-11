@@ -34,7 +34,7 @@ exports.main = async () => {
     await Promise.all(activeBookings.data.map((b) => db.collection('bookings').doc(b._id).update({
       data: {
         status: 'cancelled',
-        cancelReason: 'account_deleted',
+        cancellationNote: 'account_deleted',
         updatedAt: now,
       },
     })))
@@ -69,6 +69,8 @@ exports.main = async () => {
         remark: '',
         reviewReason: '',
         cancellationNote: '',
+        cancelReason: '',
+        terminationReasonCode: '',
         updatedAt: now,
       },
     })))

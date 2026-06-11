@@ -10,19 +10,10 @@ Page({
     try {
       const res = await api.callFunction('listBookingReviews')
       const ruleItems = (res.items || []).filter((item) => item.status === 'rule_review_pending')
-      if (ruleItems.length === 0) {
-        const allRes = await api.callFunction('listBookingReviews')
-        const allRuleItems = (allRes.items || []).filter((item) => item.status === 'rule_review_pending')
-        this.setData({ items: allRuleItems.map((item) => ({
-          ...item,
-          timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,
-        })) })
-      } else {
-        this.setData({ items: ruleItems.map((item) => ({
-          ...item,
-          timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,
-        })) })
-      }
+      this.setData({ items: ruleItems.map((item) => ({
+        ...item,
+        timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,
+      })) })
     } catch (err) { this.setData({ items: [] }) }
   },
 

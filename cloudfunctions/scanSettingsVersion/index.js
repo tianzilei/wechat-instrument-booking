@@ -87,7 +87,7 @@ exports.main = async () => {
   await db.collection('rule_migration_tasks').doc(taskRes._id).update({
     data: {
       status: 'completed',
-      cursor: cursor + batch.data.length,
+      cursor,
       affectedBookings: affected,
       updatedAt: now,
     },

@@ -29,11 +29,19 @@ exports.main = async () => {
   const monthStart = new Date()
   monthStart.setDate(1)
   monthStart.setHours(0, 0, 0, 0)
-  const monthBookings = await db.collection('bookings').where({
-    status: _.in(['confirmed', 'completed']),
-    startAt: _.gte(monthStart),
-  }).limit(1000).get()
-  const monthHours = monthBookings.data.reduce((sum, item) => sum + (item.durationHours || 0), 0)
+  let monthBookings = []
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('bookings').where({
+      status: _.in(['confirmed', 'completed']),
+      startAt: _.gte(monthStart),
+    }).skip(skip).limit(1000).get()
+    monthBookings = monthBookings.concat(batch.data)
+    if (batch.data.length < 1000) hasMore = false
+    else skip += batch.data.length
+  }
+  const monthHours = monthBookings.reduce((sum, item) => sum + (item.durationHours || 0), 0)
 
   return ok({
     registrationPending: registrationPending.total,

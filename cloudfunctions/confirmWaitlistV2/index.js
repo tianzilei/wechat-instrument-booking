@@ -88,8 +88,12 @@ async function checkConflict(segments) {
     startAt: _.lt(new Date(s.endAt)),
     endAt: _.gt(new Date(s.startAt)),
   }))
-  const query = { [_.or]: conditions }
-  const res = await db.collection('bookings').where(query).limit(1).get()
+  if (conditions.length === 0) return false
+  if (conditions.length === 1) {
+    const res = await db.collection('bookings').where(conditions[0]).limit(1).get()
+    return res.data.length > 0
+  }
+  const res = await db.collection('bookings').where(_.or(conditions)).limit(1).get()
   return res.data.length > 0
 }
 

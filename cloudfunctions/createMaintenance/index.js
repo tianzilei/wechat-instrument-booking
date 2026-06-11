@@ -42,12 +42,20 @@ exports.main = async (event) => {
   }
 
   const activeStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
-  const conflictRes = await db.collection('bookings').where({
-    status: _.in(activeStatuses),
-    startAt: _.lt(endAt),
-    endAt: _.gt(startAt),
-  }).limit(1000).get()
-  const cancelledBookingIds = conflictRes.data.map((item) => item._id)
+  let allConflicts = []
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('bookings').where({
+      status: _.in(activeStatuses),
+      startAt: _.lt(endAt),
+      endAt: _.gt(startAt),
+    }).skip(skip).limit(1000).get()
+    allConflicts = allConflicts.concat(batch.data)
+    if (batch.data.length < 1000) hasMore = false
+    else skip += batch.data.length
+  }
+  const cancelledBookingIds = allConflicts.map((item) => item._id)
   const now = db.serverDate()
   const addRes = await db.collection('maintenance_slots').add({
     data: {

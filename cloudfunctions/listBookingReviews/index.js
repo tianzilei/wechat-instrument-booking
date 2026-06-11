@@ -26,10 +26,10 @@ exports.main = async () => {
     .field({
       _id: true,
       userId: true,
-      userName: true,
-      projectAbbr: true,
-      startAt: true,
-      endAt: true,
+      projectAbbrDisplayCache: true,
+      firstStartAt: true,
+      lastEndAt: true,
+      segments: true,
       durationHours: true,
       status: true,
       bookingType: true,
@@ -40,5 +40,13 @@ exports.main = async () => {
     .orderBy('createdAt', 'asc')
     .limit(100)
     .get()
-  return ok({ items: res.data })
+
+  const items = res.data.map((item) => ({
+    ...item,
+    startAt: item.firstStartAt,
+    endAt: item.lastEndAt,
+    projectAbbr: item.projectAbbrDisplayCache || '',
+  }))
+
+  return ok({ items })
 }

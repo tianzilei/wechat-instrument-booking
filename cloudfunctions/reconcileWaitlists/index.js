@@ -71,7 +71,7 @@ async function checkSegmentConflict(segments) {
   }))
   const query = conditions.length === 1
     ? conditions[0]
-    : { status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']), [_.or]: conditions }
+    : _.or(conditions)
   const res = await db.collection('bookings').where(query).limit(1).get()
   return res.data.length > 0
 }

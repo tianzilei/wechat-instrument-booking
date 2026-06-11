@@ -19,18 +19,18 @@ Page({
   },
 
   approve(e) {
-    const app = e.currentTarget.dataset.application
+    const application = e.currentTarget.dataset.application
     wx.showModal({
       title: '通过课题申请',
-      content: `将创建课题"${app.proposedName}"（${app.proposedAbbr}），并通知申请人确认。`,
+      content: `将创建课题"${application.proposedName}"（${application.proposedAbbr}），并通知申请人确认。`,
       editable: true, placeholderText: '可修改课题名称',
       success: async (res) => {
         if (!res.confirm) return
-        const finalName = res.content || app.proposedName
+        const finalName = res.content || application.proposedName
         try {
           await api.callFunction('reviewProjectApplication', {
-            applicationId: app._id, action: 'approve',
-            finalName, finalAbbr: app.proposedAbbr,
+            applicationId: application._id, action: 'approve',
+            finalName, finalAbbr: application.proposedAbbr,
           })
           wx.showToast({ title: '已通过', icon: 'success' })
           this.loadItems()
@@ -40,11 +40,11 @@ Page({
   },
 
   reject(e) {
-    const app = e.currentTarget.dataset.application
+    const application = e.currentTarget.dataset.application
     this.setData({ modal: {
       visible: true, title: '拒绝课题申请', showInput: true,
       placeholder: '请输入拒绝原因', confirmText: '拒绝', confirmTone: 'danger',
-      payload: { id: app._id },
+      payload: { id: application._id },
     }})
   },
 

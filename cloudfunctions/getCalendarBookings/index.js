@@ -30,10 +30,10 @@ exports.main = async (event) => {
 
   const bookingsRes = await db.collection('bookings').where({
     status: _.in(activeStatuses),
-    startAt: _.lt(weekEnd),
-    endAt: _.gt(weekStart),
+    lastEndAt: _.gt(weekStart),
+    firstStartAt: _.lt(weekEnd),
   }).field({
-    _id: true, status: true, startAt: true, endAt: true, projectAbbr: true, userName: true,
+    _id: true, status: true, firstStartAt: true, lastEndAt: true, projectAbbrDisplayCache: true,
   }).limit(100).get()
 
   const maintenanceRes = await db.collection('maintenance_slots').where({
@@ -69,12 +69,9 @@ exports.main = async (event) => {
       type: 'booking',
       bookingId: item._id,
       status: item.status,
-      startAt: item.startAt,
-      endAt: item.endAt,
-      projectAbbr: item.projectAbbr || '',
-    }
-    if (isAdmin) {
-      base.userName = item.userName || ''
+      startAt: item.firstStartAt,
+      endAt: item.lastEndAt,
+      projectAbbr: item.projectAbbrDisplayCache || '',
     }
     return base
   })

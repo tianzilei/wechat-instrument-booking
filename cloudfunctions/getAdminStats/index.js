@@ -44,15 +44,23 @@ exports.main = async () => {
     openEndHour = settings.openEndHour || 18
   } catch (err) {}
 
-  const res = await db.collection('bookings').where({
-    status: _.in(['confirmed', 'completed']),
-  }).limit(1000).get()
+  let allBookings = []
+  let hasMore = true
+  let skip = 0
+  while (hasMore) {
+    const batch = await db.collection('bookings').where({
+      status: _.in(['confirmed', 'completed']),
+    }).skip(skip).limit(1000).get()
+    allBookings = allBookings.concat(batch.data)
+    if (batch.data.length < 1000) hasMore = false
+    else skip += batch.data.length
+  }
 
   const byMonthMap = {}
   let totalHours = 0
   let workingHours = 0
   let nonWorkingHours = 0
-  res.data.forEach((booking) => {
+  allBookings.forEach((booking) => {
     const hours = booking.durationHours || ((new Date(booking.endAt) - new Date(booking.startAt)) / 3600000)
     totalHours += hours
     if (isWorking(booking.startAt, openStartHour, openEndHour)) workingHours += hours

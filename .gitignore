@@ -44,3 +44,6 @@ project.private.config.json
 # Environment files
 .env
 .env.*
+
+# Codex / agent artifacts
+.mimocode/
