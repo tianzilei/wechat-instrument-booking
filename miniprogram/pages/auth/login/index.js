@@ -47,9 +47,13 @@ Page({
   async acceptLegal() {
     wx.showLoading({ title: '处理中' })
     try {
-      await api.callFunction('acceptLegalDocuments')
+      const res = await api.callFunction('acceptLegalDocuments')
       wx.hideLoading()
       app.globalData.needsLegalAcceptance = false
+      const user = app.globalData.user || {}
+      user.agreementVersion = res.agreementVersion || ''
+      user.privacyVersion = res.privacyVersion || ''
+      app.globalData.user = user
       wx.showToast({ title: '已确认', icon: 'success' })
       this.applyUser()
     } catch (err) {
