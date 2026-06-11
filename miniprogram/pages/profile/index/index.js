@@ -9,6 +9,7 @@ Page({
     statusText: '未登录',
     statusTone: 'muted',
     stats: {},
+    needRegister: false,
   },
 
   onShow() {
@@ -29,7 +30,8 @@ Page({
       statusText = '需重新选课题'
       statusTone = 'warning'
     }
-    this.setData({ user, statusText, statusTone })
+    const needRegister = !!user && user.registrationStatus !== 'approved'
+    this.setData({ user, statusText, statusTone, needRegister })
   },
 
   async loadStats() {
@@ -44,6 +46,10 @@ Page({
 
   goLogin() {
     wx.navigateTo({ url: '/pages/auth/login/index' })
+  },
+
+  goRegister() {
+    wx.navigateTo({ url: '/pages/auth/register/index' })
   },
 
   goBookings() {
