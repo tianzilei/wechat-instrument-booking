@@ -54,7 +54,10 @@
       </view>
     </block>
 
-    <view class="agreement-row">
+    <view wx:if="{{legalAlreadyAccepted}}" class="agreement-row agreement-accepted">
+      <text>已同意《用户服务协议》和《隐私政策》</text>
+    </view>
+    <view wx:else class="agreement-row">
       <checkbox-group bindchange="onAgreeChange">
         <label class="agreement-check">
           <checkbox value="agreed" checked="{{form.agreed}}" />

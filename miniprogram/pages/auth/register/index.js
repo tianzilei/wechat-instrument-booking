@@ -22,7 +22,12 @@ Page({
 
   onLoad() {
     const user = app.globalData.user || {}
-    this.setData({ 'form.name': user.name || '' })
+    const alreadyAccepted = !!(user.agreementVersion && user.privacyVersion)
+    this.setData({
+      'form.name': user.name || '',
+      'form.agreed': alreadyAccepted,
+      legalAlreadyAccepted: alreadyAccepted,
+    }, () => this.checkCanSubmit())
   },
 
   onInput(event) {

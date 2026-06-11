@@ -63,3 +63,8 @@
   color: var(--color-primary);
   font-size: var(--font-size-sm);
 }
+
+.agreement-accepted {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}

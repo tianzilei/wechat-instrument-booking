@@ -29,7 +29,7 @@ Page({
       needsLegalAcceptance: needsLegal,
       statusText: status.text,
       statusTone: status.tone,
-      showRegister: isLoggedIn && !needsLegal && regStatus !== 'approved',
+      showRegister: isLoggedIn && regStatus !== 'approved',
     })
   },
 
