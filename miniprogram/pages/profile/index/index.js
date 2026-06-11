@@ -75,7 +75,7 @@ Page({
       title: '退出登录',
       content: '退出后将以游客身份浏览，不影响已有预约记录。是否继续？',
       confirmText: '退出',
-      confirmColor: '#e53e3e',
+      confirmColor: '#A43B32',
       success: (res) => {
         if (res.confirm) {
           app.setUser(null)
@@ -91,14 +91,14 @@ Page({
       title: '注销账号',
       content: '注销后将不可撤销：\n\n1. 取消全部未来预约和候补\n2. 删除个人资料和协议记录\n3. 历史预约将被匿名化处理\n\n是否继续？',
       confirmText: '确认注销',
-      confirmColor: '#e53e3e',
+      confirmColor: '#A43B32',
       success: (res) => {
         if (!res.confirm) return
         wx.showModal({
           title: '二次确认',
           content: '注销后无法恢复，确认删除账号吗？',
           confirmText: '删除',
-          confirmColor: '#e53e3e',
+          confirmColor: '#A43B32',
           success: async (res2) => {
             if (!res2.confirm) return
             wx.showLoading({ title: '注销中...' })

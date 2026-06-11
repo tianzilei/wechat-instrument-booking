@@ -25,7 +25,7 @@
 }
 
 .tab-bar__text {
-  font-size: 28rpx;
+  font-size: var(--font-size-md);
   font-weight: 600;
   line-height: 1;
   text-align: center;

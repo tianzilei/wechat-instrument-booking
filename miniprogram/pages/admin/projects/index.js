@@ -58,7 +58,7 @@ Page({
     const p = e.currentTarget.dataset.project
     const res = await new Promise((resolve) => wx.showModal({
       title: '停用课题', content: `确定停用"${p.name}"？将取消该课题全部未来预约。`,
-      confirmText: '停用', confirmColor: '#e53e3e', success: resolve,
+      confirmText: '停用', confirmColor: '#A43B32', success: resolve,
     }))
     if (!res.confirm) return
     try {

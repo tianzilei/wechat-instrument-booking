@@ -56,7 +56,7 @@ Page({
   async runMigration() {
     wx.showModal({
       title: '执行数据迁移', content: '将清除旧字段、匿名化历史记录。此操作不可逆！',
-      confirmText: '执行', confirmColor: '#e53e3e',
+      confirmText: '执行', confirmColor: '#A43B32',
       success: async (res) => {
         if (!res.confirm) return
         wx.showLoading({ title: '迁移中...' })

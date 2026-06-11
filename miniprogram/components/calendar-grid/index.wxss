@@ -124,7 +124,7 @@
   border-radius: 4rpx;
   background: var(--color-warning-soft);
   color: var(--color-warning);
-  font-size: 22rpx;
+  font-size: var(--font-size-xs);
   line-height: 1.2;
 }
 
@@ -160,7 +160,7 @@
 
 .calendar-cell__sub {
   margin-top: 4rpx;
-  font-size: 22rpx;
+  font-size: var(--font-size-xs);
   line-height: 1.2;
 }
 
@@ -229,6 +229,6 @@
   border-radius: var(--radius-sm);
   background: var(--color-primary-selection-soft);
   color: var(--color-primary);
-  font-size: 22rpx;
+  font-size: var(--font-size-xs);
   line-height: 1.2;
 }
