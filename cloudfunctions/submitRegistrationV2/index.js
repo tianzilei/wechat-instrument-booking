@@ -16,7 +16,12 @@ exports.main = async (event) => {
   if (!event.projectId) return fail('INVALID_PARAMS', '请先选择课题')
   if (event.agreed !== true) return fail('LEGAL_ACCEPTANCE_REQUIRED', '请先同意协议')
 
-  const projectRes = await db.collection('projects').doc(event.projectId).field({ _id: true, status: true }).get()
+  const projectRes = await db.collection('projects').doc(event.projectId).field({
+    _id: true,
+    name: true,
+    abbr: true,
+    status: true,
+  }).get()
   const project = projectRes.data
   if (!project || project.status !== 'active') return fail('PROJECT_INACTIVE', '课题不可用')
 
@@ -46,6 +51,8 @@ exports.main = async (event) => {
       userId: user._id,
       nameSnapshot: name,
       projectId: event.projectId,
+      projectNameSnapshot: project.name,
+      projectAbbrSnapshot: project.abbr,
       status: 'pending',
       reviewReason: '',
       agreementVersion, privacyVersion,

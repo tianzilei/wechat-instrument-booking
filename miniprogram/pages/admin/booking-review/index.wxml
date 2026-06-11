@@ -3,7 +3,7 @@
   <view wx:if="{{items.length > 0}}" class="surface-section">
     <view wx:for="{{items}}" wx:key="_id" class="list-card review-card">
       <view class="row-between">
-        <view class="review-title">{{item.userName}} · {{item.college}}</view>
+        <view class="review-title">{{item.userName}} · {{item.projectAbbr || '未关联课题'}}</view>
         <status-tag text="待审核" tone="warning" />
       </view>
       <view class="page-subtitle">{{item.timeText}}</view>

@@ -48,6 +48,8 @@ exports.main = async (event) => {
     data: {
       name: app.nameSnapshot,
       projectId: app.projectId,
+      projectName: app.projectNameSnapshot || '',
+      projectAbbr: app.projectAbbrSnapshot || '',
       registrationStatus: 'approved',
       agreementVersion: app.agreementVersion,
       privacyVersion: app.privacyVersion,

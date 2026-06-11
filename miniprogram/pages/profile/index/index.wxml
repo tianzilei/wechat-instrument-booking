@@ -7,7 +7,7 @@
     <view class="surface-section profile-summary">
       <view>
         <view class="profile-name">{{user.name || '未填写姓名'}}</view>
-        <view class="page-subtitle">{{user.college || '未填写学院'}} · {{user.supervisor || '未填写负责人'}}</view>
+        <view class="page-subtitle">{{user.projectName ? user.projectName + ' · ' + user.projectAbbr : '未关联课题'}}</view>
       </view>
       <status-tag text="{{statusText}}" tone="{{statusTone}}" />
     </view>

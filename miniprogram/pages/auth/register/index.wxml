@@ -1,28 +1,77 @@
 <view class="page">
-  <view class="page-intro">请填写管理员核验所需资料。审核通过后即可预约仪器。</view>
+  <view class="page-intro">仅填写姓名并关联所属课题。审核通过后即可预约仪器。</view>
 
   <view class="surface-section register-form">
     <view class="field">
       <view class="field-label">姓名</view>
-      <input class="input" value="{{form.name}}" data-field="name" bindinput="onInput" placeholder="请输入姓名" />
+      <input class="input" value="{{form.name}}" data-field="name" bindinput="onInput" placeholder="请输入真实姓名" />
     </view>
+
     <view class="field">
-      <view class="field-label">手机号</view>
-      <input class="input" type="number" value="{{form.phone}}" data-field="phone" bindinput="onInput" placeholder="请输入手机号" />
+      <view class="field-label">所属课题</view>
+      <view class="segmented">
+        <view class="segmented-item {{projectMode === 'search' ? 'segmented-item--active' : ''}}" bindtap="switchToSearch">选择已有课题</view>
+        <view class="segmented-item {{projectMode === 'new' ? 'segmented-item--active' : ''}}" bindtap="switchToNewProject">申请新课题</view>
+      </view>
     </view>
-    <view class="field">
-      <view class="field-label">学号</view>
-      <input class="input" value="{{form.studentId}}" data-field="studentId" bindinput="onInput" placeholder="请输入学号" />
-    </view>
-    <view class="field">
-      <view class="field-label">学院</view>
-      <input class="input" value="{{form.college}}" data-field="college" bindinput="onInput" placeholder="请输入学院" />
-    </view>
-    <view class="field">
-      <view class="field-label">导师/负责人</view>
-      <input class="input" value="{{form.supervisor}}" data-field="supervisor" bindinput="onInput" placeholder="请输入导师或负责人" />
+
+    <block wx:if="{{projectMode === 'search'}}">
+      <view class="field">
+        <view class="field-label">搜索课题名称或缩写</view>
+        <input class="input" value="{{projectSearch}}" bindinput="onProjectInput" placeholder="输入至少2个字符" />
+      </view>
+      <view wx:if="{{searching}}" class="project-hint">正在搜索</view>
+      <view wx:if="{{selectedProjectId}}" class="selected-project row-between">
+        <view>
+          <view class="project-name">{{selectedProjectName}}</view>
+          <view class="page-subtitle">{{selectedProjectAbbr}}</view>
+        </view>
+        <button class="button button--ghost button--compact clear-project" bindtap="clearProject">重新选择</button>
+      </view>
+      <view wx:elif="{{projectResults.length}}" class="project-results">
+        <view
+          wx:for="{{projectResults}}"
+          wx:key="_id"
+          class="project-result"
+          data-project="{{item}}"
+          bindtap="selectProject"
+        >
+          <view class="project-name">{{item.name}}</view>
+          <view class="page-subtitle">{{item.abbr}}</view>
+        </view>
+      </view>
+      <view wx:elif="{{projectSearch.length >= 2 && !searching}}" class="project-hint">未找到可加入的课题，可切换为申请新课题。</view>
+    </block>
+
+    <block wx:else>
+      <view class="field">
+        <view class="field-label">课题名称</view>
+        <input class="input" value="{{newProjectName}}" data-field="newProjectName" bindinput="onInput" placeholder="请输入完整课题名称" />
+      </view>
+      <view class="field">
+        <view class="field-label">课题缩写</view>
+        <input class="input" value="{{newProjectAbbr}}" data-field="newProjectAbbr" bindinput="onInput" placeholder="用于周历公开展示" />
+      </view>
+    </block>
+
+    <view class="agreement-row">
+      <checkbox-group bindchange="onAgreeChange">
+        <label class="agreement-check">
+          <checkbox value="agreed" checked="{{form.agreed}}" />
+          <text>我已阅读并同意</text>
+        </label>
+      </checkbox-group>
+      <view class="agreement-links">
+        <text class="agreement-link" bindtap="goAgreement">《用户服务协议》</text>
+        <text class="agreement-link" bindtap="goPrivacy">《隐私政策》</text>
+      </view>
     </view>
   </view>
 
-  <button class="button button--primary register-submit" loading="{{loading}}" bindtap="submit">提交审核</button>
+  <button
+    class="button {{canSubmit ? 'button--primary' : 'button--disabled'}} register-submit"
+    loading="{{loading}}"
+    disabled="{{!canSubmit || loading}}"
+    bindtap="submit"
+  >{{projectMode === 'new' ? '提交课题申请' : '提交注册审核'}}</button>
 </view>

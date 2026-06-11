@@ -5,10 +5,20 @@
     <view class="row-between">
       <view>
         <view class="login-name">{{user.name || '未登录用户'}}</view>
-        <view class="page-subtitle">{{openid ? '已获取微信身份' : '尚未获取微信身份'}}</view>
+        <view class="page-subtitle">{{hasLogin ? '微信身份已识别' : '尚未获取微信身份'}}</view>
       </view>
       <status-tag text="{{statusText}}" tone="{{statusTone}}" />
     </view>
+  </view>
+
+  <view wx:if="{{needsLegalAcceptance}}" class="surface-section legal-consent">
+    <view class="section-title">使用前确认</view>
+    <view class="legal-consent-text">请阅读并同意以下文件后继续使用预约与管理功能。</view>
+    <view class="legal-links">
+      <text class="legal-link" bindtap="goAgreement">《用户服务协议》</text>
+      <text class="legal-link" bindtap="goPrivacy">《隐私政策》</text>
+    </view>
+    <button class="button button--primary legal-accept" bindtap="acceptLegal">同意协议并继续</button>
   </view>
 
   <view class="section">

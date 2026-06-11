@@ -63,9 +63,9 @@ Page({
     this.submitReview(id, action, reason)
   },
 
-  async submitReview(userId, action, reason) {
+  async submitReview(applicationId, action, reason) {
     try {
-      await api.callFunction('reviewRegistration', { userId, action, reason })
+      await api.callFunction('reviewRegistrationV2', { applicationId, action, reason })
       wx.showToast({ title: '已处理', icon: 'success' })
       this.loadItems()
     } catch (err) {

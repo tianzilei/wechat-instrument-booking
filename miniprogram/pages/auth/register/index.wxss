@@ -6,3 +6,60 @@
 .register-submit {
   margin-top: 24rpx;
 }
+
+.project-results {
+  margin-bottom: 24rpx;
+  border-top: 1rpx solid var(--color-divider);
+}
+
+.project-result {
+  padding: 20rpx 0;
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.project-name {
+  font-weight: 600;
+}
+
+.project-hint {
+  margin: -8rpx 0 24rpx;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+.selected-project {
+  margin-bottom: 24rpx;
+  padding: 20rpx 0;
+  border-top: 1rpx solid var(--color-divider);
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.clear-project {
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.agreement-row {
+  padding: 20rpx 0;
+  border-top: 1rpx solid var(--color-divider);
+}
+
+.agreement-check {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: var(--font-size-sm);
+}
+
+.agreement-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8rpx 20rpx;
+  margin-top: 12rpx;
+  padding-left: 56rpx;
+}
+
+.agreement-link {
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+}
