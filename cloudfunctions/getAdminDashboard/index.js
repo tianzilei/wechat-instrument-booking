@@ -35,7 +35,7 @@ exports.main = async () => {
   while (hasMore) {
     const batch = await db.collection('bookings').where({
       status: _.in(['confirmed', 'completed']),
-      startAt: _.gte(monthStart),
+      firstStartAt: _.gte(monthStart),
     }).skip(skip).limit(1000).get()
     monthBookings = monthBookings.concat(batch.data)
     if (batch.data.length < 1000) hasMore = false

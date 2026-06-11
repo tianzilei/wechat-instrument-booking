@@ -40,11 +40,22 @@ exports.main = async () => {
     .limit(100)
     .get()
 
-  const items = res.data.map((item) => ({
-    ...item,
-    startAt: item.firstStartAt,
-    endAt: item.lastEndAt,
-    projectAbbr: item.projectAbbrDisplayCache || '',
+  const items = await Promise.all(res.data.map(async (item) => {
+    let userName = ''
+    if (item.userId) {
+      try {
+        const userRes = await db.collection('users').doc(item.userId).field({ name: true }).get()
+        if (userRes.data) userName = userRes.data.name || ''
+      } catch (err) {}
+    }
+    return {
+      ...item,
+      startAt: item.firstStartAt,
+      endAt: item.lastEndAt,
+      projectAbbr: item.projectAbbrDisplayCache || '',
+      userName,
+      cancelReason: item.cancellationNote || '',
+    }
   }))
 
   return ok({ items })

@@ -61,12 +61,14 @@ exports.main = async () => {
   let workingHours = 0
   let nonWorkingHours = 0
   allBookings.forEach((booking) => {
-    const hours = booking.durationHours || ((new Date(booking.endAt) - new Date(booking.startAt)) / 3600000)
+    const startAt = booking.firstStartAt || booking.startAt
+    const endAt = booking.lastEndAt || booking.endAt
+    const hours = booking.durationHours || ((new Date(endAt) - new Date(startAt)) / 3600000)
     totalHours += hours
-    if (isWorking(booking.startAt, openStartHour, openEndHour)) workingHours += hours
+    if (isWorking(startAt, openStartHour, openEndHour)) workingHours += hours
     else nonWorkingHours += hours
 
-    const month = monthKey(booking.startAt)
+    const month = monthKey(startAt)
     byMonthMap[month] = (byMonthMap[month] || 0) + hours
   })
 
