@@ -26,7 +26,7 @@
     <view class="surface-section">
       <view class="list-card" wx:for="{{items}}" wx:key="_id">
         <view class="row-between">
-          <view>
+          <view class="project-info">
             <view class="nav-title">{{item.name}}</view>
             <view class="page-subtitle">{{item.abbr}}</view>
           </view>
