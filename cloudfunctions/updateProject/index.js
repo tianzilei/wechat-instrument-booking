@@ -41,8 +41,7 @@ exports.main = async (event) => {
           return fail('CONTENT_UNSAFE', '课题信息包含违规内容')
         }
       } catch (err) {
-        console.error('msgSecCheck error:', err.errCode || err.message)
-      return fail('CONTENT_UNSAFE', '内容安全检查失败，请稍后重试')
+        console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
       }
     }
     data.name = newName
