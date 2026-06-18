@@ -6,11 +6,21 @@ const db = cloud.database()
 const _ = db.command
 
 function ok(data) { return { success: true, data, error: null } }
+function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
 async function getCurrentUser(openid) {
   if (!openid) return null
   const res = await db.collection('users').where({ openid }).field({ _id: true, role: true }).limit(1).get()
   return res.data[0] || null
+}
+
+function isValidWeekStartDate(dateStr) {
+  if (typeof dateStr !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return false
+  const parts = dateStr.split('-').map((part) => Number(part))
+  const date = new Date(Date.UTC(parts[0], parts[1] - 1, parts[2]))
+  return date.getUTCFullYear() === parts[0]
+    && date.getUTCMonth() === parts[1] - 1
+    && date.getUTCDate() === parts[2]
 }
 
 function parseChinaDate(dateStr) {
@@ -48,7 +58,11 @@ exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const currentUser = await getCurrentUser(OPENID)
   const isAdmin = !!(currentUser && currentUser.role === 'admin')
-  const weekStart = parseChinaDate(event.weekStartDate)
+  const weekStartDate = event.weekStartDate
+  if (!isValidWeekStartDate(weekStartDate)) {
+    return fail('INVALID_PARAMS', 'weekStartDate must be YYYY-MM-DD')
+  }
+  const weekStart = parseChinaDate(weekStartDate)
   const weekEnd = addDays(weekStart, 7)
   const activeStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
 
@@ -82,25 +96,6 @@ exports.main = async (event) => {
   ])
   const settings = settingsRes.data || {}
 
-  const userIds = []
-  bookingsRes.forEach((item) => {
-    if (item.userId) userIds.push(item.userId)
-  })
-  legacyBookingsRes.forEach((item) => {
-    if (item.userId) userIds.push(item.userId)
-  })
-
-  const uniqueUserIds = [...new Set(userIds)]
-  const userNameMap = {}
-  if (isAdmin && uniqueUserIds.length > 0) {
-    const userRes = await db.collection('users').where({
-      _id: uniqueUserIds.length === 1 ? uniqueUserIds[0] : _.in(uniqueUserIds),
-    }).field({ _id: true, name: true }).get()
-    userRes.data.forEach((item) => {
-      userNameMap[item._id] = item.name || ''
-    })
-  }
-
   const slots = []
   bookingsRes.forEach((item) => {
     const segments = Array.isArray(item.segments) && item.segments.length > 0
@@ -108,39 +103,44 @@ exports.main = async (event) => {
       : [{ startAt: item.firstStartAt, endAt: item.lastEndAt }]
     const state = item.status === 'pending_review' ? 'pending' : 'occupied'
     segments.forEach((segment, index) => {
-      slots.push({
+      const slot = {
         startAt: segment.startAt,
         endAt: segment.endAt,
         state,
-        bookingId: item._id,
         projectAbbr: item.projectAbbrDisplayCache || '',
-        userName: isAdmin ? (userNameMap[item.userId] || '') : '',
-        publicRenderId: `${item._id}:${index}`,
-      })
+        publicRenderId: `slot-${slots.length}-${index}`,
+      }
+      if (isAdmin) slot.bookingId = item._id
+      slots.push(slot)
     })
   })
 
   legacyBookingsRes.forEach((item) => {
-    slots.push({
+    const slot = {
       startAt: item.startAt,
       endAt: item.endAt,
       state: item.status === 'pending_review' ? 'pending' : 'occupied',
-      bookingId: item._id,
       projectAbbr: item.projectAbbr || '',
-      userName: isAdmin ? (userNameMap[item.userId] || '') : '',
-      publicRenderId: item._id,
-    })
+      publicRenderId: `legacy-slot-${slots.length}`,
+    }
+    if (isAdmin) slot.bookingId = item._id
+    slots.push(slot)
   })
 
   maintenanceRes.forEach((item) => {
-    slots.push({
-      startAt: item.startAt, endAt: item.endAt,
-      state: 'maintenance', maintenanceId: item._id, projectAbbr: '', publicRenderId: item._id,
-    })
+    const slot = {
+      startAt: item.startAt,
+      endAt: item.endAt,
+      state: 'maintenance',
+      projectAbbr: '',
+      publicRenderId: `maintenance-slot-${slots.length}`,
+    }
+    if (isAdmin) slot.maintenanceId = item._id
+    slots.push(slot)
   })
 
   return ok({
-    weekStart: event.weekStartDate,
+    weekStart: weekStartDate,
     serverNow: new Date(),
     rulesVersion: settings.rulesVersion || 1,
     serviceMode: settings.serviceMode || 'normal',

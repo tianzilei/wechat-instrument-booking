@@ -100,41 +100,46 @@ function anyMaintenanceConflict(segments, maintenanceSlots) {
 }
 
 async function anyBookingConflict(segments, excludeBookingId) {
+  const sharedFilter = { status: _.in(ACTIVE_STATUSES) }
+  if (excludeBookingId) {
+    sharedFilter._id = _.neq(excludeBookingId)
+  }
   const v2Conditions = segments.map((s) => ({
+    ...sharedFilter,
     firstStartAt: _.lt(s.endAt),
     lastEndAt: _.gt(s.startAt),
   }))
   const v1Conditions = segments.map((s) => ({
+    ...sharedFilter,
     startAt: _.lt(s.endAt),
     endAt: _.gt(s.startAt),
   }))
   const allConditions = [...v2Conditions, ...v1Conditions]
   if (allConditions.length === 0) return false
-  const timeFilter = allConditions.length === 1 ? allConditions[0] : _.or(allConditions)
-  const query = { status: _.in(ACTIVE_STATUSES), _id: excludeBookingId ? _.neq(excludeBookingId) : _.exists(true), ...timeFilter }
+  const query = allConditions.length === 1 ? allConditions[0] : _.or(allConditions)
   const res = await db.collection('bookings').where(query).limit(1).get()
   return res.data.length > 0
 }
 
 async function anyProjectConflict(segments, projectId, excludeBookingId) {
   if (!projectId) return false
+  const sharedFilter = { status: _.in(ACTIVE_STATUSES), projectId }
+  if (excludeBookingId) {
+    sharedFilter._id = _.neq(excludeBookingId)
+  }
   const v2Conditions = segments.map((s) => ({
+    ...sharedFilter,
     firstStartAt: _.lt(s.endAt),
     lastEndAt: _.gt(s.startAt),
   }))
   const v1Conditions = segments.map((s) => ({
+    ...sharedFilter,
     startAt: _.lt(s.endAt),
     endAt: _.gt(s.startAt),
   }))
   const allConditions = [...v2Conditions, ...v1Conditions]
   if (allConditions.length === 0) return false
-  const timeFilter = allConditions.length === 1 ? allConditions[0] : _.or(allConditions)
-  const query = {
-    status: _.in(ACTIVE_STATUSES),
-    projectId,
-    _id: excludeBookingId ? _.neq(excludeBookingId) : _.exists(true),
-    ...timeFilter,
-  }
+  const query = allConditions.length === 1 ? allConditions[0] : _.or(allConditions)
   const res = await db.collection('bookings').where(query).limit(1).get()
   return res.data.length > 0
 }
@@ -218,7 +223,6 @@ exports.main = async (event) => {
   }
 
   if (!event.requestId || !event.segments || !Array.isArray(event.segments)) return fail('INVALID_PARAMS', '参数错误')
-  if (event.segments.length > 10) return fail('INVALID_SEGMENTS', '单次最多预约 10 个时段')
 
   const existing = await db.collection('bookings').where({ requestId: event.requestId }).limit(1).get()
   if (existing.data.length > 0) {
@@ -274,7 +278,7 @@ exports.main = async (event) => {
   const durationHours = normalized.reduce((sum, s) => sum + (s.endAt - s.startAt) / 3600000, 0)
 
   if (event.remark) {
-    if (event.remark.length > 500) return fail('INVALID_PARAMS', '备注不超过 500 字')
+    if (event.remark.length > 100) return fail('INVALID_PARAMS', '备注不超过 100 字')
     try {
       const checkRes = await cloud.openapi.security.msgSecCheck({ content: event.remark })
       if (checkRes.result && checkRes.result.suggest === 'risky') {

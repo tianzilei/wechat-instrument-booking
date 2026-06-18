@@ -1,14 +1,19 @@
 function callFunction(name, data = {}) {
-  return wx.cloud.callFunction({
-    name,
-    data,
-  }).then((res) => {
-    const result = res.result || {}
+  return callFunctionRaw(name, data).then((result) => {
     if (!result.success) {
       const message = result.error && result.error.message ? result.error.message : '操作失败'
       throw new Error(message)
     }
     return result.data
+  })
+}
+
+function callFunctionRaw(name, data = {}) {
+  return wx.cloud.callFunction({
+    name,
+    data,
+  }).then((res) => {
+    return res.result || {}
   })
 }
 
@@ -21,5 +26,6 @@ function showError(err) {
 
 module.exports = {
   callFunction,
+  callFunctionRaw,
   showError,
 }

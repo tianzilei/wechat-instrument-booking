@@ -15,6 +15,42 @@ function formatHintDate(date) {
   return `${date.getMonth() + 1}月${date.getDate()}日`
 }
 
+function buildSegmentsFromCells(cells) {
+  if (!Array.isArray(cells) || cells.length === 0) return []
+  const sorted = cells.slice().sort((a, b) => {
+    const dateCompare = a.date.localeCompare(b.date)
+    return dateCompare === 0 ? a.hour - b.hour : dateCompare
+  })
+  const segments = []
+  sorted.forEach((cell) => {
+    const startAt = dateUtils.toCellDate(cell.date, Number(cell.hour))
+    const endAt = dateUtils.toCellDate(cell.date, Number(cell.hour) + 1)
+    const last = segments[segments.length - 1]
+    if (last && last.endAt.getTime() === startAt.getTime()) {
+      last.endAt = endAt
+    } else {
+      segments.push({ startAt, endAt })
+    }
+  })
+  return segments
+}
+
+function formatSegmentsText(segments) {
+  if (!segments || segments.length === 0) return ''
+  return segments.map((segment) => `${dateUtils.formatDateTime(segment.startAt)} - ${dateUtils.formatTime(segment.endAt)}`).join('；')
+}
+
+function segmentsContainSpecialTime(segments) {
+  return segments.some((segment) => (
+    !dateUtils.isWorkingHour(segment.startAt)
+    || !dateUtils.isWorkingHour(new Date(segment.endAt.getTime() - 1))
+  ))
+}
+
+function getSheetPrimaryClass(mode) {
+  return mode === 'waitlist' ? 'sheet__action--secondary' : 'sheet__action--primary'
+}
+
 function buildShareTitle(weekTitle) {
   return weekTitle ? `仪器预约周历｜${weekTitle}` : '仪器预约周历'
 }
@@ -60,6 +96,7 @@ Page({
     isSelecting: false,
     bookingWindowHint: '',
     selectedRange: null,
+    selectedSegments: [],
     sheet: {
       visible: false,
       title: '预约仪器',
@@ -69,6 +106,7 @@ Page({
       submitText: '确认预约',
       disabled: false,
       mode: 'booking',
+      primaryClass: 'sheet__action--primary',
     },
     maintenanceModal: {
       visible: false,
@@ -128,7 +166,7 @@ Page({
       ;(data.slots || []).forEach((slot) => {
         if (slot.state === 'maintenance') {
           maintenanceSlots.push({
-            maintenanceId: slot.maintenanceId || slot.publicRenderId,
+            maintenanceId: slot.maintenanceId || '',
             startAt: slot.startAt,
             endAt: slot.endAt,
             reason: '',
@@ -137,12 +175,12 @@ Page({
         } else {
           items.push({
             type: 'booking',
-            bookingId: slot.bookingId || slot.publicRenderId,
+            bookingId: slot.bookingId || '',
             status: slot.state === 'occupied' ? 'confirmed' : 'pending_review',
             startAt: slot.startAt,
             endAt: slot.endAt,
             projectAbbr: slot.projectAbbr || '',
-            userName: slot.userName || '',
+            publicRenderId: slot.publicRenderId || '',
           })
         }
       })
@@ -205,7 +243,7 @@ Page({
     return dateUtils.buildRangeFromCells(cell, cell)
   },
 
-  openBookingSheet(range, entries) {
+  openBookingSheet(segments, entries) {
     if (!app.globalData.user) {
       wx.navigateTo({ url: '/pages/auth/login/index' })
       return
@@ -219,15 +257,16 @@ Page({
       wx.navigateTo({ url: '/pages/auth/register/index' })
       return
     }
-    if (!range) return
+    if (!segments || segments.length === 0) return
     if (entries && entries.some((item) => item.status !== 'available')) {
       wx.showToast({ title: '请选择空闲时段', icon: 'none' })
       return
     }
-    const timeText = `${dateUtils.formatDateTime(range.startAt)} - ${dateUtils.formatDateTime(range.endAt)}`
-    const isSpecial = !dateUtils.isWorkingHour(range.startAt) || !dateUtils.isWorkingHour(new Date(range.endAt.getTime() - 1))
+    const timeText = formatSegmentsText(segments)
+    const isSpecial = segmentsContainSpecialTime(segments)
     this.setData({
-      selectedRange: range,
+      selectedRange: null,
+      selectedSegments: segments,
       sheet: {
         visible: true,
         title: isSpecial ? '提交特殊时段审核' : '预约仪器',
@@ -237,6 +276,40 @@ Page({
         submitText: isSpecial ? '提交审核' : '确认预约',
         disabled: false,
         mode: 'booking',
+        primaryClass: getSheetPrimaryClass('booking'),
+      },
+    })
+  },
+
+  openWaitlistSheet(cell) {
+    if (!app.globalData.user) {
+      wx.navigateTo({ url: '/pages/auth/login/index' })
+      return
+    }
+    const user = app.globalData.user
+    if (user.accountStatus && user.accountStatus !== 'active') {
+      wx.showToast({ title: '账号状态异常，暂不可候补', icon: 'none' })
+      return
+    }
+    if (!app.isApprovedUser()) {
+      wx.navigateTo({ url: '/pages/auth/register/index' })
+      return
+    }
+    const range = this.buildSingleRange(cell)
+    if (!range) return
+    this.setData({
+      selectedRange: null,
+      selectedSegments: [range],
+      sheet: {
+        visible: true,
+        title: '加入候补',
+        timeText: `${dateUtils.formatDateTime(range.startAt)} - ${dateUtils.formatTime(range.endAt)}`,
+        hint: '该时段已被占用。提交后进入候补队列，时段释放时按顺序确认。',
+        hintTone: 'accent',
+        submitText: '加入候补',
+        disabled: false,
+        mode: 'waitlist',
+        primaryClass: getSheetPrimaryClass('waitlist'),
       },
     })
   },
@@ -287,18 +360,25 @@ Page({
       this.openMaintenancePreview(this.buildSingleRange(cell))
       return
     }
-    if (cellData.status !== 'available') return
-    this.openBookingSheet(this.buildSingleRange(cell), [{ status: 'available' }])
+    if (cellData.status !== 'available') {
+      if (cellData.status === 'confirmed' || cellData.status === 'pending_review') {
+        this.openWaitlistSheet(cell)
+      }
+      return
+    }
+    this.openBookingSheet([this.buildSingleRange(cell)], [{ status: 'available' }])
   },
 
   onSelectRange(event) {
+    const selectedCells = event.detail.selectedCells || []
+    const segments = buildSegmentsFromCells(selectedCells)
     const range = dateUtils.buildRangeFromCells(event.detail.startCell, event.detail.endCell)
     const selectedEntries = event.detail.selectedEntries || []
     if (this.data.isAdminView) {
       this.openMaintenancePreview(range)
       return
     }
-    this.openBookingSheet(range, selectedEntries)
+    this.openBookingSheet(segments, selectedEntries)
   },
 
   onSelectModeChange(event) {
@@ -308,6 +388,7 @@ Page({
   closeSheet() {
     this.setData({
       selectedRange: null,
+      selectedSegments: [],
       'sheet.visible': false,
     })
   },
@@ -320,8 +401,8 @@ Page({
   },
 
   async submitSheet(event) {
-    const range = this.data.selectedRange
-    if (!range) return
+    const segments = this.data.selectedSegments || []
+    if (segments.length === 0) return
 
     const serviceMode = this.data.serviceMode || 'normal'
     if (serviceMode !== 'normal') {
@@ -332,11 +413,21 @@ Page({
     const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
     wx.showLoading({ title: '提交中' })
     try {
-      await api.callFunction('createBookingV2', {
-        requestId,
-        segments: [{ startAt: range.startAt.toISOString(), endAt: range.endAt.toISOString() }],
+      const payload = {
+        segments: segments.map((segment) => ({
+          startAt: segment.startAt.toISOString(),
+          endAt: segment.endAt.toISOString(),
+        })),
         remark: event.detail.remark || '',
-      })
+      }
+      if (this.data.sheet.mode === 'waitlist') {
+        await api.callFunction('createWaitlistV2', payload)
+      } else {
+        await api.callFunction('createBookingV2', {
+          requestId,
+          ...payload,
+        })
+      }
       wx.hideLoading()
       wx.showToast({ title: '已提交', icon: 'success' })
       this.closeSheet()

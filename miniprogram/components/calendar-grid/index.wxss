@@ -19,7 +19,6 @@
   padding: 12rpx 24rpx;
   border-bottom: 1rpx solid var(--color-border);
   background: var(--color-surface);
-  box-shadow: var(--shadow-popover);
 }
 
 .multi-select-bar__text {
@@ -203,17 +202,6 @@
   background: var(--color-primary-soft);
   color: var(--color-primary);
   box-shadow: inset 0 0 0 2rpx var(--color-primary-selection);
-}
-
-.calendar-cell--selecting::after {
-  content: "";
-  position: absolute;
-  top: 8rpx;
-  right: 8rpx;
-  width: 14rpx;
-  height: 14rpx;
-  border-radius: 50%;
-  background: var(--color-primary);
 }
 
 .calendar-cell__select-mark {

@@ -22,11 +22,9 @@ button {
   padding: 0;
   border-radius: var(--radius-md);
   font-size: var(--font-size-md);
-  line-height: 1;
-  overflow: hidden;
+  line-height: 1.25;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 button::after {

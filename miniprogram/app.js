@@ -1,4 +1,5 @@
 const config = require('./config')
+const api = require('./utils/api')
 const { normalizeRegistrationStatus } = require('./utils/status')
 
 App({
@@ -21,11 +22,7 @@ App({
 
   async refreshSession() {
     try {
-      const res = await wx.cloud.callFunction({
-        name: 'login',
-        data: {},
-      })
-      const result = res.result || {}
+      const result = await api.callFunctionRaw('login')
       if (result.success && result.data && result.data.identified) {
         const user = result.data.user || null
         if (user) {

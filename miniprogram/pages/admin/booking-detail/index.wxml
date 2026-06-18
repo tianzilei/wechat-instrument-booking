@@ -40,10 +40,10 @@
       </view>
     </view>
 
-    <view wx:if="{{booking.status === 'pending_review'}}" class="section">
+    <view wx:if="{{booking.canReview}}" class="section">
       <view class="surface-section detail-actions">
-        <button class="button button--primary" data-action="approve" bindtap="review">通过</button>
-        <button class="button button--danger" data-action="reject" bindtap="review">拒绝</button>
+        <button class="button button--primary" data-action="approve" bindtap="review">{{booking.approveText}}</button>
+        <button class="button button--danger" data-action="reject" bindtap="review">{{booking.rejectText}}</button>
       </view>
     </view>
   </block>

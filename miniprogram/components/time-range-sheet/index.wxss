@@ -43,11 +43,9 @@
 .sheet__title {
   flex: 1;
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
   font-size: var(--font-size-lg);
   font-weight: 700;
+  line-height: 1.25;
 }
 
 .sheet__time {
@@ -90,9 +88,9 @@
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   align-items: center;
-  gap: 8rpx;
-  width: 288rpx;
-  max-width: 54vw;
+  gap: 12rpx;
+  min-width: 320rpx;
+  max-width: 58vw;
 }
 
 .sheet__action {
@@ -103,15 +101,13 @@
   min-width: 0;
   max-width: 100%;
   min-height: var(--control-height-compact);
-  padding: 0 8rpx;
+  padding: 8rpx 12rpx;
   border-radius: var(--radius-md);
   font-size: var(--font-size-sm);
   font-weight: 700;
-  line-height: 1;
-  overflow: hidden;
+  line-height: 1.25;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .sheet__action--secondary {
@@ -137,7 +133,7 @@
   }
 
   .sheet__actions {
-    align-self: flex-end;
+    align-self: stretch;
     width: 100%;
     max-width: none;
   }

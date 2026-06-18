@@ -44,6 +44,7 @@
     hint-tone="{{sheet.hintTone}}"
     submit-text="{{sheet.submitText}}"
     disabled="{{sheet.disabled}}"
+    primary-class="{{sheet.primaryClass}}"
     bind:close="closeSheet"
     bind:submit="submitSheet"
   />

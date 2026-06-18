@@ -8,8 +8,8 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   min-height: 100rpx;
   padding-bottom: env(safe-area-inset-bottom);
-  border-top: 1rpx solid #d5dedd;
-  background: #ffffff;
+  border-top: 1rpx solid var(--color-divider);
+  background: var(--color-surface);
 }
 
 .tab-bar__item {
@@ -17,11 +17,11 @@
   align-items: center;
   justify-content: center;
   min-height: 100rpx;
-  color: #566762;
+  color: var(--color-text-secondary);
 }
 
 .tab-bar__item--active {
-  color: #0f766e;
+  color: var(--color-primary);
 }
 
 .tab-bar__text {

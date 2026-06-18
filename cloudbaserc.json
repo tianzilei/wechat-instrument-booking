@@ -12,6 +12,7 @@
     { "name": "createBookingV2", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "createMaintenance", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "createProject", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "createWaitlistV2", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "createRestrictedSlot", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "deleteAccount", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "deleteMaintenance", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },

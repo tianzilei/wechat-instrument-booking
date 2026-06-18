@@ -69,11 +69,9 @@
   border-radius: var(--radius-md);
   font-size: var(--font-size-md);
   font-weight: 700;
-  line-height: 1;
-  overflow: hidden;
+  line-height: 1.25;
   text-align: center;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  white-space: normal;
 }
 
 .theme-modal__button--secondary {

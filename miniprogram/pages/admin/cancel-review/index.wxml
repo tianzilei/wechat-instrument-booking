@@ -5,17 +5,14 @@
     <view class="section-title">取消待审</view>
     <empty-state wx:if="{{cancelItems.length === 0}}" title="暂无取消待审" />
     <view wx:if="{{cancelItems.length > 0}}" class="surface-section">
-      <view wx:for="{{cancelItems}}" wx:key="_id" class="list-card review-card">
+      <view wx:for="{{cancelItems}}" wx:key="_id" class="list-card review-card" data-id="{{item._id}}" bindtap="openDetail">
         <view class="row-between">
           <view class="review-title">{{item.userName}} · {{item.projectAbbr || '未关联课题'}}</view>
           <status-tag text="取消审核中" tone="warning" />
         </view>
         <view class="page-subtitle">{{item.timeText}}</view>
         <view class="page-subtitle">取消原因：{{item.cancelReason || '无'}}</view>
-        <view class="review-actions">
-          <button class="button button--primary button--compact" data-id="{{item._id}}" data-action="approve" bindtap="review">同意取消</button>
-          <button class="button button--danger button--compact" data-id="{{item._id}}" data-action="reject" bindtap="review">拒绝</button>
-        </view>
+        <view class="page-subtitle">点击查看详情并处理</view>
       </view>
     </view>
   </view>
@@ -24,30 +21,14 @@
     <view class="section-title">规则复审</view>
     <empty-state wx:if="{{ruleItems.length === 0}}" title="暂无规则复审" />
     <view wx:if="{{ruleItems.length > 0}}" class="surface-section">
-      <view wx:for="{{ruleItems}}" wx:key="_id" class="list-card review-card">
+      <view wx:for="{{ruleItems}}" wx:key="_id" class="list-card review-card" data-id="{{item._id}}" bindtap="openDetail">
         <view class="row-between">
           <view class="review-title">{{item.userName}} · {{item.projectAbbr || '未关联课题'}}</view>
           <status-tag text="规则复审中" tone="warning" />
         </view>
         <view class="page-subtitle">{{item.timeText}}</view>
-        <view class="review-actions">
-          <button class="button button--primary button--compact" data-id="{{item._id}}" bindtap="approveRule">通过</button>
-          <button class="button button--danger button--compact" data-id="{{item._id}}" bindtap="rejectRule">拒绝</button>
-        </view>
+        <view class="page-subtitle">点击查看详情并处理</view>
       </view>
     </view>
   </view>
-
-  <theme-modal
-    visible="{{modal.visible}}"
-    title="{{modal.title}}"
-    content="{{modal.content}}"
-    show-input="{{modal.showInput}}"
-    placeholder="{{modal.placeholder}}"
-    confirm-text="{{modal.confirmText}}"
-    confirm-tone="{{modal.confirmTone}}"
-    payload="{{modal.payload}}"
-    bind:cancel="closeModal"
-    bind:confirm="confirmModal"
-  />
 </view>

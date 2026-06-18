@@ -1,4 +1,4 @@
-<view wx:if="{{visible}}" class="theme-modal-mask" catchtap="onCancel">
+<view wx:if="{{visible}}" class="theme-modal-mask" catchtap="onMaskTap">
   <view class="theme-modal" catchtap="noop">
     <view class="theme-modal__title">{{title}}</view>
     <view wx:if="{{content}}" class="theme-modal__content">{{content}}</view>

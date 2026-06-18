@@ -342,15 +342,6 @@ Component({
         })
         return
       }
-      const indexes = selectedCells.map((cell) => this.getCellIndex(cell))
-      const isContinuous = indexes.every((index, position) => position === 0 || index === indexes[position - 1] + 1)
-      if (!isContinuous) {
-        wx.showToast({
-          title: '请选择连续时间段',
-          icon: 'none',
-        })
-        return
-      }
       this.triggerEvent('selectrange', {
         startCell: selectedCells[0],
         endCell: selectedCells[selectedCells.length - 1],

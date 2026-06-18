@@ -4,7 +4,7 @@
       <view class="sheet__title">{{title}}</view>
       <view class="sheet__actions">
         <button class="sheet__action sheet__action--secondary" bindtap="onClose">取消</button>
-        <button class="sheet__action sheet__action--primary {{disabled ? 'sheet__action--disabled' : ''}}" disabled="{{disabled}}" bindtap="onSubmit">{{submitText}}</button>
+        <button class="sheet__action {{primaryClass}} {{disabled ? 'sheet__action--disabled' : ''}}" disabled="{{disabled}}" bindtap="onSubmit">{{submitText}}</button>
       </view>
     </view>
     <view class="sheet__content">

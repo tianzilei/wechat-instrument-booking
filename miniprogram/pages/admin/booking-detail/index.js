@@ -12,6 +12,7 @@ Page({
     bookingId: '',
     booking: null,
     reviewMode: false,
+    actionType: '',
     modal: {
       visible: false,
       title: '',
@@ -28,6 +29,7 @@ Page({
     this.setData({
       bookingId: options.bookingId || '',
       reviewMode: options.mode === 'review',
+      actionType: options.actionType || '',
     })
   },
 
@@ -54,6 +56,9 @@ Page({
           statusTone: status.tone,
           ruleText: (booking.specialReasons || []).map((item) => SPECIAL_RULE_LABELS[item] || item).join('、') || '无',
           segments,
+          canReview: ['pending_review', 'cancel_pending', 'rule_review_pending'].includes(booking.status),
+          approveText: booking.status === 'cancel_pending' ? '同意取消' : '通过',
+          rejectText: '拒绝',
         },
       })
     } catch (err) {
@@ -63,12 +68,13 @@ Page({
 
   review(event) {
     const action = event.currentTarget.dataset.action
+    const isCancelReview = this.data.booking && this.data.booking.status === 'cancel_pending'
     if (action === 'reject') {
       this.setData({
         modal: {
           visible: true,
-          title: '拒绝预约申请',
-          content: '请填写拒绝原因，用户会在预约记录中看到该说明。',
+          title: isCancelReview ? '拒绝取消申请' : '拒绝预约申请',
+          content: isCancelReview ? '请填写拒绝原因，用户会在预约记录中看到该说明。' : '请填写拒绝原因，用户会在预约记录中看到该说明。',
           showInput: true,
           placeholder: '请输入拒绝原因',
           confirmText: '拒绝',
@@ -97,7 +103,10 @@ Page({
 
   async submitReview(action, reason) {
     try {
-      await api.callFunction('reviewBookingV2', {
+      const functionName = this.data.booking && this.data.booking.status === 'cancel_pending'
+        ? 'reviewCancelV2'
+        : 'reviewBookingV2'
+      await api.callFunction(functionName, {
         bookingId: this.data.bookingId,
         action,
         reason,

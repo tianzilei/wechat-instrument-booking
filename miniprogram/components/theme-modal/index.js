@@ -40,6 +40,10 @@ Component({
       type: Object,
       value: {},
     },
+    closeOnMask: {
+      type: Boolean,
+      value: false,
+    },
   },
 
   data: {
@@ -59,6 +63,11 @@ Component({
     },
     onCancel() {
       this.triggerEvent('cancel')
+    },
+    onMaskTap() {
+      if (this.properties.closeOnMask) {
+        this.onCancel()
+      }
     },
     onConfirm() {
       this.triggerEvent('confirm', {
