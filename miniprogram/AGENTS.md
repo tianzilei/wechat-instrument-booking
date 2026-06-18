@@ -69,7 +69,7 @@ Custom component at `custom-tab-bar/`. 3 text-only tabs matched to `app.json`. R
 - **Page pattern**: `pages/<feature>/<subpage>/index.{js,json,wxml,wxss}` — all 4 files mandatory
 - **Data loading**: Always in `onShow()`, never only in `onLoad()` — pages refresh on every visibility
 - **API layer**: ALL cloud function calls via `utils/api.js` — `callFunction(name, data)`
-- **Auth gating**: Pages check `getApp().needsLegalAcceptance()` before legal docs; `getApp().isApprovedUser()` (checks `accountStatus === 'active'` AND `registrationStatus === 'approved'`) / `isAdmin()` before operations
+- **Auth gating**: Pages check `getApp().needsLegalAcceptance()` before legal docs; `getApp().isApprovedUser()` (checks `accountStatus === 'active'` AND `registrationStatus === 'approved'`) / `isAdmin()` before operations. Booking and waitlist conversion are re-validated server-side against account status, legal version, and `serviceMode`.
 - **Tab bar sync**: Every tab page calls `setTabBarSelected(this, index)` in `onShow()`
 - **Imports**: CommonJS `require`/`module.exports` only. No ES modules.
 - **WXSS**: Import chain tokens → base → components; page-specific WXSS for layout only
@@ -80,6 +80,7 @@ Custom component at `custom-tab-bar/`. 3 text-only tabs matched to `app.json`. R
 - **Never** call `wx.cloud.callFunction` directly — always use `utils/api.js`
 - **Never** hardcode colors in page/component WXSS — use CSS variables from `tokens.wxss`
 - **Never** trust client time for validation — cloud functions re-validate server time
+- **Never** assume client-side legal or maintenance checks are sufficient — cloud functions are the final authority
 - **Never** suppress type errors with `as any` or similar (JS project so N/A but principle holds)
 - **Never** use images, icons, gradients, or animations (see `docs/style-guide.md`)
 - **Never** duplicate page titles — native nav bar handles titles

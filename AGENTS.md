@@ -1,7 +1,7 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-06-10T14:30:00Z
-**Commit:** 758484c
+**Generated:** 2026-06-18T09:03:07Z
+**Commit:** e85d5c5
 **Branch:** main
 
 ## OVERVIEW
@@ -27,11 +27,12 @@
 │   ├── custom-tab-bar/    # Custom text-only tab bar (3 tabs)
 │   ├── styles/            # Global stylesheets (tokens, base, components, calendar)
 │   └── utils/             # Shared utilities (api, date, status, tabbar)
-├── cloudfunctions/        # 71 CloudBase functions → AGENTS.md
+├── cloudfunctions/        # 62 local function dirs (57 in deploy manifest) → AGENTS.md
 ├── docs/                  # Business baseline v2, style guide, audit plan, impl design
-├── legacy-wechat-demo/    # Archived WeChat demo (gitignored, reference only)
+├── legacy-wechat-demo/    # Archived WeChat demo (tracked reference only)
 ├── project.config.json    # WeChat DevTools project config
 ├── cloudbaserc.json       # CloudBase CLI deployment config
+├── .eslintrc.js           # Root ESLint config
 └── package.json           # Root dev deps (eslint only)
 ```
 
@@ -52,7 +53,7 @@
 | Visual specs | `docs/style-guide.md` | Theme tokens, component contracts, acceptance checklist |
 | Privacy/audit compliance | `docs/audit-compliance-optimization-plan.md` | Forbidden data fields, content safety rules |
 | v1 design reference (historical) | `docs/implementation-design.md` | Deprecated — only for understanding existing v1 code |
-| Cloud function deployment | `cloudbaserc.json` | 71 deployed functions, all Nodejs18.15, 15s timeout (migrateData: 60s) |
+| Cloud function deployment | `cloudbaserc.json` | 57 deployed functions, all Nodejs18.15, default 15s timeout (`exportOperationalData`: 60s) |
 | Cloud functions source | `cloudfunctions/` | Backend logic — see `cloudfunctions/AGENTS.md` |
 | Admin pages | `miniprogram/pages/admin/` | 13 sub-pages — see `miniprogram/pages/admin/AGENTS.md` |
 
@@ -65,7 +66,7 @@
 - **Cloud function pattern** — `index.main` handler, `{ success, data, error }` response, self-contained (no shared utils)
 - **Admin guard** — check `getApp().isAdmin()` before sensitive operations; server-side re-verifies role. Also check `needsLegalAcceptance()` and account status (`isApprovedUser()`) before allowing bookings.
 - **CSS token system** — `tokens.wxss` → `base.wxss` → `components.wxss` import chain; page WXSS for page-specific only
-- **ESLint** — airbnb-base config via `package.json`, run with `npm run lint`
+- **ESLint** — root config is `.eslintrc.js` + `.eslintignore`; `npm run lint` is available but currently reports repo-wide legacy violations and should be treated as an audit signal, not a green gate
 
 ## ANTI-PATTERNS (THIS PROJECT)
 
@@ -76,7 +77,7 @@ Must NOT implement: collecting phone/email/studentId/college/supervisor, storing
 No images, illustrations, decorative icons, icon grids, gradients, animations, card nesting, theme-color hardcoding outside `tokens.wxss`, page title duplication with native nav bar.
 
 ### Privacy/security
-Never return raw DB records to client (field whitelists only), never trust client time (use server time), never expose `openid`/names/notes in public APIs, never skip content safety checks on user text input.
+Never return raw DB records to client (field whitelists only), never trust client time (use server time), never expose `openid`/names/notes in public APIs, never skip content safety checks on user text input, and fail closed when the content safety API is unavailable.
 
 ### Code hygiene
 - Only lint suppression: `cloudfunctions/openapi/index.js:54` (`// eslint-disable-next-line`)
@@ -86,7 +87,7 @@ Never return raw DB records to client (field whitelists only), never trust clien
 
 ```bash
 npm install          # Install root dev dependencies (eslint)
-npm run lint         # Run ESLint (airbnb-base rules)
+npm run lint         # Run ESLint audit (currently reports existing repo-wide legacy issues)
 ```
 
 **Cloud function deploy:**
@@ -102,7 +103,7 @@ tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
 
 - `miniprogramRoot` is `miniprogram/` — app files are NOT at repo root
 - `booking/form` is a 7-line stub that redirects to calendar tab; safe to remove
-- `legacy-wechat-demo/` is gitignored, reference only
+- `legacy-wechat-demo/` is a tracked archived reference directory and should not be treated as active app code
 - LSP unavailable (no TypeScript in project)
 - All cloud functions are self-contained — no shared `utils/` directory among them
 - `project.private.config.json` is gitignored and contains developer-local settings

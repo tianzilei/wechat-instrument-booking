@@ -995,9 +995,9 @@ pending → processing → completed / rejected
 
 ```js
 {
-  ok: true,
+  success: true,
   data: {},
-  traceId: 'server-trace-id'
+  error: null
 }
 ```
 
@@ -1005,23 +1005,20 @@ pending → processing → completed / rejected
 
 ```js
 {
-  ok: false,
+  success: false,
+  data: null,
   error: {
     code: 'BOOKING_CONFLICT',
-    message: '存在不可预约时段',
-    details: {
-      conflictSlots: ['2026-06-12T10:00:00+08:00']
-    }
-  },
-  traceId: 'server-trace-id'
+    message: '存在不可预约时段'
+  }
 }
 ```
 
-- `details` 只能返回帮助当前用户修正操作的非敏感数据。
+- 如需补充 `details`，只能返回帮助当前用户修正操作的非敏感数据。
 - 列表接口使用 `cursor + limit`，默认 `20`、最大 `50`，不得用不断增大的页码扫描大集合。
 - 时间输入输出统一使用带时区的 ISO 8601 字符串；云函数进入业务层后立即转成服务器时间对象。
 - 前端不得展示原始堆栈、数据库错误、函数名或内部记录 ID。
-- `traceId` 用于技术排障；写操作中的 `requestId` 是客户端生成的幂等键，两者不得混用。
+- 写操作中的 `requestId` 是客户端生成的幂等键；对关键占用写操作，服务端还应通过独立互斥锁避免并发双写。
 
 `getPublicCalendar` 最小返回结构：
 
@@ -1031,6 +1028,7 @@ pending → processing → completed / rejected
   serverNow,
   rulesVersion,
   serviceMode,
+  maxAdvanceDays,
   slots: [
     {
       startAt,
@@ -1043,7 +1041,7 @@ pending → processing → completed / rejected
 }
 ```
 
-`createBooking` 成功时只返回新预约的真实 ID、最终状态、规范化时段和总小时；不得回传其他用户或冲突预约详情。`BOOKING_CONFLICT` 只返回发生冲突的小时，不返回占用者、课题、备注或真实预约 ID。
+`createBookingV2` 成功时只返回新预约的真实 ID、最终状态、预约类型、审核原因和排期键；不得回传其他用户或冲突预约详情。`BOOKING_CONFLICT` 只返回当前用户可修正的非敏感冲突信息，不返回占用者、课题、备注或真实预约 ID。
 
 ## 15. 页面目标结构
 

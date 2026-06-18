@@ -28,7 +28,7 @@
 
 ```text
 .
-├── cloudfunctions/        # 64 个云函数，全部由 cloudbaserc.json 部署
+├── cloudfunctions/        # 62 个本地云函数目录，其中 57 个在 cloudbaserc.json 中部署
 ├── docs/                  # 业务基线、部署运维、Style Guide、审核合规计划
 ├── miniprogram/           # 小程序前端
 │   ├── pages/
@@ -61,6 +61,14 @@ npm install
 4. 在微信开发者工具中构建 npm。
 5. 为云函数安装依赖并部署。
 
+可选代码检查：
+
+```bash
+npm run lint
+```
+
+当前仓库已补充根级 ESLint 配置，但仍存在较多历史风格问题；该命令适合作为扫描和回归参考，不代表当前仓库应当零告警。
+
 ### 云函数部署
 
 每个云函数目录下都有自己的 `package.json`，可以在微信开发者工具里逐个上传并部署，或使用 CloudBase CLI 批量部署。
@@ -68,7 +76,7 @@ npm install
 ```bash
 tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
 
-# 按 cloudbaserc.json 批量覆盖部署全部 67 个业务函数
+# 按 cloudbaserc.json 批量覆盖部署全部 57 个业务函数
 tcb fn deploy --all --force -e <env-id>
 ```
 
@@ -99,6 +107,7 @@ tcb fn deploy --all --force -e <env-id>
 - 课题与注册分离：管理员维护课题目录，用户搜索或申请新课题
 - 预约、取消和候补都按整单处理，同一预约单支持多时段不连续选择
 - 维护、受限、特殊时段会触发不同的审核和占用规则
+- 预约创建与候补转正会在服务端强制校验维护模式、法务版本、账号状态，并通过互斥锁串行化关键写入
 - 隐私优先：最小必要信息采集，结构化隐私请求，三级信息视图（公开/本人/管理员）
 - 管理员治理覆盖课题审核、隐私请求处理、维护模式、规则复审、用户暂停/恢复
 

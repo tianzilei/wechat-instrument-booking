@@ -1,10 +1,10 @@
 # cloudfunctions/ — CloudBase Backend
 
-WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-contained (no shared utils directory). Env: `cloud1-d9goiq7y767dbd158`.
+WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. All self-contained (no shared utils directory). Env: `cloud1-d9goiq7y767dbd158`.
 
 ## OVERVIEW
 
-64 cloud functions. Every function: `index.main` handler, `wx-server-sdk`, inline `ok()`/`fail()` helpers. Auth functions verify `openid` from `wxContext`. Admin functions re-verify role.
+62 local cloud-function directories, of which 57 are in the active deployment manifest. Every function uses `index.main`, `wx-server-sdk`, and inline `ok()`/`fail()` helpers. Auth functions verify `openid` from `wxContext`. Admin functions re-verify role.
 
 ## STRUCTURE
 
@@ -126,14 +126,14 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 
 | Task | Location | Notes |
 |------|----------|-------|
-| Deployment config | `../cloudbaserc.json` | 67 deployed functions, Nodejs18.15, exportOperationalData uses 60s timeout |
+| Deployment config | `../cloudbaserc.json` | 57 deployed functions, Nodejs18.15, `exportOperationalData` uses 60s timeout |
 | User model &amp; auth | `login/index.js`, `submitRegistration/index.js` | Registration form fields, role assignment |
 | V2 user model &amp; auth | `submitRegistrationV2/index.js` | Registration with project association |
 | Booking conflict logic | `createBooking/index.js` | Maintenance/restriction/working-hour checks |
-| V2 booking logic | `createBookingV2/index.js` | Multi-segment model, requestId idempotency |
+| V2 booking logic | `createBookingV2/index.js` | Multi-segment model, requestId idempotency, server-side legal/service-mode enforcement, booking mutex |
 | Cancel threshold | `cancelBooking/index.js` | 12-hour rule; `cancel_pending` vs direct cancel |
 | V2 cancel logic | `cancelBookingV2/index.js` | 12-hour rule, segments model |
-| Waitlist conversion | `confirmWaitlist/index.js` | Atomic confirm → booking flow |
+| Waitlist conversion | `confirmWaitlistV2/index.js` | Confirming waitlist → booking conversion, server-side legal/service-mode enforcement, booking mutex |
 | Review audit trail | `reviewBooking/`, `reviewCancel/`, `reviewRegistration/` | All write to `review_logs` collection |
 | Calendar data assembly | `getCalendarBookings/index.js` | Public weekly view with field whitelist |
 | V2 public calendar | `getPublicCalendar/index.js` | Weekly view, strict field whitelist |
@@ -144,7 +144,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 | Legal documents | `getLegalDocuments/`, `acceptLegalDocuments/` | Agreement + privacy policy versioning |
 | User lifecycle | `suspendUser/`, `restoreUser/`, `deleteAccount/` | Suspension, restoration, deletion |
 | Settings | `getSettings/`, `updateSettings/`, `scanSettingsVersion/` | System configuration, version migration |
-| Background tasks | `expireBookingReviews/`, `reconcileWaitlists/`, `cleanupRetentionData/` | Scheduled maintenance jobs |
+| Background tasks | `expireBookingReviews/`, `reconcileWaitlists/`, `cleanupRetentionData/` | Scheduled jobs; current implementations iterate in batches until exhausted |
 | Operational export | `exportOperationalData/index.js` | Admin-only anonymized JSON export, 60s timeout |
 
 ## CONVENTIONS
@@ -155,6 +155,8 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 - **Admin guard**: Re-verify `user.role === 'admin'` on every admin operation (trust no client)
 - **Field whitelist**: Never return raw DB records; always `.field({...})` filter
 - **Server time**: Use `new Date()` in cloud functions; never trust client timestamps
+- **Booking serialization**: `createBookingV2` and `confirmWaitlistV2` serialize conflicting writes through `system_locks/booking_schedule_mutex`
+- **Fail-closed text safety**: If `msgSecCheck` is unavailable, reject the write instead of proceeding
 - **Init**: Most use `cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })`
 
 ## ANTI-PATTERNS
@@ -164,7 +166,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 - **Never** trust client time — use server `new Date()` for validation
 - **Never** log PII (openid, names, notes, reasons) in cloud function logs
 - **Never** skip content safety checks on user text input before DB write
-- **Never** skip content safety checks on user text (name, remark, reason, project name/abbr, etc.)
+- **Never** treat failed content safety checks as pass-through; errors must block the write
 - **Never** create shared utils — each function is intentionally self-contained
 
 ## NOTES
@@ -172,3 +174,4 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, 15s timeout. All self-c
 - All functions use `wx-server-sdk` (`latest` or `~2.5.3`)
 - `exportOperationalData` has a 60-second timeout — the only function exceeding the default 15s
 - Only lint suppression in codebase is at `openapi/index.js:54`
+- `confirmWaitlist`, `getServerDataDemo`, `getTempFileURL`, `openapi`, and `wxContext` exist locally but are not in the active deployment manifest

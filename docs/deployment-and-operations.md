@@ -8,8 +8,9 @@
 - 云函数根目录：`cloudfunctions/`
 - 云函数运行时：`Nodejs18.15`
 - 部署清单：`cloudbaserc.json`
-- 当前部署清单包含 67 个业务云函数。
-- `cloudfunctions/` 下共有 71 个目录，以下 4 个是示例或调试目录，不在批量部署清单中：
+- 当前部署清单包含 57 个业务云函数。
+- `cloudfunctions/` 下共有 62 个目录，以下 5 个是历史兼容、示例或调试目录，不在批量部署清单中：
+  - `confirmWaitlist`
   - `getServerDataDemo`
   - `getTempFileURL`
   - `openapi`
@@ -67,6 +68,7 @@ npm install
 | `maintenance_slots` | 维护时段 |
 | `restricted_slots` | 受限时段 |
 | `settings` | 全局工作时间、维护模式和协议版本 |
+| `system_locks` | 预约/候补关键写入互斥锁 |
 | `review_logs` | 审核与运维操作记录 |
 | `notifications` | 候补通知 |
 | `important_events` | 强提醒事件 |
@@ -77,6 +79,8 @@ npm install
 | `error_logs` | 可清理的错误日志 |
 
 `perm4` 仅被未部署的示例函数使用，不属于业务集合。
+
+`system_locks` 当前至少会使用文档 ID `booking_schedule_mutex`，由 `createBookingV2` 和 `confirmWaitlistV2` 在关键写入时维护。建议提前创建集合并保留云函数独占写权限。
 
 ### 3.2 初始化全局设置
 
@@ -208,7 +212,7 @@ tcb login
 tcb fn deploy --all --force -e <env-id>
 ```
 
-`--all` 只部署 `cloudbaserc.json` 中的 67 个业务函数，不会部署 4 个示例目录。`--force` 会覆盖云端同名函数，执行前必须确认环境 ID。
+`--all` 只部署 `cloudbaserc.json` 中的 57 个业务函数，不会部署上述 5 个未纳入清单的目录。`--force` 会覆盖云端同名函数，执行前必须确认环境 ID。
 
 ### 5.2 单函数部署
 
@@ -224,7 +228,7 @@ tcb fn deploy <function-name> \
 ### 5.3 部署后核对
 
 ```bash
-# 应返回 67 个业务函数，且状态均为 Deployment completed
+# 应返回 57 个业务函数，且状态均为 Deployment completed
 tcb fn list --limit 100 --json -e <env-id>
 
 # 查看单个函数配置
@@ -278,16 +282,16 @@ tcb fn invoke getPublicCalendar -d '{"weekStartDate":"2026-06-08"}' --json -e <e
 
 1. 记录当前环境 ID、云函数列表、函数更新时间和主要集合数量。
 2. 在“管理 → 系统设置”开启维护模式。
-3. 确认 `getSettings` 返回 `serviceMode: maintenance`。
+3. 确认 `getSettings` 返回 `serviceMode: maintenance`，并验证 `createBookingV2` / `confirmWaitlistV2` 被服务端拒绝。
 4. 创建数据库备份或确认可用回滚时间。
 5. 创建新增集合和索引，更新最小权限规则。
-6. 部署全部云函数并核对 67 个函数状态和定时触发器。
+6. 部署全部云函数并核对 57 个函数状态和定时触发器。
 7. 在“管理 → 系统设置”执行一次脱敏运营数据导出，确认导出函数可用并留存发布前快照。
 8. 编译、预览并上传新版小程序。
 9. 使用管理员和普通用户分别完成真机验收。
 10. 清理测试数据并复核管理员角色。
 11. 在“管理 → 系统设置”结束维护模式。
-12. 再次调用 `getSettings`，确认 `serviceMode: normal`。
+12. 再次调用 `getSettings`，确认 `serviceMode: normal`，并验证预约入口恢复可用。
 
 任一步失败都保持维护模式，修复后从失败步骤幂等重跑。不要为恢复服务而重新开放旧版个人信息结构。
 
@@ -388,7 +392,7 @@ tcb db nosql backup restore \
 
 这是预期行为。CLI 调用没有微信 `OPENID`，管理员函数会拒绝。请在管理员小程序中执行，或按紧急数据库流程处理。
 
-### 云函数目录有 71 个，但云端只有 67 个
+### 云函数目录有 62 个，但云端只有 57 个
 
 这是当前设计。4 个示例目录不在 `cloudbaserc.json` 中，也不应部署到生产环境。
 
