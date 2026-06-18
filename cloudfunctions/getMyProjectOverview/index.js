@@ -5,6 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 const PAGE_SIZE = 100
+const IN_QUERY_SIZE = 100
 const DAY_MS = 24 * 60 * 60 * 1000
 const RECENT_DAYS = 7
 const ALLOWED_BOOKING_STATUSES = ['pending_review', 'confirmed', 'completed', 'cancel_pending', 'rule_review_pending']
@@ -47,6 +48,31 @@ async function fetchAll(collectionName, where, options) {
     }
   }
   return items
+}
+
+function chunk(items, size) {
+  const batches = []
+  for (let index = 0; index < items.length; index += size) {
+    batches.push(items.slice(index, index + size))
+  }
+  return batches
+}
+
+async function fetchUserNameMap(userIds) {
+  const map = {}
+  const uniqueIds = [...new Set((userIds || []).filter(Boolean))]
+  for (const ids of chunk(uniqueIds, IN_QUERY_SIZE)) {
+    const batch = await db.collection('users').where({
+      _id: _.in(ids),
+    }).field({
+      _id: true,
+      name: true,
+    }).get()
+    batch.data.forEach((item) => {
+      map[item._id] = item.name || ''
+    })
+  }
+  return map
 }
 
 function computeDurationHours(item) {
@@ -169,11 +195,15 @@ exports.main = async () => {
     map[item._id] = item
     return map
   }, {})
+  const bookingUserNameMap = await fetchUserNameMap([
+    ...v2Bookings.map((item) => item.userId),
+    ...legacyBookings.map((item) => item.userId),
+  ])
 
   const bookingItems = [...v2Bookings, ...legacyBookings].map((item) => ({
     _id: item._id,
     userId: item.userId || '',
-    userName: memberMap[item.userId] ? (memberMap[item.userId].name || '') : '',
+    userName: bookingUserNameMap[item.userId] || (memberMap[item.userId] ? (memberMap[item.userId].name || '') : ''),
     status: item.status,
     startAt: item.firstStartAt || item.startAt,
     endAt: item.lastEndAt || item.endAt,

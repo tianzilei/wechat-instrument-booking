@@ -14,6 +14,8 @@ async function getCurrentUser(openid) {
   const res = await db.collection('users').where({ openid }).field({
     _id: true,
     role: true,
+    accountStatus: true,
+    registrationStatus: true,
     projectId: true,
   }).limit(1).get()
   return res.data[0] || null
@@ -85,10 +87,12 @@ async function fetchUserMap(userIds) {
   return map
 }
 
-function canExposeUserName(currentUser, bookingUser) {
-  if (!currentUser || !bookingUser) return false
+function canExposeUserName(currentUser, bookingProjectId) {
+  if (!currentUser) return false
   if (currentUser.role === 'admin') return true
-  return !!(currentUser.projectId && bookingUser.projectId && currentUser.projectId === bookingUser.projectId)
+  if (currentUser.accountStatus !== 'active') return false
+  if (currentUser.registrationStatus !== 'approved') return false
+  return !!(currentUser.projectId && bookingProjectId && currentUser.projectId === bookingProjectId)
 }
 
 exports.main = async (event) => {
@@ -112,6 +116,7 @@ exports.main = async (event) => {
       _id: true,
       status: true,
       userId: true,
+      projectId: true,
       segments: true,
       firstStartAt: true,
       lastEndAt: true,
@@ -122,7 +127,7 @@ exports.main = async (event) => {
       startAt: _.lt(weekEnd),
       endAt: _.gt(weekStart),
     }, {
-      _id: true, status: true, userId: true, startAt: true, endAt: true, projectAbbr: true,
+      _id: true, status: true, userId: true, projectId: true, startAt: true, endAt: true, projectAbbr: true,
     }),
     fetchAll('maintenance_slots', {
       status: 'active',
@@ -144,7 +149,7 @@ exports.main = async (event) => {
       : [{ startAt: item.firstStartAt, endAt: item.lastEndAt }]
     const state = item.status === 'pending_review' ? 'pending' : 'occupied'
     const bookingUser = bookingUserMap[item.userId]
-    const userName = canExposeUserName(currentUser, bookingUser) ? (bookingUser.name || '') : ''
+    const userName = canExposeUserName(currentUser, item.projectId) ? (bookingUser && bookingUser.name ? bookingUser.name : '') : ''
     segments.forEach((segment, index) => {
       const slot = {
         startAt: segment.startAt,
@@ -168,7 +173,7 @@ exports.main = async (event) => {
       state: item.status === 'pending_review' ? 'pending' : 'occupied',
       status: item.status,
       projectAbbr: item.projectAbbr || '',
-      userName: canExposeUserName(currentUser, bookingUser) ? (bookingUser.name || '') : '',
+      userName: canExposeUserName(currentUser, item.projectId) ? (bookingUser && bookingUser.name ? bookingUser.name : '') : '',
       publicRenderId: `legacy-slot-${slots.length}`,
     }
     if (isAdmin) slot.bookingId = item._id

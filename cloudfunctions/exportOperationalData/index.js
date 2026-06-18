@@ -5,6 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const PAGE_SIZE = 100
 const EXPORT_LIMIT = 5000
+const IN_QUERY_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -61,11 +62,37 @@ async function getSettings() {
 
 function buildMap(items, keyField) {
   return (items || []).reduce((map, item) => {
-    if (item && item[keyField]) {
-      map[item[keyField]] = item
+    if (!item || !item[keyField]) return map
+    return {
+      ...map,
+      [item[keyField]]: item,
     }
-    return map
   }, {})
+}
+
+function chunk(items, size) {
+  const batches = []
+  for (let index = 0; index < items.length; index += size) {
+    batches.push(items.slice(index, index + size))
+  }
+  return batches
+}
+
+async function fetchUsersByIds(userIds) {
+  const uniqueIds = [...new Set((userIds || []).filter(Boolean))]
+  const items = []
+  for (const ids of chunk(uniqueIds, IN_QUERY_SIZE)) {
+    const res = await db.collection('users').where({
+      _id: db.command.in(ids),
+    }).field({
+      _id: true,
+      name: true,
+      projectName: true,
+      projectAbbr: true,
+    }).get()
+    items.push(...res.data)
+  }
+  return items
 }
 
 exports.main = async () => {
@@ -75,7 +102,6 @@ exports.main = async () => {
 
   const [
     settings,
-    users,
     projects,
     bookings,
     waitlists,
@@ -87,18 +113,6 @@ exports.main = async () => {
     projectApplicationCount,
   ] = await Promise.all([
     getSettings(),
-    fetchCollection('users', {
-      _id: true,
-      role: true,
-      accountStatus: true,
-      registrationStatus: true,
-      name: true,
-      projectId: true,
-      projectName: true,
-      projectAbbr: true,
-      createdAt: true,
-      updatedAt: true,
-    }),
     fetchCollection('projects', {
       _id: true, name: true, abbr: true, status: true, createdAt: true, updatedAt: true,
     }),
@@ -151,7 +165,11 @@ exports.main = async () => {
     db.collection('project_applications').count(),
   ])
 
-  const userMap = buildMap(users.items, '_id')
+  const exportUsers = await fetchUsersByIds([
+    ...bookings.items.map((item) => item.userId),
+    ...waitlists.items.map((item) => item.userId),
+  ])
+  const userMap = buildMap(exportUsers, '_id')
   const projectMap = buildMap(projects.items, '_id')
   const exportedBookings = bookings.items.map((item) => {
     const user = userMap[item.userId] || {}
@@ -186,7 +204,6 @@ exports.main = async () => {
       projectApplications: projectApplicationCount.total,
     },
     settings,
-    users: users.items,
     projects: projects.items,
     bookings: exportedBookings,
     waitlists: exportedWaitlists,
@@ -194,7 +211,6 @@ exports.main = async () => {
     restrictedSlots: restrictedSlots.items,
     monthlyStats: monthlyStats.items,
     truncated: {
-      users: users.truncated,
       projects: projects.truncated,
       bookings: bookings.truncated,
       waitlists: waitlists.truncated,
