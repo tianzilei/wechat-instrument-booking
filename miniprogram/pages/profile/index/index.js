@@ -3,13 +3,28 @@ const api = require('../../../utils/api')
 const { getRegistrationStatus } = require('../../../utils/status')
 const { setTabBarSelected } = require('../../../utils/tabbar')
 
+function buildPrimaryAction(user) {
+  if (!user || user.role === 'admin' || user.registrationStatus === 'approved') {
+    return { visible: false, text: '', mode: '' }
+  }
+  if (user.registrationStatus === 'project_confirm_required') {
+    return { visible: true, text: '确认课题并完成注册', mode: 'confirm-project' }
+  }
+  if (['unsubmitted', 'rejected'].includes(user.registrationStatus || 'unsubmitted')) {
+    return { visible: true, text: '提交注册申请', mode: 'register' }
+  }
+  return { visible: false, text: '', mode: '' }
+}
+
 Page({
   data: {
     user: null,
     statusText: '未登录',
     statusTone: 'muted',
     stats: {},
-    needRegister: false,
+    showPrimaryAction: false,
+    primaryActionText: '',
+    primaryActionMode: '',
   },
 
   onShow() {
@@ -33,8 +48,15 @@ Page({
       statusText = '需重新选课题'
       statusTone = 'warning'
     }
-    const needRegister = !!user && user.role !== 'admin' && user.registrationStatus !== 'approved'
-    this.setData({ user, statusText, statusTone, needRegister })
+    const action = buildPrimaryAction(user)
+    this.setData({
+      user,
+      statusText,
+      statusTone,
+      showPrimaryAction: action.visible,
+      primaryActionText: action.text,
+      primaryActionMode: action.mode,
+    })
   },
 
   async loadStats() {
@@ -53,6 +75,29 @@ Page({
 
   goRegister() {
     wx.navigateTo({ url: '/pages/auth/register/index' })
+  },
+
+  async confirmProject() {
+    wx.showLoading({ title: '处理中' })
+    try {
+      await api.callFunction('confirmApprovedProject')
+      await app.refreshSession()
+      wx.hideLoading()
+      wx.showToast({ title: '已完成注册', icon: 'success' })
+      this.applyUser()
+      this.loadStats()
+    } catch (err) {
+      wx.hideLoading()
+      api.showError(err)
+    }
+  },
+
+  handlePrimaryAction() {
+    if (this.data.primaryActionMode === 'confirm-project') {
+      this.confirmProject()
+      return
+    }
+    this.goRegister()
   },
 
   goBookings() {

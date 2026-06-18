@@ -8,6 +8,39 @@ const _ = db.command
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
+function isFutureActiveSegment(segment, currentTime) {
+  return (segment.state || 'active') === 'active' && new Date(segment.startAt) > currentTime
+}
+
+function summarizeActiveSegments(segments) {
+  const activeSegments = (segments || []).filter((segment) => (segment.state || 'active') === 'active')
+  if (activeSegments.length === 0) return null
+  return {
+    firstStartAt: activeSegments[0].startAt,
+    lastEndAt: activeSegments[activeSegments.length - 1].endAt,
+    durationHours: activeSegments.reduce((sum, segment) => sum + ((new Date(segment.endAt) - new Date(segment.startAt)) / 3600000), 0),
+  }
+}
+
+function cancelFutureActiveSegments(segments, currentTime, nowServer, reasonCode) {
+  let changed = false
+  const nextSegments = (segments || []).map((segment) => {
+    if (!isFutureActiveSegment(segment, currentTime)) return segment
+    changed = true
+    return {
+      ...segment,
+      state: 'cancelled',
+      cancelledAt: nowServer,
+      cancelReasonCode: reasonCode,
+    }
+  })
+  return {
+    changed,
+    nextSegments,
+    remainingSummary: summarizeActiveSegments(nextSegments),
+  }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const userRes = await db.collection('users').where({ openid: OPENID }).field({ _id: true }).limit(1).get()
@@ -23,7 +56,7 @@ exports.main = async (event) => {
   if (!['confirmed', 'pending_review'].includes(booking.status)) return fail('STATE_CHANGED', '当前状态不可取消')
 
   const now = new Date()
-  const futureActive = (booking.segments || []).filter((s) => s.state === 'active' && new Date(s.startAt) > now)
+  const futureActive = (booking.segments || []).filter((segment) => isFutureActiveSegment(segment, now))
   if (futureActive.length === 0) return fail('STATE_CHANGED', '无未开始的有效时段')
 
   if (event.reason) {
@@ -55,22 +88,18 @@ exports.main = async (event) => {
     return ok({ bookingId: event.bookingId, status: 'cancel_pending', needReview: true })
   }
 
-  const segments = booking.segments.map((s) => {
-    if (s.state === 'active' && new Date(s.startAt) > now) {
-      return { ...s, state: 'cancelled', cancelledAt: nowServer, cancelReasonCode: 'user_cancelled' }
-    }
-    return s
-  })
-  const allFutureCancelled = segments.every((s) => s.state !== 'active' || new Date(s.startAt) <= now)
+  const cancellation = cancelFutureActiveSegments(booking.segments, now, nowServer, 'user_cancelled')
+  const nextStatus = cancellation.remainingSummary ? 'confirmed' : 'cancelled'
 
   await db.collection('bookings').doc(event.bookingId).update({
     data: {
-      status: allFutureCancelled ? 'cancelled' : 'confirmed',
-      segments,
+      status: nextStatus,
+      segments: cancellation.nextSegments,
+      ...(cancellation.remainingSummary || {}),
       cancellationNote: event.reason || '',
       updatedAt: nowServer,
     },
   })
 
-  return ok({ bookingId: event.bookingId, status: allFutureCancelled ? 'cancelled' : 'confirmed', needReview: false })
+  return ok({ bookingId: event.bookingId, status: nextStatus, needReview: false })
 }

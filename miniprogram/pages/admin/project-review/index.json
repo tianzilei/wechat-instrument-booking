@@ -1,1 +1,7 @@
-{"navigationBarTitleText":"课题申请审核"}
+{
+  "navigationBarTitleText": "课题申请审核",
+  "usingComponents": {
+    "empty-state": "../../../components/empty-state/index",
+    "theme-modal": "../../../components/theme-modal/index"
+  }
+}

@@ -5,7 +5,7 @@
   </view>
 
   <block wx:else>
-    <view class="surface-section profile-summary" bindtap="goRegister">
+    <view class="surface-section profile-summary">
       <view>
         <view class="profile-name">{{user.name || '未填写姓名'}}</view>
         <view class="page-subtitle">{{user.projectName ? user.projectName + ' · ' + user.projectAbbr : '未关联课题'}}</view>
@@ -13,8 +13,8 @@
       <status-tag text="{{statusText}}" tone="{{statusTone}}" />
     </view>
 
-    <view wx:if="{{needRegister}}" class="section">
-      <button class="button button--primary" bindtap="goRegister">提交注册申请</button>
+    <view wx:if="{{showPrimaryAction}}" class="section">
+      <button class="button button--primary" bindtap="handlePrimaryAction">{{primaryActionText}}</button>
     </view>
 
     <view class="section-title profile-section-title">预约统计</view>

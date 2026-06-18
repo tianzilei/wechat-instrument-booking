@@ -16,9 +16,16 @@ const bookingStatusMap = {
 
 const registrationStatusMap = {
   unsubmitted: { text: '未提交', tone: 'muted' },
-  pending: { text: '待审核', tone: 'warning' },
+  project_pending: { text: '课题审核中', tone: 'warning' },
+  project_confirm_required: { text: '待确认课题', tone: 'accent' },
+  registration_pending: { text: '注册审核中', tone: 'warning' },
   approved: { text: '已通过', tone: 'success' },
   rejected: { text: '已拒绝', tone: 'danger' },
+}
+
+function normalizeRegistrationStatus(status) {
+  if (status === 'pending') return 'registration_pending'
+  return status || 'unsubmitted'
 }
 
 function getBookingStatus(status) {
@@ -26,7 +33,8 @@ function getBookingStatus(status) {
 }
 
 function getRegistrationStatus(status) {
-  return registrationStatusMap[status] || { text: status || '未知', tone: 'muted' }
+  const normalizedStatus = normalizeRegistrationStatus(status)
+  return registrationStatusMap[normalizedStatus] || { text: normalizedStatus || '未知', tone: 'muted' }
 }
 
 function getCellClass(status) {
@@ -47,4 +55,5 @@ module.exports = {
   getBookingStatus,
   getRegistrationStatus,
   getCellClass,
+  normalizeRegistrationStatus,
 }

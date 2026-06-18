@@ -7,13 +7,24 @@ const db = cloud.database()
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
+function isFutureActiveSegment(segment, currentTime) {
+  return (segment.state || 'active') === 'active' && new Date(segment.startAt) > currentTime
+}
+
+function summarizeActiveSegments(segments) {
+  const activeSegments = (segments || []).filter((segment) => (segment.state || 'active') === 'active')
+  if (activeSegments.length === 0) return null
+  return {
+    firstStartAt: activeSegments[0].startAt,
+    lastEndAt: activeSegments[activeSegments.length - 1].endAt,
+    durationHours: activeSegments.reduce((sum, segment) => sum + ((new Date(segment.endAt) - new Date(segment.startAt)) / 3600000), 0),
+  }
+}
+
 function getFutureSegmentReviewUpdate(booking, nowServer, reasonCode, nextStatus) {
   const currentTime = new Date()
-  const segments = Array.isArray(booking.segments) ? booking.segments : []
-  const nextSegments = segments.map((segment) => {
-    const state = segment.state || 'active'
-    const startAt = new Date(segment.startAt)
-    if (state !== 'active' || startAt <= currentTime) return segment
+  const nextSegments = (booking.segments || []).map((segment) => {
+    if (!isFutureActiveSegment(segment, currentTime)) return segment
     return {
       ...segment,
       state: 'cancelled',
@@ -21,18 +32,14 @@ function getFutureSegmentReviewUpdate(booking, nowServer, reasonCode, nextStatus
       cancelReasonCode: reasonCode,
     }
   })
-  const activeSegments = nextSegments.filter((segment) => (segment.state || 'active') === 'active')
+  const remainingSummary = summarizeActiveSegments(nextSegments)
   const updateData = {
     status: nextStatus,
     segments: nextSegments,
     previousStatus: '',
     updatedAt: nowServer,
   }
-  if (activeSegments.length > 0) {
-    updateData.firstStartAt = activeSegments[0].startAt
-    updateData.lastEndAt = activeSegments[activeSegments.length - 1].endAt
-    updateData.durationHours = activeSegments.reduce((sum, item) => sum + ((new Date(item.endAt) - new Date(item.startAt)) / 3600000), 0)
-  }
+  Object.assign(updateData, remainingSummary || {})
   return updateData
 }
 

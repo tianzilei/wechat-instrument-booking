@@ -15,15 +15,15 @@ async function getAdmin(openid) {
   return user && user.role === 'admin' ? user : null
 }
 
-async function fetchAllApplications(status) {
+async function fetchAll(collectionName, where, options) {
   let skip = 0
   let hasMore = true
   const items = []
   while (hasMore) {
-    const batch = await db.collection('project_applications')
-      .where({ status })
-      .field({ _id: true, userId: true, proposedName: true, proposedAbbr: true, status: true, reviewReason: true, createdAt: true })
-      .orderBy('createdAt', 'asc')
+    const batch = await db.collection(collectionName)
+      .where(where)
+      .field(options.field)
+      .orderBy(options.orderBy, options.order)
       .skip(skip)
       .limit(PAGE_SIZE)
       .get()
@@ -43,6 +43,10 @@ exports.main = async (event) => {
   if (!admin) return fail('PERMISSION_DENIED', '无权限操作')
 
   const status = event.status || 'pending'
-  const items = await fetchAllApplications(status)
+  const items = await fetchAll('project_applications', { status }, {
+    field: { _id: true, userId: true, proposedName: true, proposedAbbr: true, status: true, reviewReason: true, createdAt: true },
+    orderBy: 'createdAt',
+    order: 'asc',
+  })
   return ok({ items })
 }

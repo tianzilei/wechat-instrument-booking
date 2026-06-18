@@ -7,6 +7,44 @@ const db = cloud.database()
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
+function isFutureActiveSegment(segment, currentTime) {
+  return (segment.state || 'active') === 'active' && new Date(segment.startAt) > currentTime
+}
+
+function summarizeActiveSegments(segments) {
+  const activeSegments = (segments || []).filter((segment) => (segment.state || 'active') === 'active')
+  if (activeSegments.length === 0) return null
+  return {
+    firstStartAt: activeSegments[0].startAt,
+    lastEndAt: activeSegments[activeSegments.length - 1].endAt,
+    durationHours: activeSegments.reduce((sum, segment) => sum + ((new Date(segment.endAt) - new Date(segment.startAt)) / 3600000), 0),
+  }
+}
+
+function buildFutureActiveSegmentCancellationUpdate(booking, currentTime, nowServer, reasonCode, activeStatus) {
+  let changed = false
+  const nextSegments = (booking.segments || []).map((segment) => {
+    if (!isFutureActiveSegment(segment, currentTime)) return segment
+    changed = true
+    return {
+      ...segment,
+      state: 'cancelled',
+      cancelledAt: nowServer,
+      cancelReasonCode: reasonCode,
+    }
+  })
+  if (!changed) return null
+
+  const remainingSummary = summarizeActiveSegments(nextSegments)
+  return {
+    status: remainingSummary ? activeStatus : 'cancelled',
+    previousStatus: '',
+    segments: nextSegments,
+    ...(remainingSummary || {}),
+    updatedAt: nowServer,
+  }
+}
+
 async function getAdmin(openid) {
   if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
@@ -38,17 +76,17 @@ exports.main = async (event) => {
   let resultStatus = booking.previousStatus || 'confirmed'
   if (event.action === 'approve') {
     const currentTime = new Date()
-    const segments = (booking.segments || []).map((s) => ({
-      ...s,
-      state: s.state === 'active' && new Date(s.startAt) > currentTime ? 'cancelled' : s.state,
-      cancelledAt: s.state === 'active' && new Date(s.startAt) > currentTime ? now : s.cancelledAt,
-      cancelReasonCode: s.state === 'active' && new Date(s.startAt) > currentTime ? 'cancel_approved' : s.cancelReasonCode,
-    }))
-    const allFutureCancelled = segments.every((s) => s.state !== 'active' || new Date(s.startAt) <= currentTime)
-    const nextStatus = allFutureCancelled ? 'cancelled' : (booking.previousStatus || 'confirmed')
-    resultStatus = nextStatus
+    const updateData = buildFutureActiveSegmentCancellationUpdate(
+      booking,
+      currentTime,
+      now,
+      'cancel_approved',
+      booking.previousStatus || 'confirmed'
+    )
+    if (!updateData) return fail('STATE_CHANGED', '无未开始的有效时段')
+    resultStatus = updateData.status
     await db.collection('bookings').doc(event.bookingId).update({
-      data: { status: nextStatus, previousStatus: '', segments, updatedAt: now },
+      data: updateData,
     })
   } else {
     const previousStatus = booking.previousStatus || 'confirmed'

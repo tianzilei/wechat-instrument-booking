@@ -1,1 +1,6 @@
-{"navigationBarTitleText":"规则复审"}
+{
+  "navigationBarTitleText": "规则复审",
+  "usingComponents": {
+    "empty-state": "../../../components/empty-state/index"
+  }
+}

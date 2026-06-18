@@ -32,15 +32,27 @@ async function fetchAll(collectionName, where) {
   return items
 }
 
-function buildFutureCancellationUpdate(booking, nowServer, reasonCode) {
+function isFutureActiveSegment(segment, currentTime) {
+  return (segment.state || 'active') === 'active' && new Date(segment.startAt) > currentTime
+}
+
+function summarizeActiveSegments(segments) {
+  const activeSegments = (segments || []).filter((segment) => (segment.state || 'active') === 'active')
+  if (activeSegments.length === 0) return null
+  return {
+    firstStartAt: activeSegments[0].startAt,
+    lastEndAt: activeSegments[activeSegments.length - 1].endAt,
+    durationHours: activeSegments.reduce((sum, segment) => sum + ((new Date(segment.endAt) - new Date(segment.startAt)) / 3600000), 0),
+  }
+}
+
+function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCode) {
   const currentTime = new Date()
   const segments = Array.isArray(booking.segments) ? booking.segments : []
   if (segments.length > 0) {
     let changed = false
     const nextSegments = segments.map((segment) => {
-      const state = segment.state || 'active'
-      const startAt = new Date(segment.startAt)
-      if (state !== 'active' || startAt <= currentTime) return segment
+      if (!isFutureActiveSegment(segment, currentTime)) return segment
       changed = true
       return {
         ...segment,
@@ -50,18 +62,14 @@ function buildFutureCancellationUpdate(booking, nowServer, reasonCode) {
       }
     })
     if (!changed) return null
-    const activeSegments = nextSegments.filter((segment) => (segment.state || 'active') === 'active')
+    const remainingSummary = summarizeActiveSegments(nextSegments)
     const updateData = {
-      status: 'cancelled',
+      status: remainingSummary ? 'cancelled' : 'cancelled',
       segments: nextSegments,
       cancellationNote: reasonCode,
       updatedAt: nowServer,
     }
-    if (activeSegments.length > 0) {
-      updateData.firstStartAt = activeSegments[0].startAt
-      updateData.lastEndAt = activeSegments[activeSegments.length - 1].endAt
-      updateData.durationHours = activeSegments.reduce((sum, item) => sum + ((new Date(item.endAt) - new Date(item.startAt)) / 3600000), 0)
-    }
+    Object.assign(updateData, remainingSummary || {})
     return updateData
   }
 
@@ -103,7 +111,7 @@ exports.main = async (event) => {
     status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']),
   })
   const bookingUpdates = bookings
-    .map((booking) => ({ booking, update: buildFutureCancellationUpdate(booking, now, 'account_suspended') }))
+    .map((booking) => ({ booking, update: buildFutureActiveSegmentCancellationUpdate(booking, now, 'account_suspended') }))
     .filter((item) => !!item.update)
   await Promise.all(bookingUpdates.map((item) => db.collection('bookings').doc(item.booking._id).update({
     data: item.update,

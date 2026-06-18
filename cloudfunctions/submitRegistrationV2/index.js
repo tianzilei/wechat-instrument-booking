@@ -99,7 +99,7 @@ exports.main = async (event) => {
 
   await db.collection('users').doc(user._id).update({
     data: {
-      registrationStatus: 'pending',
+      registrationStatus: 'registration_pending',
       rejectReason: '',
       agreementVersion,
       agreementAcceptedAt: now,
@@ -109,5 +109,5 @@ exports.main = async (event) => {
     },
   })
 
-  return ok({ applicationId: res._id, status: 'pending' })
+  return ok({ applicationId: res._id, status: 'pending', registrationStatus: 'registration_pending' })
 }

@@ -1,4 +1,5 @@
 const config = require('./config')
+const { normalizeRegistrationStatus } = require('./utils/status')
 
 App({
   onLaunch() {
@@ -26,7 +27,11 @@ App({
       })
       const result = res.result || {}
       if (result.success && result.data && result.data.identified) {
-        this.globalData.user = result.data.user
+        const user = result.data.user || null
+        if (user) {
+          user.registrationStatus = normalizeRegistrationStatus(user.registrationStatus)
+        }
+        this.globalData.user = user
         this.globalData.hasLogin = true
         this.globalData.needsLegalAcceptance = result.data.needsLegalAcceptance || false
       } else {

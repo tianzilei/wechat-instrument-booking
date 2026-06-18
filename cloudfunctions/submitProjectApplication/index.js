@@ -84,6 +84,10 @@ exports.main = async (event) => {
   })
   await db.collection('users').doc(user._id).update({
     data: {
+      ...(user.registrationStatus === 'approved' ? {} : {
+        registrationStatus: 'project_pending',
+        rejectReason: '',
+      }),
       agreementVersion,
       agreementAcceptedAt: now,
       privacyVersion,
@@ -91,5 +95,9 @@ exports.main = async (event) => {
       updatedAt: now,
     },
   })
-  return ok({ applicationId: res._id, status: 'pending' })
+  return ok({
+    applicationId: res._id,
+    status: 'pending',
+    registrationStatus: user.registrationStatus === 'approved' ? 'approved' : 'project_pending',
+  })
 }

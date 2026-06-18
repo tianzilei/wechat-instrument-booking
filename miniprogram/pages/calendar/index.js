@@ -27,8 +27,14 @@ function buildUserHint() {
   if (user && user.registrationStatus === 'approved') {
     return `${user.name || '已登录'}，可预约仪器`
   }
-  if (user && user.registrationStatus === 'pending') {
+  if (user && user.registrationStatus === 'registration_pending') {
     return '注册申请审核中，暂不可预约'
+  }
+  if (user && user.registrationStatus === 'project_pending') {
+    return '课题申请审核中，待通过后继续完成注册'
+  }
+  if (user && user.registrationStatus === 'project_confirm_required') {
+    return '课题已通过，请先确认课题后完成注册'
   }
   if (user && user.registrationStatus === 'rejected') {
     return '注册申请未通过，可重新提交'

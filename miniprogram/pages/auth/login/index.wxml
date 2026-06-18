@@ -23,6 +23,6 @@
 
   <view class="section">
     <button class="button button--primary" loading="{{loading}}" bindtap="login">登录/刷新状态</button>
-    <button wx:if="{{showRegister}}" class="button button--secondary action-gap" bindtap="goRegister">提交注册申请</button>
+    <button wx:if="{{showPrimaryAction}}" class="button button--secondary action-gap" bindtap="handlePrimaryAction">{{primaryActionText}}</button>
   </view>
 </view>

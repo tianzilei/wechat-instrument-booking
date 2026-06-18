@@ -70,8 +70,14 @@ function overlaps(startAt, endAt, targetStartAt, targetEndAt) {
   return startAt < targetEndAt && endAt > targetStartAt
 }
 
-function sumDurationHours(segments) {
-  return segments.reduce((total, item) => total + ((new Date(item.endAt) - new Date(item.startAt)) / 3600000), 0)
+function summarizeActiveSegments(segments) {
+  const activeSegments = (segments || []).filter((segment) => (segment.state || 'active') !== 'cancelled')
+  if (activeSegments.length === 0) return null
+  return {
+    firstStartAt: activeSegments[0].startAt,
+    lastEndAt: activeSegments[activeSegments.length - 1].endAt,
+    durationHours: activeSegments.reduce((total, item) => total + ((new Date(item.endAt) - new Date(item.startAt)) / 3600000), 0),
+  }
 }
 
 function buildPreview(booking, startAt, endAt, now) {
@@ -132,15 +138,12 @@ function buildBookingUpdate(preview, nowServer) {
     cancellationNote: 'maintenance_cancelled',
     updatedAt: nowServer,
   }
-
-  if (activeSegments.length === 0) {
+  const remainingSummary = summarizeActiveSegments(nextSegments)
+  if (!remainingSummary) {
     updateData.status = 'cancelled'
     return updateData
   }
-
-  updateData.firstStartAt = activeSegments[0].startAt
-  updateData.lastEndAt = activeSegments[activeSegments.length - 1].endAt
-  updateData.durationHours = sumDurationHours(activeSegments)
+  Object.assign(updateData, remainingSummary)
   return updateData
 }
 

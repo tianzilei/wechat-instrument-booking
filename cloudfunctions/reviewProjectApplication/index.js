@@ -7,6 +7,10 @@ const db = cloud.database()
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
+function needsRegistrationCompletion(user) {
+  return !!user && (user.registrationStatus !== 'approved' || !user.projectId)
+}
+
 async function getAdmin(openid) {
   if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
@@ -23,6 +27,9 @@ exports.main = async (event) => {
   const ref = db.collection('project_applications').doc(event.applicationId)
   const application = (await ref.get()).data
   if (!application || application.status !== 'pending') return fail('STATE_CHANGED', '申请状态已变化')
+  const userRef = db.collection('users').doc(application.userId)
+  const user = (await userRef.get()).data
+  if (!user) return fail('NOT_FOUND', '申请用户不存在')
 
   const now = db.serverDate()
   if (event.action === 'reject') {
@@ -37,6 +44,15 @@ exports.main = async (event) => {
       }
     }
     await ref.update({ data: { status: 'rejected', reviewReason: event.reason || '', reviewedBy: admin._id, reviewedAt: now, updatedAt: now } })
+    if (needsRegistrationCompletion(user)) {
+      await userRef.update({
+        data: {
+          registrationStatus: 'rejected',
+          rejectReason: event.reason || '',
+          updatedAt: now,
+        },
+      })
+    }
     await db.collection('review_logs').add({
       data: { targetType: 'project_application', targetId: event.applicationId, action: 'reject', reason: event.reason || '', reviewerId: admin._id, createdAt: now },
     })
@@ -56,6 +72,15 @@ exports.main = async (event) => {
         updatedAt: now,
       },
     })
+    if (needsRegistrationCompletion(user)) {
+      await userRef.update({
+        data: {
+          registrationStatus: 'project_confirm_required',
+          rejectReason: '',
+          updatedAt: now,
+        },
+      })
+    }
     await db.collection('review_logs').add({
       data: { targetType: 'project_application', targetId: event.applicationId, action: 'approve', reason: '', reviewerId: admin._id, createdAt: now },
     })
@@ -94,6 +119,15 @@ exports.main = async (event) => {
       reviewedBy: admin._id, reviewedAt: now, updatedAt: now,
     },
   })
+  if (needsRegistrationCompletion(user)) {
+    await userRef.update({
+      data: {
+        registrationStatus: 'project_confirm_required',
+        rejectReason: '',
+        updatedAt: now,
+      },
+    })
+  }
   await db.collection('review_logs').add({
     data: { targetType: 'project_application', targetId: event.applicationId, action: 'approve', reason: '', reviewerId: admin._id, createdAt: now },
   })

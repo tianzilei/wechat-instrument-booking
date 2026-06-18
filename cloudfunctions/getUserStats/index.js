@@ -33,7 +33,7 @@ async function fetchAllUserBookings(userId) {
   while (hasMore) {
     const batch = await db.collection('bookings').where({
       userId,
-      status: _.in(['confirmed', 'completed']),
+      status: 'confirmed',
     })
       .field({
         firstStartAt: true,

@@ -13,10 +13,10 @@ function fail(code, message) {
   return { success: false, data: null, error: { code, message } }
 }
 
-async function isAdmin(openid) {
-  if (!openid) return false
+async function getAdmin(openid) {
+  if (!openid) return null
   const user = (await db.collection('users').where({ openid }).limit(1).get()).data[0]
-  return user && user.role === 'admin'
+  return user && user.role === 'admin' ? user : null
 }
 
 async function fetchAllApprovedUsers() {
@@ -53,7 +53,7 @@ async function fetchAllApprovedUsers() {
 
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
-  if (!(await isAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
+  if (!(await getAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
   const items = await fetchAllApprovedUsers()
   return ok({ items })
 }
