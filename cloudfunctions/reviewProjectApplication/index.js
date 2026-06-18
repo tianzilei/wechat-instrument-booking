@@ -33,7 +33,7 @@ exports.main = async (event) => {
           return fail('CONTENT_UNSAFE', '拒绝原因包含违规内容')
         }
       } catch (err) {
-        console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+        return fail('CONTENT_CHECK_FAILED', '拒绝原因内容安全校验失败，请稍后重试')
       }
     }
     await ref.update({ data: { status: 'rejected', reviewReason: event.reason || '', reviewedBy: admin._id, reviewedAt: now, updatedAt: now } })
@@ -56,7 +56,7 @@ exports.main = async (event) => {
       return fail('CONTENT_UNSAFE', '课题信息包含违规内容')
     }
   } catch (err) {
-    console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+    return fail('CONTENT_CHECK_FAILED', '课题信息内容安全校验失败，请稍后重试')
   }
 
   const normalizedName = finalName.replace(/\s+/g, '').toLowerCase()

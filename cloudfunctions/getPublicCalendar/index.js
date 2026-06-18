@@ -23,6 +23,27 @@ function addDays(date, days) {
   return d
 }
 
+async function fetchAll(collectionName, query, fields) {
+  const items = []
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection(collectionName)
+      .where(query)
+      .field(fields)
+      .skip(skip)
+      .limit(100)
+      .get()
+    items.push(...batch.data)
+    if (batch.data.length < 100) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const currentUser = await getCurrentUser(OPENID)
@@ -31,13 +52,12 @@ exports.main = async (event) => {
   const weekEnd = addDays(weekStart, 7)
   const activeStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
 
-  // V2 bookings use firstStartAt/lastEndAt and segments; keep a separate query for legacy records.
   const [bookingsRes, legacyBookingsRes, maintenanceRes, settingsRes] = await Promise.all([
-    db.collection('bookings').where({
+    fetchAll('bookings', {
       status: _.in(activeStatuses),
       firstStartAt: _.lt(weekEnd),
       lastEndAt: _.gt(weekStart),
-    }).field({
+    }, {
       _id: true,
       status: true,
       userId: true,
@@ -45,28 +65,28 @@ exports.main = async (event) => {
       firstStartAt: true,
       lastEndAt: true,
       projectAbbrDisplayCache: true,
-    }).limit(100).get(),
-    db.collection('bookings').where({
+    }),
+    fetchAll('bookings', {
       status: _.in(activeStatuses),
       startAt: _.lt(weekEnd),
       endAt: _.gt(weekStart),
-    }).field({
+    }, {
       _id: true, status: true, userId: true, startAt: true, endAt: true, projectAbbr: true,
-    }).limit(100).get(),
-    db.collection('maintenance_slots').where({
+    }),
+    fetchAll('maintenance_slots', {
       status: 'active',
       startAt: _.lt(weekEnd),
       endAt: _.gt(weekStart),
-    }).field({ _id: true, startAt: true, endAt: true, status: true }).limit(100).get(),
+    }, { _id: true, startAt: true, endAt: true, status: true }),
     db.collection('settings').doc('global').get(),
   ])
   const settings = settingsRes.data || {}
 
   const userIds = []
-  bookingsRes.data.forEach((item) => {
+  bookingsRes.forEach((item) => {
     if (item.userId) userIds.push(item.userId)
   })
-  legacyBookingsRes.data.forEach((item) => {
+  legacyBookingsRes.forEach((item) => {
     if (item.userId) userIds.push(item.userId)
   })
 
@@ -82,7 +102,7 @@ exports.main = async (event) => {
   }
 
   const slots = []
-  bookingsRes.data.forEach((item) => {
+  bookingsRes.forEach((item) => {
     const segments = Array.isArray(item.segments) && item.segments.length > 0
       ? item.segments.filter((segment) => segment.state !== 'cancelled')
       : [{ startAt: item.firstStartAt, endAt: item.lastEndAt }]
@@ -100,7 +120,7 @@ exports.main = async (event) => {
     })
   })
 
-  legacyBookingsRes.data.forEach((item) => {
+  legacyBookingsRes.forEach((item) => {
     slots.push({
       startAt: item.startAt,
       endAt: item.endAt,
@@ -112,7 +132,7 @@ exports.main = async (event) => {
     })
   })
 
-  maintenanceRes.data.forEach((item) => {
+  maintenanceRes.forEach((item) => {
     slots.push({
       startAt: item.startAt, endAt: item.endAt,
       state: 'maintenance', maintenanceId: item._id, projectAbbr: '', publicRenderId: item._id,

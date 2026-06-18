@@ -33,10 +33,17 @@ exports.main = async (event) => {
           return fail('CONTENT_UNSAFE', '拒绝原因包含违规内容')
         }
       } catch (err) {
-        console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+        return fail('CONTENT_CHECK_FAILED', '拒绝原因内容安全校验失败，请稍后重试')
       }
     }
     await ref.update({ data: { status: 'rejected', reviewReason: event.reason || '', reviewedBy: admin._id, reviewedAt: now, updatedAt: now } })
+    await db.collection('users').doc(application.userId).update({
+      data: {
+        registrationStatus: 'rejected',
+        rejectReason: event.reason || '',
+        updatedAt: now,
+      },
+    })
     await db.collection('review_logs').add({
       data: { targetType: 'registration', targetId: event.applicationId, action: 'reject', reason: event.reason || '', reviewerId: admin._id, createdAt: now },
     })
@@ -52,6 +59,7 @@ exports.main = async (event) => {
       projectName: application.projectNameSnapshot || '',
       projectAbbr: application.projectAbbrSnapshot || '',
       registrationStatus: 'approved',
+      rejectReason: '',
       agreementVersion: application.agreementVersion,
       privacyVersion: application.privacyVersion,
       updatedAt: now,

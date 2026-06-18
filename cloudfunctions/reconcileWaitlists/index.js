@@ -5,17 +5,32 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+async function fetchAllWaitlists() {
+  const items = []
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('waitlists').where({
+      status: _.in(['waitlisted', 'confirming']),
+    }).orderBy('createdAt', 'asc').skip(skip).limit(100).get()
+    items.push(...batch.data)
+    if (batch.data.length < 100) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
 exports.main = async () => {
   const now = new Date()
   const results = { processed: 0, converted: 0, expired: 0, errors: 0 }
 
-  const allWaitlists = await db.collection('waitlists').where({
-    status: _.in(['waitlisted', 'confirming']),
-  }).orderBy('createdAt', 'asc').limit(100).get()
-
-  const scheduleKeys = [...new Set(allWaitlists.data.map((w) => w.scheduleKey || `${w.startAt}|${w.endAt}`))]
+  const allWaitlists = await fetchAllWaitlists()
+  const scheduleKeys = [...new Set(allWaitlists.map((w) => w.scheduleKey || `${w.startAt}|${w.endAt}`))]
   for (const sk of scheduleKeys) {
-    const waitlists = allWaitlists.data.filter((w) => (w.scheduleKey || `${w.startAt}|${w.endAt}`) === sk)
+    const waitlists = allWaitlists.filter((w) => (w.scheduleKey || `${w.startAt}|${w.endAt}`) === sk)
     for (const w of waitlists) {
       results.processed += 1
       try {
@@ -65,7 +80,7 @@ exports.main = async () => {
 
 async function checkSegmentConflict(segments) {
   const conditions = segments.map((s) => ({
-    status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']),
+    status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']),
     firstStartAt: _.lt(new Date(s.endAt)),
     lastEndAt: _.gt(new Date(s.startAt)),
   }))

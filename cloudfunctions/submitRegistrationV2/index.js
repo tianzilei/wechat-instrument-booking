@@ -45,7 +45,7 @@ exports.main = async (event) => {
       return fail('CONTENT_UNSAFE', '姓名包含违规信息')
     }
   } catch (err) {
-    console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+    return fail('CONTENT_CHECK_FAILED', '姓名内容安全校验失败，请稍后重试')
   }
 
   const now = db.serverDate()
@@ -66,6 +66,8 @@ exports.main = async (event) => {
 
   await db.collection('users').doc(user._id).update({
     data: {
+      registrationStatus: 'pending',
+      rejectReason: '',
       agreementVersion,
       agreementAcceptedAt: now,
       privacyVersion,

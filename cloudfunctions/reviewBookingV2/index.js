@@ -30,7 +30,7 @@ exports.main = async (event) => {
         return fail('CONTENT_UNSAFE', '拒绝原因包含违规信息')
       }
     } catch (err) {
-      console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+      return fail('CONTENT_CHECK_FAILED', '拒绝原因内容安全校验失败，请稍后重试')
     }
   }
 

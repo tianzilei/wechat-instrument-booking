@@ -6,9 +6,21 @@ const db = cloud.database()
 const _ = db.command
 
 const ACTIVE_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
+const BOOKING_MUTEX_DOC_ID = 'booking_schedule_mutex'
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
+
+function businessError(code, message) {
+  const err = new Error(message)
+  err.code = code
+  return err
+}
+
+function isWriteConflictError(err) {
+  const text = String((err && (err.errMsg || err.message || err.code)) || '').toLowerCase()
+  return text.includes('conflict')
+}
 
 function isWholeHour(date) {
   return date.getMinutes() === 0 && date.getSeconds() === 0 && date.getMilliseconds() === 0
@@ -131,6 +143,36 @@ async function getUser(openid) {
   return res.data[0]
 }
 
+async function runWithBookingMutex(holder, callback) {
+  let lastErr = null
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const transaction = await db.startTransaction()
+    try {
+      const mutexRef = transaction.collection('system_locks').doc(BOOKING_MUTEX_DOC_ID)
+      await mutexRef.get()
+      await mutexRef.set({
+        data: {
+          _id: BOOKING_MUTEX_DOC_ID,
+          holder,
+          updatedAt: db.serverDate(),
+        },
+      })
+      const result = await callback(transaction)
+      await transaction.commit()
+      return result
+    } catch (err) {
+      lastErr = err
+      try {
+        await transaction.rollback()
+      } catch (rollbackErr) {}
+      if (!isWriteConflictError(err) || attempt === 2) {
+        throw err
+      }
+    }
+  }
+  throw lastErr || new Error('booking mutex failed')
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const user = await getUser(OPENID)
@@ -153,13 +195,24 @@ exports.main = async (event) => {
   let openStartHour = 9
   let openEndHour = 18
   let maxAdvanceDays = 7
+  let serviceMode = 'normal'
+  let agreementVersion = '1.0'
+  let privacyVersion = '1.0'
   try {
     const settingsRes = await db.collection('settings').doc('global').get()
     const settings = settingsRes.data || {}
     openStartHour = settings.openStartHour || 9
     openEndHour = settings.openEndHour || 18
     maxAdvanceDays = settings.maxAdvanceDays || 7
+    serviceMode = settings.serviceMode || 'normal'
+    agreementVersion = settings.serviceAgreementVersion || '1.0'
+    privacyVersion = settings.privacyPolicyVersion || '1.0'
   } catch (err) {}
+
+  if (serviceMode !== 'normal') return fail('SERVICE_UNAVAILABLE', '系统维护中，暂不支持预约')
+  if ((user.agreementVersion || '') !== agreementVersion || (user.privacyVersion || '') !== privacyVersion) {
+    return fail('LEGAL_ACCEPTANCE_REQUIRED', '请先同意最新协议与隐私政策')
+  }
 
   const minimumStartAt = getMinimumStartAt()
   const maxAdvanceBoundary = getMaxAdvanceBoundary(new Date(), maxAdvanceDays)
@@ -170,15 +223,6 @@ exports.main = async (event) => {
       return fail('INVALID_SEGMENTS', `只能提前${maxAdvanceDays}天预约`)
     }
   }
-
-  const maintenance = await db.collection('maintenance_slots').where({ status: 'active' }).limit(1000).get()
-  if (anyMaintenanceConflict(normalized, maintenance.data)) return fail('MAINTENANCE_CONFLICT', '任一时段命中维护')
-
-  if (await anyProjectConflict(normalized, user.projectId || '', '')) {
-    return fail('PROJECT_BOOKING_CONFLICT', '该时段已被本课题预约')
-  }
-
-  if (await anyBookingConflict(normalized)) return fail('BOOKING_CONFLICT', '任一时段发生占用冲突')
 
   const specialReasons = getSpecialReasons(normalized, openStartHour, openEndHour)
   const status = specialReasons.length > 0 ? 'pending_review' : 'confirmed'
@@ -200,35 +244,70 @@ exports.main = async (event) => {
         return fail('CONTENT_UNSAFE', '备注包含违规信息')
       }
     } catch (err) {
-      console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+      return fail('CONTENT_CHECK_FAILED', '备注内容安全校验失败，请稍后重试')
     }
   }
 
-  const res = await db.collection('bookings').add({
-    data: {
-      userId: user._id,
-      projectId: user.projectId || '',
-      projectAbbrDisplayCache: user.projectAbbr || '',
-      projectDisplayVersion: 1,
-      requestId: event.requestId,
-      scheduleKey,
-      segments,
-      firstStartAt: segments[0].startAt,
-      lastEndAt: segments[segments.length - 1].endAt,
-      durationHours,
-      remark: event.remark || '',
-      status,
-      previousStatus: '',
-      bookingType,
-      specialReasons,
-      reviewReason: '',
-      cancellationNote: '',
-      terminationReasonCode: '',
-      reviewedBy: '',
-      createdAt: nowServer,
-      updatedAt: nowServer,
-    },
-  })
+  try {
+    const result = await runWithBookingMutex(`create:${event.requestId}`, async (transaction) => {
+      const latestExisting = await db.collection('bookings').where({ requestId: event.requestId }).limit(1).get()
+      if (latestExisting.data.length > 0) {
+        const booking = latestExisting.data[0]
+        return { duplicateRequest: true, bookingId: booking._id, status: booking.status, bookingType: booking.bookingType }
+      }
 
-  return ok({ bookingId: res._id, status, bookingType, specialReasons, scheduleKey })
+      const maintenance = await db.collection('maintenance_slots').where({ status: 'active' }).limit(1000).get()
+      if (anyMaintenanceConflict(normalized, maintenance.data)) {
+        throw businessError('MAINTENANCE_CONFLICT', '任一时段命中维护')
+      }
+      if (await anyProjectConflict(normalized, user.projectId || '', '')) {
+        throw businessError('PROJECT_BOOKING_CONFLICT', '该时段已被本课题预约')
+      }
+      if (await anyBookingConflict(normalized)) {
+        throw businessError('BOOKING_CONFLICT', '任一时段发生占用冲突')
+      }
+
+      const bookingRes = await transaction.collection('bookings').add({
+        data: {
+          userId: user._id,
+          projectId: user.projectId || '',
+          projectAbbrDisplayCache: user.projectAbbr || '',
+          projectDisplayVersion: 1,
+          requestId: event.requestId,
+          scheduleKey,
+          segments,
+          firstStartAt: segments[0].startAt,
+          lastEndAt: segments[segments.length - 1].endAt,
+          durationHours,
+          remark: event.remark || '',
+          status,
+          previousStatus: '',
+          bookingType,
+          specialReasons,
+          reviewReason: '',
+          cancellationNote: '',
+          terminationReasonCode: '',
+          reviewedBy: '',
+          createdAt: nowServer,
+          updatedAt: nowServer,
+        },
+      })
+
+      return { duplicateRequest: false, bookingId: bookingRes._id }
+    })
+
+    if (result.duplicateRequest) {
+      return ok({
+        bookingId: result.bookingId,
+        status: result.status,
+        bookingType: result.bookingType,
+        duplicateRequest: true,
+      })
+    }
+
+    return ok({ bookingId: result.bookingId, status, bookingType, specialReasons, scheduleKey })
+  } catch (err) {
+    if (err && err.code) return fail(err.code, err.message)
+    return fail('SYSTEM_BUSY', '系统繁忙，请稍后重试')
+  }
 }

@@ -23,7 +23,7 @@ exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   if (!(await isAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
 
-  const registrationPending = await db.collection('users').where({ registrationStatus: 'pending' }).count()
+  const registrationPending = await db.collection('registration_applications').where({ status: 'pending' }).count()
   const projectPending = await db.collection('project_applications').where({ status: 'pending' }).count()
   const bookingPending = await db.collection('bookings').where({ status: 'pending_review' }).count()
   const cancelPending = await db.collection('bookings').where({ status: _.in(['cancel_pending', 'rule_review_pending']) }).count()

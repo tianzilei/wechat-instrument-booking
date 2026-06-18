@@ -23,7 +23,7 @@ exports.main = async (event) => {
       return fail('CONTENT_UNSAFE', '课题信息包含违规内容')
     }
   } catch (err) {
-    console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+    return fail('CONTENT_CHECK_FAILED', '课题信息内容安全校验失败，请稍后重试')
   }
 
   const existing = await db.collection('project_applications').where({ userId: user._id, status: 'pending' }).limit(1).get()

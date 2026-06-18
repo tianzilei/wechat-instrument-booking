@@ -30,26 +30,32 @@ exports.main = async (event) => {
         return fail('CONTENT_UNSAFE', '拒绝原因包含违规信息')
       }
     } catch (err) {
-      console.warn('msgSecCheck unavailable, proceeding:', err.errCode || err.message)
+      return fail('CONTENT_CHECK_FAILED', '拒绝原因内容安全校验失败，请稍后重试')
     }
   }
 
   const now = db.serverDate()
+  let resultStatus = booking.previousStatus || 'confirmed'
   if (event.action === 'approve') {
+    const currentTime = new Date()
     const segments = (booking.segments || []).map((s) => ({
       ...s,
-      state: s.state === 'active' ? 'cancelled' : s.state,
-      cancelledAt: now,
-      cancelReasonCode: 'cancel_approved',
+      state: s.state === 'active' && new Date(s.startAt) > currentTime ? 'cancelled' : s.state,
+      cancelledAt: s.state === 'active' && new Date(s.startAt) > currentTime ? now : s.cancelledAt,
+      cancelReasonCode: s.state === 'active' && new Date(s.startAt) > currentTime ? 'cancel_approved' : s.cancelReasonCode,
     }))
+    const allFutureCancelled = segments.every((s) => s.state !== 'active' || new Date(s.startAt) <= currentTime)
+    const nextStatus = allFutureCancelled ? 'cancelled' : (booking.previousStatus || 'confirmed')
+    resultStatus = nextStatus
     await db.collection('bookings').doc(event.bookingId).update({
-      data: { status: 'cancelled', segments, updatedAt: now },
+      data: { status: nextStatus, previousStatus: '', segments, updatedAt: now },
     })
   } else {
     const previousStatus = booking.previousStatus || 'confirmed'
     if (!['confirmed', 'pending_review'].includes(previousStatus)) {
       return fail('STATE_CHANGED', '预约状态异常')
     }
+    resultStatus = previousStatus
     await db.collection('bookings').doc(event.bookingId).update({
       data: { status: previousStatus, previousStatus: '', updatedAt: now },
     })
@@ -63,5 +69,5 @@ exports.main = async (event) => {
     },
   })
 
-  return ok({ bookingId: event.bookingId, status: event.action === 'approve' ? 'cancelled' : booking.previousStatus })
+  return ok({ bookingId: event.bookingId, status: resultStatus })
 }
