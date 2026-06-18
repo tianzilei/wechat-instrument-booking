@@ -55,6 +55,33 @@
   line-height: 1.5;
 }
 
+.sheet__details {
+  margin-top: 20rpx;
+  border-top: 1rpx solid var(--color-divider);
+}
+
+.sheet__detail-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24rpx;
+  padding: 16rpx 0;
+  border-bottom: 1rpx solid var(--color-divider);
+}
+
+.sheet__detail-label {
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.sheet__detail-value {
+  min-width: 0;
+  text-align: right;
+  font-size: var(--font-size-sm);
+  line-height: 1.55;
+}
+
 .sheet__hint {
   margin-top: 16rpx;
   padding: 16rpx;
@@ -91,6 +118,12 @@
   gap: 12rpx;
   min-width: 320rpx;
   max-width: 58vw;
+}
+
+.sheet__actions--single {
+  grid-template-columns: minmax(180rpx, 1fr);
+  min-width: 180rpx;
+  max-width: 240rpx;
 }
 
 .sheet__action {

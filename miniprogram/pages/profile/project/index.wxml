@@ -1,0 +1,82 @@
+<view class="page project-page">
+  <view class="page-intro">仅显示未来预约和最近 {{scopeDays}} 天内已开启的记录，方便课题成员同步排期。</view>
+
+  <empty-state wx:if="{{!accessible && !loading}}" title="{{errorTitle}}" description="{{errorDescription}}" />
+
+  <block wx:if="{{accessible && project}}">
+    <view class="surface-section dashboard-summary project-summary project-dashboard">
+      <view>
+        <view class="project-name">{{project.name || '未命名课题'}}</view>
+        <view class="page-subtitle">{{project.abbr ? '课题简称：' + project.abbr : '课题简称待补充'}}</view>
+      </view>
+      <status-tag text="{{projectStatusText}}" tone="{{projectStatusTone}}" />
+    </view>
+
+    <view wx:if="{{notice}}" class="section">
+      <view class="dashboard-note project-dashboard">{{notice}}</view>
+    </view>
+
+    <view class="section stat-grid dashboard-grid project-dashboard">
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{summary.memberCount || 0}}</view>
+        <view class="stat-label">成员总数</view>
+      </view>
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{summary.activeMemberCount || 0}}</view>
+        <view class="stat-label">当前可用成员</view>
+      </view>
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{summary.futureBookingCount || 0}}</view>
+        <view class="stat-label">未来预约</view>
+      </view>
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{summary.recentBookingCount || 0}}</view>
+        <view class="stat-label">近期已开启</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">课题成员</view>
+      <empty-state wx:if="{{members.length === 0}}" title="暂无成员" description="当前课题下还没有可展示的成员。" />
+      <view wx:if="{{members.length > 0}}" class="surface-section">
+        <view wx:for="{{members}}" wx:key="_id" class="list-card project-row">
+          <view>
+            <view class="project-row__title">{{item.name || '未命名成员'}}</view>
+            <view class="page-subtitle">{{item.role === 'admin' ? '管理员成员' : '课题成员'}}</view>
+          </view>
+          <status-tag text="{{item.tagText}}" tone="{{item.tagTone}}" />
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">未来预约</view>
+      <empty-state wx:if="{{futureBookings.length === 0}}" title="暂无未来预约" description="新的课题内预约会显示在这里。" />
+      <view wx:if="{{futureBookings.length > 0}}" class="surface-section">
+        <view wx:for="{{futureBookings}}" wx:key="_id" class="list-card booking-row">
+          <view class="row-between booking-row__head">
+            <view class="booking-row__name">{{item.userName}}</view>
+            <status-tag text="{{item.statusText}}" tone="{{item.statusTone}}" />
+          </view>
+          <view class="page-subtitle">{{item.timeText}}</view>
+          <view class="booking-row__meta">{{item.hoursText}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">最近 {{scopeDays}} 天内已开启</view>
+      <empty-state wx:if="{{recentBookings.length === 0}}" title="暂无近期记录" description="最近开始的课题内预约会显示在这里。" />
+      <view wx:if="{{recentBookings.length > 0}}" class="surface-section">
+        <view wx:for="{{recentBookings}}" wx:key="_id" class="list-card booking-row">
+          <view class="row-between booking-row__head">
+            <view class="booking-row__name">{{item.userName}}</view>
+            <status-tag text="{{item.statusText}}" tone="{{item.statusTone}}" />
+          </view>
+          <view class="page-subtitle">{{item.timeText}}</view>
+          <view class="booking-row__meta">{{item.hoursText}}</view>
+        </view>
+      </view>
+    </view>
+  </block>
+</view>

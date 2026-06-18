@@ -1,3 +1,16 @@
+.admin-dashboard {
+  --dashboard-accent: var(--color-maintenance);
+}
+
+.admin-summary {
+  align-items: flex-start;
+}
+
+.admin-summary__title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
 .admin-todo-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6,19 +19,6 @@
 
 .admin-todo-card {
   min-height: 224rpx;
-  padding: 24rpx;
-}
-
-.admin-todo-card__count {
-  color: var(--color-primary);
-  font-size: 56rpx;
-  font-weight: 700;
-  line-height: 1;
-}
-
-.admin-todo-card__title {
-  margin-top: 16rpx;
-  font-weight: 700;
 }
 
 .admin-nav {
@@ -30,6 +30,10 @@
 
 .admin-nav__title {
   font-weight: 600;
+}
+
+.admin-nav-panel {
+  --dashboard-accent: var(--color-maintenance);
 }
 
 @media (max-width: 620rpx) {

@@ -5,16 +5,20 @@ Component({
       {
         pagePath: '/pages/calendar/index',
         text: '周历',
+        theme: 'calendar',
       },
       {
         pagePath: '/pages/profile/index/index',
         text: '我的',
+        theme: 'profile',
       },
       {
         pagePath: '/pages/admin/index/index',
         text: '管理',
+        theme: 'admin',
       },
     ],
+    theme: 'calendar',
   },
 
   lifetimes: {
@@ -37,7 +41,10 @@ Component({
       const route = `/${current.route}`
       const selected = this.data.list.findIndex((item) => item.pagePath === route)
       if (selected >= 0) {
-        this.setData({ selected })
+        this.setData({
+          selected,
+          theme: this.data.list[selected].theme || 'calendar',
+        })
       }
     },
 

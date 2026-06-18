@@ -53,8 +53,8 @@
       <view class="legal-heading">三、信息用途</view>
       <view class="legal-text">您的个人信息仅用于以下目的：</view>
       <view class="legal-text">1. 用户身份标识与管理员审核。</view>
-      <view class="legal-text">2. 周历公开展示（仅课题缩写和占用状态，不含姓名、备注或 OpenID）。</view>
-      <view class="legal-text">3. 管理员进行预约管理和仪器维护。</view>
+      <view class="legal-text">2. 周历按权限展示课题缩写、占用状态及必要的成员姓名信息。</view>
+      <view class="legal-text">3. 管理员进行预约管理、仪器维护和内部运营导出。</view>
       <view class="legal-text">4. 生成匿名化的使用统计数据。</view>
       <view class="legal-text">5. 处理您的隐私相关请求。</view>
       <view class="legal-text">6. 记录协议同意状态以满足合规要求。</view>
@@ -63,9 +63,10 @@
     <view class="legal-section">
       <view class="legal-heading">四、信息展示范围</view>
       <view class="legal-text">1. 游客和未登录用户：只能看到周历中的课题缩写和占用状态，看不到姓名。</view>
-      <view class="legal-text">2. 普通登录用户：只能看到其他用户的课题缩写，看不到他人姓名、备注或 OpenID。</view>
-      <view class="legal-text">3. 管理员：因注册审核和仪器管理需要，可以查看用户姓名。</view>
-      <view class="legal-text">4. OpenID 不在任何页面展示，不向任何用户返回。</view>
+      <view class="legal-text">2. 同课题成员：可在周历中看到本课题预约人的姓名，用于课题内协同排期。</view>
+      <view class="legal-text">3. 其他普通登录用户：只能看到课题缩写和占用状态，看不到他人姓名、备注或 OpenID。</view>
+      <view class="legal-text">4. 管理员：因注册审核、仪器管理和运营导出需要，可以查看全部预约人的姓名与课题归属。</view>
+      <view class="legal-text">5. OpenID 不在任何页面展示，不向任何用户返回，也不包含在管理员导出中。</view>
     </view>
 
     <view class="legal-section">
@@ -103,7 +104,8 @@
       <view class="legal-heading">八、信息共享与披露</view>
       <view class="legal-text">1. 本小程序不出售、不交易、不向无关第三方提供用户个人信息。</view>
       <view class="legal-text">2. 除法律法规要求外，不向任何第三方公开披露用户数据。</view>
-      <view class="legal-text">3. 管理员仅因管理需要查看用户姓名，不得用于其他目的。</view>
+      <view class="legal-text">3. 管理员仅因预约管理、课题协同核对和内部运营导出需要查看姓名与课题信息，不得用于其他目的。</view>
+      <view class="legal-text">4. 管理员导出文件仅用于内部管理，不包含 openid、备注、隐私请求和审核日志。</view>
     </view>
 
     <view class="legal-section">

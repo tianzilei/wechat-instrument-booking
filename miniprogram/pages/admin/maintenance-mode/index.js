@@ -83,32 +83,39 @@ Page({
 
   async exportData() {
     if (this.data.exporting) return
-    this.setData({ exporting: true })
-    wx.showLoading({ title: '正在导出' })
-    try {
-      const result = await api.callFunction('exportOperationalData')
-      const download = await new Promise((resolve, reject) => {
-        wx.cloud.downloadFile({
-          fileID: result.fileId,
-          success: resolve,
-          fail: reject,
-        })
-      })
-      wx.hideLoading()
-      if (typeof wx.shareFileMessage === 'function') {
-        wx.shareFileMessage({
-          filePath: download.tempFilePath,
-          fileName: result.fileName,
-          fail: () => wx.setClipboardData({ data: result.tempFileURL }),
-        })
-      } else {
-        wx.setClipboardData({ data: result.tempFileURL })
-      }
-    } catch (err) {
-      wx.hideLoading()
-      api.showError(err)
-    } finally {
-      this.setData({ exporting: false })
-    }
+    wx.showModal({
+      title: '导出运营数据',
+      content: '该导出仅限管理员内部使用，包含课题组与预约人信息，不包含 openid、备注、隐私请求和审核日志。确认继续导出吗？',
+      success: async (res) => {
+        if (!res.confirm) return
+        this.setData({ exporting: true })
+        wx.showLoading({ title: '正在导出' })
+        try {
+          const result = await api.callFunction('exportOperationalData')
+          const download = await new Promise((resolve, reject) => {
+            wx.cloud.downloadFile({
+              fileID: result.fileId,
+              success: resolve,
+              fail: reject,
+            })
+          })
+          wx.hideLoading()
+          if (typeof wx.shareFileMessage === 'function') {
+            wx.shareFileMessage({
+              filePath: download.tempFilePath,
+              fileName: result.fileName,
+              fail: () => wx.setClipboardData({ data: result.tempFileURL }),
+            })
+          } else {
+            wx.setClipboardData({ data: result.tempFileURL })
+          }
+        } catch (err) {
+          wx.hideLoading()
+          api.showError(err)
+        } finally {
+          this.setData({ exporting: false })
+        }
+      },
+    })
   },
 })

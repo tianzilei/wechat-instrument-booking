@@ -5,20 +5,28 @@
   <empty-state wx:if="{{!isAdmin}}" title="暂无管理权限" description="管理员身份需要在数据库中手动设置。" />
 
   <block wx:else>
+    <view class="surface-section dashboard-summary admin-summary admin-dashboard">
+      <view>
+        <view class="admin-summary__title">当前待办 {{totalTodoCount}} 项</view>
+        <view class="page-subtitle">审核、取消与隐私请求优先从下方 dashboard 进入。</view>
+      </view>
+      <status-tag text="管理员" tone="danger" />
+    </view>
+
     <view class="section">
       <view class="section-title">待办直达</view>
-      <view class="admin-todo-grid">
-        <view wx:for="{{todoCards}}" wx:key="key" class="surface-section admin-todo-card" data-url="{{item.url}}" bindtap="goPage">
-          <view class="admin-todo-card__count">{{item.count}}</view>
-          <view class="admin-todo-card__title">{{item.title}}</view>
-          <view class="page-subtitle">{{item.desc}}</view>
+      <view class="admin-todo-grid dashboard-grid admin-dashboard">
+        <view wx:for="{{todoCards}}" wx:key="key" class="stat-card dashboard-stat admin-todo-card" data-url="{{item.url}}" bindtap="goPage">
+          <view class="dashboard-stat__value">{{item.count}}</view>
+          <view class="dashboard-stat__title">{{item.title}}</view>
+          <view class="dashboard-stat__desc">{{item.desc}}</view>
         </view>
       </view>
     </view>
 
     <view class="section">
       <view class="section-title">其他功能</view>
-      <view class="surface-section">
+      <view class="surface-section admin-nav-panel">
         <view wx:for="{{navs}}" wx:key="url" class="list-card admin-nav" data-url="{{item.url}}" bindtap="goPage">
           <view>
             <view class="admin-nav__title">{{item.title}}</view>

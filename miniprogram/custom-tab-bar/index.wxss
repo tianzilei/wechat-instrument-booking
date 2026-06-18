@@ -1,4 +1,5 @@
 .tab-bar {
+  --tab-bar-accent: var(--color-primary);
   position: fixed;
   left: 0;
   right: 0;
@@ -12,6 +13,18 @@
   background: var(--color-surface);
 }
 
+.tab-bar--calendar {
+  --tab-bar-accent: var(--color-primary);
+}
+
+.tab-bar--profile {
+  --tab-bar-accent: var(--color-accent);
+}
+
+.tab-bar--admin {
+  --tab-bar-accent: var(--color-maintenance);
+}
+
 .tab-bar__item {
   display: flex;
   align-items: center;
@@ -21,7 +34,7 @@
 }
 
 .tab-bar__item--active {
-  color: var(--color-primary);
+  color: var(--tab-bar-accent);
 }
 
 .tab-bar__text {

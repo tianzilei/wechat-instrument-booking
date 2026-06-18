@@ -1,0 +1,41 @@
+.project-dashboard {
+  --dashboard-accent: var(--color-accent);
+}
+
+.project-summary {
+  align-items: flex-start;
+}
+
+.project-name {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.project-row,
+.booking-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24rpx;
+  min-height: 96rpx;
+}
+
+.project-row__title,
+.booking-row__name {
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+
+.booking-row {
+  display: block;
+}
+
+.booking-row__head {
+  align-items: flex-start;
+}
+
+.booking-row__meta {
+  margin-top: 8rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}

@@ -59,6 +59,15 @@ async function getSettings() {
   }
 }
 
+function buildMap(items, keyField) {
+  return (items || []).reduce((map, item) => {
+    if (item && item[keyField]) {
+      map[item[keyField]] = item
+    }
+    return map
+  }, {})
+}
+
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   const admin = await getAdmin(OPENID)
@@ -66,6 +75,7 @@ exports.main = async () => {
 
   const [
     settings,
+    users,
     projects,
     bookings,
     waitlists,
@@ -77,11 +87,24 @@ exports.main = async () => {
     projectApplicationCount,
   ] = await Promise.all([
     getSettings(),
+    fetchCollection('users', {
+      _id: true,
+      role: true,
+      accountStatus: true,
+      registrationStatus: true,
+      name: true,
+      projectId: true,
+      projectName: true,
+      projectAbbr: true,
+      createdAt: true,
+      updatedAt: true,
+    }),
     fetchCollection('projects', {
       _id: true, name: true, abbr: true, status: true, createdAt: true, updatedAt: true,
     }),
     fetchCollection('bookings', {
       _id: true,
+      userId: true,
       projectId: true,
       projectAbbrDisplayCache: true,
       segments: true,
@@ -95,7 +118,9 @@ exports.main = async () => {
     }),
     fetchCollection('waitlists', {
       _id: true,
+      userId: true,
       projectId: true,
+      projectAbbrDisplayCache: true,
       scheduleKey: true,
       segments: true,
       status: true,
@@ -126,24 +151,50 @@ exports.main = async () => {
     db.collection('project_applications').count(),
   ])
 
+  const userMap = buildMap(users.items, '_id')
+  const projectMap = buildMap(projects.items, '_id')
+  const exportedBookings = bookings.items.map((item) => {
+    const user = userMap[item.userId] || {}
+    const project = projectMap[item.projectId] || {}
+    return {
+      ...item,
+      userName: user.name || '',
+      projectName: project.name || user.projectName || '',
+      projectAbbr: item.projectAbbrDisplayCache || project.abbr || user.projectAbbr || '',
+    }
+  })
+  const exportedWaitlists = waitlists.items.map((item) => {
+    const user = userMap[item.userId] || {}
+    const project = projectMap[item.projectId] || {}
+    return {
+      ...item,
+      userName: user.name || '',
+      projectName: project.name || user.projectName || '',
+      projectAbbr: item.projectAbbrDisplayCache || project.abbr || user.projectAbbr || '',
+    }
+  })
+
   const now = new Date()
   const exportData = {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: now.toISOString(),
-    privacyNotice: 'This export excludes personal names, openid, user remarks, privacy requests, and audit logs.',
+    exportScope: 'Admin-only operational export for internal scheduling, project governance, and booking audits.',
+    privacyNotice: 'This admin-only export includes booking user names and project affiliation. It excludes openid, booking remarks, privacy requests, and review logs.',
     summary: {
       users: userCount.total,
       registrationApplications: registrationCount.total,
       projectApplications: projectApplicationCount.total,
     },
     settings,
+    users: users.items,
     projects: projects.items,
-    bookings: bookings.items,
-    waitlists: waitlists.items,
+    bookings: exportedBookings,
+    waitlists: exportedWaitlists,
     maintenanceSlots: maintenanceSlots.items,
     restrictedSlots: restrictedSlots.items,
     monthlyStats: monthlyStats.items,
     truncated: {
+      users: users.truncated,
       projects: projects.truncated,
       bookings: bookings.truncated,
       waitlists: waitlists.truncated,

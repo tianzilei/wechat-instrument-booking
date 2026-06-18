@@ -132,13 +132,14 @@ Component({
 
       const booking = this.properties.items.find((item) => this.overlaps(keyTime, nextTime, item.startAt, item.endAt))
       if (booking) {
-        const isPendingReview = ['pending_review', 'cancel_pending', 'rule_review_pending'].includes(booking.status)
         return {
           className: getCellClass(booking.status),
-          text: booking.projectAbbr || (isPendingReview ? '待审核' : '已占用'),
+          text: booking.projectAbbr || (booking.status === 'pending_review' ? '待审核' : '已占用'),
           subtext: booking.userName || '',
           status: booking.status,
           bookingId: booking.bookingId,
+          projectAbbr: booking.projectAbbr || '',
+          userName: booking.userName || '',
         }
       }
 

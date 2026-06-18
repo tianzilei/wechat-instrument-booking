@@ -1,6 +1,7 @@
 const app = getApp()
 const api = require('../../utils/api')
 const dateUtils = require('../../utils/date')
+const { getBookingStatus } = require('../../utils/status')
 const { setTabBarSelected } = require('../../utils/tabbar')
 
 const HOME_SHARE_PATH = '/pages/calendar/index'
@@ -81,6 +82,23 @@ function buildUserHint() {
   return '未登录用户可查看占用情况'
 }
 
+function buildRangeTimeText(range) {
+  return `${dateUtils.formatDateTime(range.startAt)} - ${dateUtils.formatTime(range.endAt)}`
+}
+
+function buildOccupiedHint(user) {
+  if (!user) {
+    return '登录并通过注册审核后，可在这里加入候补排队。'
+  }
+  if (user.accountStatus && user.accountStatus !== 'active') {
+    return '当前账号状态异常，暂不可加入候补。'
+  }
+  if (!app.isApprovedUser()) {
+    return '注册审核通过并关联课题后，可在这里加入候补排队。'
+  }
+  return '该时段已被占用，可加入候补排队；时段释放后将按顺序确认。'
+}
+
 Page({
   data: {
     weekStart: '',
@@ -104,9 +122,13 @@ Page({
       hint: '',
       hintTone: 'warning',
       submitText: '确认预约',
+      cancelText: '取消',
       disabled: false,
       mode: 'booking',
       primaryClass: 'sheet__action--primary',
+      showSubmit: true,
+      showRemark: true,
+      detailLines: [],
     },
     maintenanceModal: {
       visible: false,
@@ -181,6 +203,7 @@ Page({
             startAt: slot.startAt,
             endAt: slot.endAt,
             projectAbbr: slot.projectAbbr || '',
+            userName: slot.userName || '',
             publicRenderId: slot.publicRenderId || '',
           })
         }
@@ -277,9 +300,13 @@ Page({
         hint: isSpecial ? '该时段命中非工作时间或周末，提交后需管理员审核。' : '',
         hintTone: 'warning',
         submitText: isSpecial ? '提交审核' : '确认预约',
+        cancelText: '取消',
         disabled: false,
         mode: 'booking',
         primaryClass: getSheetPrimaryClass('booking'),
+        showSubmit: true,
+        showRemark: true,
+        detailLines: [],
       },
     })
   },
@@ -306,13 +333,60 @@ Page({
       sheet: {
         visible: true,
         title: '加入候补',
-        timeText: `${dateUtils.formatDateTime(range.startAt)} - ${dateUtils.formatTime(range.endAt)}`,
+        timeText: buildRangeTimeText(range),
         hint: '该时段已被占用。提交后进入候补队列，时段释放时按顺序确认。',
         hintTone: 'accent',
         submitText: '加入候补',
+        cancelText: '取消',
         disabled: false,
         mode: 'waitlist',
         primaryClass: getSheetPrimaryClass('waitlist'),
+        showSubmit: true,
+        showRemark: true,
+        detailLines: [],
+      },
+    })
+  },
+
+  openOccupiedSheet(cell, cellData) {
+    const range = this.buildSingleRange(cell)
+    if (!range) return
+    const user = app.globalData.user
+    const status = getBookingStatus(cellData.status)
+    const allowWaitlist = !!(user && app.isApprovedUser() && !app.isAdmin())
+    const detailLines = [
+      {
+        label: '课题',
+        value: cellData.projectAbbr || '已占用',
+      },
+      {
+        label: '状态',
+        value: status.text,
+      },
+    ]
+    if (cellData.userName) {
+      detailLines.splice(1, 0, {
+        label: '预约人',
+        value: cellData.userName,
+      })
+    }
+    this.setData({
+      selectedRange: null,
+      selectedSegments: allowWaitlist ? [range] : [],
+      sheet: {
+        visible: true,
+        title: '时段信息',
+        timeText: buildRangeTimeText(range),
+        hint: buildOccupiedHint(user),
+        hintTone: allowWaitlist ? 'accent' : 'warning',
+        submitText: '加入候补',
+        cancelText: '关闭',
+        disabled: !allowWaitlist,
+        mode: allowWaitlist ? 'waitlist' : 'info',
+        primaryClass: getSheetPrimaryClass('waitlist'),
+        showSubmit: allowWaitlist,
+        showRemark: allowWaitlist,
+        detailLines,
       },
     })
   },
@@ -356,7 +430,7 @@ Page({
         return
       }
       if ((cellData.status === 'confirmed' || cellData.status === 'pending_review' || cellData.status === 'rule_review_pending' || cellData.status === 'cancel_pending') && cellData.bookingId) {
-        const mode = cellData.status === 'pending_review' || cellData.status === 'rule_review_pending' || cellData.status === 'cancel_pending' ? '&mode=review' : ''
+        const mode = cellData.status === 'pending_review' ? '&mode=review' : ''
         wx.navigateTo({ url: `/pages/admin/booking-detail/index?bookingId=${cellData.bookingId}${mode}` })
         return
       }
@@ -365,7 +439,7 @@ Page({
     }
     if (cellData.status !== 'available') {
       if (cellData.status === 'confirmed' || cellData.status === 'pending_review' || cellData.status === 'rule_review_pending' || cellData.status === 'cancel_pending') {
-        this.openWaitlistSheet(cell)
+        this.openOccupiedSheet(cell, cellData)
       }
       return
     }

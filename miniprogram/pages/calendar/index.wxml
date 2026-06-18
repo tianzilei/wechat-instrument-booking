@@ -43,8 +43,12 @@
     hint="{{sheet.hint}}"
     hint-tone="{{sheet.hintTone}}"
     submit-text="{{sheet.submitText}}"
+    cancel-text="{{sheet.cancelText}}"
     disabled="{{sheet.disabled}}"
     primary-class="{{sheet.primaryClass}}"
+    show-submit="{{sheet.showSubmit}}"
+    show-remark="{{sheet.showRemark}}"
+    detail-lines="{{sheet.detailLines}}"
     bind:close="closeSheet"
     bind:submit="submitSheet"
   />

@@ -16,6 +16,11 @@ function buildPrimaryAction(user) {
   return { visible: false, text: '', mode: '' }
 }
 
+function shouldShowProjectEntry(user) {
+  if (!user || user.role === 'admin') return false
+  return user.registrationStatus === 'approved' && !!user.projectId
+}
+
 Page({
   data: {
     user: null,
@@ -25,6 +30,7 @@ Page({
     showPrimaryAction: false,
     primaryActionText: '',
     primaryActionMode: '',
+    showProjectEntry: false,
   },
 
   onShow() {
@@ -56,6 +62,7 @@ Page({
       showPrimaryAction: action.visible,
       primaryActionText: action.text,
       primaryActionMode: action.mode,
+      showProjectEntry: shouldShowProjectEntry(user),
     })
   },
 
@@ -110,6 +117,10 @@ Page({
 
   goStats() {
     wx.navigateTo({ url: '/pages/profile/stats/index' })
+  },
+
+  goProject() {
+    wx.navigateTo({ url: '/pages/profile/project/index' })
   },
 
   goAgreement() {

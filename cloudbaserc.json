@@ -26,6 +26,7 @@
     { "name": "getAdminStats", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "getLegalDocuments", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "getMyBookingDetail", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
+    { "name": "getMyProjectOverview", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "getPrivacyRequestDetail", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "getProjectApplicationDetail", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },
     { "name": "getPublicCalendar", "runtime": "Nodejs18.15", "handler": "index.main", "timeout": 15 },

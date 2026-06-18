@@ -24,6 +24,10 @@ Component({
       type: String,
       value: '确认预约',
     },
+    cancelText: {
+      type: String,
+      value: '取消',
+    },
     disabled: {
       type: Boolean,
       value: false,
@@ -32,10 +36,30 @@ Component({
       type: String,
       value: 'button--primary',
     },
+    showSubmit: {
+      type: Boolean,
+      value: true,
+    },
+    showRemark: {
+      type: Boolean,
+      value: true,
+    },
+    detailLines: {
+      type: Array,
+      value: [],
+    },
   },
 
   data: {
     remark: '',
+  },
+
+  observers: {
+    visible(value) {
+      if (!value) {
+        this.setData({ remark: '' })
+      }
+    },
   },
 
   methods: {
@@ -50,6 +74,7 @@ Component({
       this.triggerEvent('close')
     },
     onSubmit() {
+      if (!this.properties.showSubmit || this.properties.disabled) return
       this.triggerEvent('submit', {
         remark: this.data.remark,
       })

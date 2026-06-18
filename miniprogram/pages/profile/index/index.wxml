@@ -5,7 +5,7 @@
   </view>
 
   <block wx:else>
-    <view class="surface-section profile-summary">
+    <view class="surface-section dashboard-summary profile-summary profile-dashboard">
       <view>
         <view class="profile-name">{{user.name || '未填写姓名'}}</view>
         <view class="page-subtitle">{{user.projectName ? user.projectName + ' · ' + user.projectAbbr : '未关联课题'}}</view>
@@ -18,28 +18,28 @@
     </view>
 
     <view class="section-title profile-section-title">预约统计</view>
-    <view class="section stat-grid">
-      <view class="stat-card">
-        <view class="stat-value">{{stats.totalHours || 0}}</view>
+    <view class="section stat-grid dashboard-grid profile-dashboard">
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{stats.totalHours || 0}}</view>
         <view class="stat-label">总预约小时</view>
       </view>
-      <view class="stat-card">
-        <view class="stat-value">{{stats.weekHours || 0}}</view>
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{stats.weekHours || 0}}</view>
         <view class="stat-label">本周小时</view>
       </view>
-      <view class="stat-card">
-        <view class="stat-value">{{stats.monthHours || 0}}</view>
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{stats.monthHours || 0}}</view>
         <view class="stat-label">本月小时</view>
       </view>
-      <view class="stat-card">
-        <view class="stat-value">{{stats.pendingCount || 0}}</view>
+      <view class="stat-card dashboard-stat">
+        <view class="dashboard-stat__value">{{stats.pendingCount || 0}}</view>
         <view class="stat-label">审核中</view>
       </view>
     </view>
 
     <view class="section">
       <view class="section-title">预约与账号</view>
-      <view class="surface-section">
+      <view class="surface-section profile-entry-panel">
         <view class="list-card nav-row" bindtap="goBookings">
           <view>
             <view class="nav-title">我的预约</view>
@@ -50,6 +50,12 @@
           <view>
             <view class="nav-title">我的候补</view>
             <view class="page-subtitle">候补中与待确认记录</view>
+          </view>
+        </view>
+        <view wx:if="{{showProjectEntry}}" class="list-card nav-row" bindtap="goProject">
+          <view>
+            <view class="nav-title">我的课题</view>
+            <view class="page-subtitle">课题成员与课题内近期预约记录</view>
           </view>
         </view>
         <view class="list-card nav-row" bindtap="goStats">

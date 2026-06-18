@@ -16,11 +16,16 @@ function buildTodoCards(dashboard) {
   }))
 }
 
+function getTotalTodoCount(dashboard) {
+  return TODO_CARD_DEFS.reduce((total, item) => total + ((dashboard && dashboard[item.key]) || 0), 0)
+}
+
 Page({
   data: {
     isAdmin: false,
     dashboard: {},
     todoCards: buildTodoCards(),
+    totalTodoCount: 0,
     navs: [
       { title: '维护', desc: '创建和删除维护时间', url: '/pages/admin/maintenance/index' },
       { title: '设置', desc: '服务模式、统计与导出', url: '/pages/admin/maintenance-mode/index' },
@@ -36,9 +41,17 @@ Page({
   async loadDashboard() {
     try {
       const dashboard = await api.callFunction('getAdminDashboard')
-      this.setData({ dashboard, todoCards: buildTodoCards(dashboard) })
+      this.setData({
+        dashboard,
+        todoCards: buildTodoCards(dashboard),
+        totalTodoCount: getTotalTodoCount(dashboard),
+      })
     } catch (err) {
-      this.setData({ dashboard: {}, todoCards: buildTodoCards() })
+      this.setData({
+        dashboard: {},
+        todoCards: buildTodoCards(),
+        totalTodoCount: 0,
+      })
     }
   },
 

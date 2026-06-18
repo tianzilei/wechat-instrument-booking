@@ -1,10 +1,9 @@
+.profile-dashboard {
+  --dashboard-accent: var(--color-accent);
+}
+
 .profile-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24rpx;
-  padding-top: 24rpx;
-  padding-bottom: 24rpx;
+  align-items: flex-start;
 }
 
 .profile-name {
@@ -14,6 +13,10 @@
 
 .profile-section-title {
   margin-top: 24rpx;
+}
+
+.profile-entry-panel {
+  --dashboard-accent: var(--color-accent);
 }
 
 .nav-row {
