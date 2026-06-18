@@ -2,12 +2,12 @@
   <view class="page-intro">处理用户提交的隐私请求（查询、更正、删除、撤回同意、注销、投诉）。</view>
 
   <view wx:if="{{items.length > 0}}" class="surface-section">
-    <view class="list-card" wx:for="{{items}}" wx:key="_id" data-id="{{item._id}}" bindtap="openDetail">
+    <view class="list-card review-card" wx:for="{{items}}" wx:key="_id" data-id="{{item._id}}" bindtap="openDetail">
       <view class="row-between">
-        <view class="nav-title">{{getTypeLabel(item.type)}}</view>
+        <view class="review-title">{{item.userName || '未知用户'}} · {{getTypeLabel(item.type)}}</view>
         <status-tag text="待处理" tone="warning" />
       </view>
-      <view wx:if="{{item.note}}" class="page-subtitle">说明：{{item.note}}</view>
+      <view class="page-subtitle">请求说明：{{item.note || '无说明'}}</view>
       <view class="page-subtitle">提交时间：{{item.createdAt ? item.createdAt.slice(0,10) : ''}}</view>
     </view>
   </view>

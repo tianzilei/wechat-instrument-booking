@@ -1,6 +1,7 @@
 {
   "navigationBarTitleText": "隐私请求管理",
   "usingComponents": {
+    "empty-state": "../../../components/empty-state/index",
     "status-tag": "../../../components/status-tag/index"
   }
 }

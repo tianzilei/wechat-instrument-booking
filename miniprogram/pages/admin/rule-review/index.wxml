@@ -2,12 +2,13 @@
   <view class="page-intro">工作时间规则变更后，命中新规则的预约需复审确认。</view>
 
   <view wx:if="{{items.length > 0}}" class="surface-section">
-    <view class="list-card" wx:for="{{items}}" wx:key="_id" data-id="{{item._id}}" bindtap="openDetail">
+    <view class="list-card review-card" wx:for="{{items}}" wx:key="_id" data-id="{{item._id}}" bindtap="openDetail">
       <view class="row-between">
-        <view class="nav-title">{{item.userName || '未知用户'}}</view>
+        <view class="review-title">{{item.userName || '未知用户'}} · {{item.projectAbbr || '未关联课题'}}</view>
         <status-tag text="规则复审中" tone="warning" />
       </view>
       <view class="page-subtitle">{{item.timeText}}</view>
+      <view class="page-subtitle">复审原因：工作时间规则变更</view>
     </view>
   </view>
 

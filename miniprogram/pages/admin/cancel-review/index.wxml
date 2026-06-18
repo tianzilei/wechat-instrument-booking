@@ -26,6 +26,7 @@
           <status-tag text="规则复审中" tone="warning" />
         </view>
         <view class="page-subtitle">{{item.timeText}}</view>
+        <view class="page-subtitle">复审原因：工作时间规则变更</view>
       </view>
     </view>
   </view>

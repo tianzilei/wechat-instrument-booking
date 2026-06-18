@@ -22,10 +22,10 @@
     <view wx:if="{{projectItems.length > 0}}" class="surface-section">
       <view wx:for="{{projectItems}}" wx:key="_id" class="list-card review-card" data-id="{{item._id}}" bindtap="openProjectDetail">
         <view class="row-between">
-          <view class="review-title">{{item.proposedName}}</view>
+          <view class="review-title">{{item.proposedName || '未填写课题名称'}}</view>
           <status-tag text="待审核" tone="warning" />
         </view>
-        <view class="page-subtitle">缩写：{{item.proposedAbbr}}</view>
+        <view class="page-subtitle">申请人：{{item.userName || '未知用户'}} · 缩写：{{item.proposedAbbr || '未填写'}}</view>
         <view class="page-subtitle">提交时间：{{item.createdAt ? item.createdAt.slice(0,10) : ''}}</view>
       </view>
     </view>
