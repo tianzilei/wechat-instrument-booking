@@ -26,6 +26,9 @@ Page({
     if (user && user.accountStatus === 'suspended') {
       statusText = '已暂停'
       statusTone = 'danger'
+    } else if (user && user.accountStatus === 'deleting') {
+      statusText = '注销处理中'
+      statusTone = 'warning'
     } else if (user && user.accountStatus === 'project_reassignment_required') {
       statusText = '需重新选课题'
       statusTone = 'warning'
@@ -112,7 +115,7 @@ Page({
               await api.callFunction('deleteAccount')
               wx.hideLoading()
               app.setUser(null)
-              wx.showToast({ title: '已注销', icon: 'none' })
+              wx.showToast({ title: '已提交注销', icon: 'none' })
               setTimeout(() => wx.switchTab({ url: '/pages/calendar/index' }), 800)
             } catch (err) {
               wx.hideLoading()

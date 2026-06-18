@@ -5,6 +5,8 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 const ACTIVE_BOOKING_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
+const BOOKING_MUTEX_DOC_ID = 'booking_schedule_mutex'
+const PAGE_SIZE = 100
 
 function ok(data) {
   return { success: true, data, error: null }
@@ -19,6 +21,41 @@ async function getAdmin(openid) {
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
+}
+
+function isWriteConflictError(err) {
+  const text = String((err && (err.errMsg || err.message || err.code)) || '').toLowerCase()
+  return text.includes('conflict')
+}
+
+async function runWithBookingMutex(holder, callback) {
+  let lastErr = null
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const transaction = await db.startTransaction()
+    try {
+      const mutexRef = transaction.collection('system_locks').doc(BOOKING_MUTEX_DOC_ID)
+      await mutexRef.get()
+      await mutexRef.set({
+        data: {
+          _id: BOOKING_MUTEX_DOC_ID,
+          holder,
+          updatedAt: db.serverDate(),
+        },
+      })
+      const result = await callback(transaction)
+      await transaction.commit()
+      return result
+    } catch (err) {
+      lastErr = err
+      try {
+        await transaction.rollback()
+      } catch (rollbackErr) {}
+      if (!isWriteConflictError(err) || attempt === 2) {
+        throw err
+      }
+    }
+  }
+  throw lastErr || new Error('booking mutex failed')
 }
 
 function isWholeHour(date) {
@@ -107,7 +144,7 @@ function buildBookingUpdate(preview, nowServer) {
   return updateData
 }
 
-async function listOverlappingBookings(startAt, endAt) {
+async function listOverlappingBookings(collectionRef, startAt, endAt) {
   const conditions = [
     {
       firstStartAt: _.lt(endAt),
@@ -126,9 +163,9 @@ async function listOverlappingBookings(startAt, endAt) {
   let hasMore = true
   let items = []
   while (hasMore) {
-    const batch = await db.collection('bookings').where(query).skip(skip).limit(100).get()
+    const batch = await collectionRef.where(query).skip(skip).limit(PAGE_SIZE).get()
     items = items.concat(batch.data)
-    if (batch.data.length < 100) {
+    if (batch.data.length < PAGE_SIZE) {
       hasMore = false
     } else {
       skip += batch.data.length
@@ -137,32 +174,11 @@ async function listOverlappingBookings(startAt, endAt) {
   return items
 }
 
-async function collectAffectedPreviews(startAt, endAt, now) {
-  const bookings = await listOverlappingBookings(startAt, endAt)
+async function collectAffectedPreviews(collectionRef, startAt, endAt, now) {
+  const bookings = await listOverlappingBookings(collectionRef, startAt, endAt)
   return bookings
     .map((booking) => buildPreview(booking, startAt, endAt, now))
     .filter((item) => item.affected)
-}
-
-async function cancelAffectedBookings(startAt, endAt, nowServer, now) {
-  const impactedIds = new Set()
-  let hasChanges = true
-
-  while (hasChanges) {
-    hasChanges = false
-    const previews = await collectAffectedPreviews(startAt, endAt, now)
-    if (previews.length === 0) break
-
-    for (const preview of previews) {
-      impactedIds.add(preview.booking._id)
-      await db.collection('bookings').doc(preview.booking._id).update({
-        data: buildBookingUpdate(preview, nowServer),
-      })
-      hasChanges = true
-    }
-  }
-
-  return [...impactedIds]
 }
 
 exports.main = async (event) => {
@@ -187,7 +203,7 @@ exports.main = async (event) => {
   }
 
   const now = new Date()
-  const previews = await collectAffectedPreviews(startAt, endAt, now)
+  const previews = await collectAffectedPreviews(db.collection('bookings'), startAt, endAt, now)
   if (event.previewOnly) {
     return ok({
       affectedBookingCount: previews.length,
@@ -197,34 +213,55 @@ exports.main = async (event) => {
     })
   }
 
-  const nowServer = db.serverDate()
-  const addRes = await db.collection('maintenance_slots').add({
-    data: {
-      startAt,
-      endAt,
-      reason: event.reason || '',
-      createdBy: admin._id,
-      cancelledBookingIds: [],
-      cancelledBookingCount: 0,
-      status: 'active',
-      createdAt: nowServer,
-      updatedAt: nowServer,
-    },
-  })
+  try {
+    const result = await runWithBookingMutex(`maintenance:${startAt.toISOString()}_${endAt.toISOString()}`, async (transaction) => {
+      const latestPreviews = await collectAffectedPreviews(transaction.collection('bookings'), startAt, endAt, new Date())
+      const cancelledBookingIds = latestPreviews.map((preview) => preview.booking._id)
+      const nowServer = db.serverDate()
+      const addRes = await transaction.collection('maintenance_slots').add({
+        data: {
+          startAt,
+          endAt,
+          reason: event.reason || '',
+          createdBy: admin._id,
+          cancelledBookingIds,
+          cancelledBookingCount: cancelledBookingIds.length,
+          status: 'active',
+          createdAt: nowServer,
+          updatedAt: nowServer,
+        },
+      })
 
-  const cancelledBookingIds = await cancelAffectedBookings(startAt, endAt, nowServer, now)
+      for (const preview of latestPreviews) {
+        await transaction.collection('bookings').doc(preview.booking._id).update({
+          data: buildBookingUpdate(preview, nowServer),
+        })
+      }
 
-  await db.collection('maintenance_slots').doc(addRes._id).update({
-    data: {
-      cancelledBookingIds,
-      cancelledBookingCount: cancelledBookingIds.length,
-      updatedAt: nowServer,
-    },
-  })
+      await transaction.collection('review_logs').add({
+        data: {
+          targetType: 'maintenance',
+          targetId: addRes._id,
+          action: 'create',
+          reason: event.reason || '',
+          reviewerId: admin._id,
+          createdAt: nowServer,
+        },
+      })
 
-  await db.collection('review_logs').add({
-    data: { targetType: 'maintenance', targetId: addRes._id, action: 'create', reason: event.reason || '', reviewerId: admin._id, createdAt: nowServer },
-  })
+      return {
+        maintenanceId: addRes._id,
+        cancelledBookingIds,
+      }
+    })
 
-  return ok({ maintenanceId: addRes._id, cancelledBookingIds, affectedBookingCount: cancelledBookingIds.length })
+    return ok({
+      maintenanceId: result.maintenanceId,
+      cancelledBookingIds: result.cancelledBookingIds,
+      affectedBookingCount: result.cancelledBookingIds.length,
+    })
+  } catch (err) {
+    if (err && err.code) return fail(err.code, err.message)
+    return fail('SYSTEM_BUSY', '系统繁忙，请稍后重试')
+  }
 }

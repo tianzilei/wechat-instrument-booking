@@ -3,7 +3,7 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
-const _ = db.command
+const PAGE_SIZE = 200
 
 function ok(data) {
   return { success: true, data, error: null }
@@ -13,63 +13,55 @@ function fail(code, message) {
   return { success: false, data: null, error: { code, message } }
 }
 
-function monthKey(date) {
-  const d = new Date(date)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
-}
-
-function isWorking(date, openStart, openEnd) {
-  const d = new Date(date)
-  const day = d.getDay()
-  const hour = d.getHours()
-  return day !== 0 && day !== 6 && hour >= openStart && hour < openEnd
-}
-
 async function isAdmin(openid) {
   if (!openid) return false
   const user = (await db.collection('users').where({ openid }).limit(1).get()).data[0]
   return user && user.role === 'admin'
 }
 
+async function fetchAllMonthlyStats() {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await db.collection('monthly_stats')
+      .field({
+        month: true,
+        date: true,
+        totalHours: true,
+        workingHours: true,
+        nonWorkingHours: true,
+      })
+      .orderBy('date', 'asc')
+      .skip(skip)
+      .limit(PAGE_SIZE)
+      .get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   if (!(await isAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
 
-  let openStartHour = 9
-  let openEndHour = 18
-  try {
-    const settingsRes = await db.collection('settings').doc('global').get()
-    const settings = settingsRes.data || {}
-    openStartHour = settings.openStartHour || 9
-    openEndHour = settings.openEndHour || 18
-  } catch (err) {}
-
-  let allBookings = []
-  let hasMore = true
-  let skip = 0
-  while (hasMore) {
-    const batch = await db.collection('bookings').where({
-      status: _.in(['confirmed', 'completed']),
-    }).skip(skip).limit(1000).get()
-    allBookings = allBookings.concat(batch.data)
-    if (batch.data.length < 1000) hasMore = false
-    else skip += batch.data.length
-  }
-
+  const dailyStats = await fetchAllMonthlyStats()
   const byMonthMap = {}
   let totalHours = 0
   let workingHours = 0
   let nonWorkingHours = 0
-  allBookings.forEach((booking) => {
-    const startAt = booking.firstStartAt || booking.startAt
-    const endAt = booking.lastEndAt || booking.endAt
-    const hours = booking.durationHours || ((new Date(endAt) - new Date(startAt)) / 3600000)
+  dailyStats.forEach((item) => {
+    const month = item.month || ''
+    const hours = item.totalHours || 0
     totalHours += hours
-    if (isWorking(startAt, openStartHour, openEndHour)) workingHours += hours
-    else nonWorkingHours += hours
-
-    const month = monthKey(startAt)
-    byMonthMap[month] = (byMonthMap[month] || 0) + hours
+    workingHours += item.workingHours || 0
+    nonWorkingHours += item.nonWorkingHours || 0
+    if (month) byMonthMap[month] = (byMonthMap[month] || 0) + hours
   })
 
   return ok({

@@ -6,6 +6,7 @@ const db = cloud.database()
 const _ = db.command
 const ACTIVE_BOOKING_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
 const BOOKING_MUTEX_DOC_ID = 'booking_schedule_mutex'
+const PAGE_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -51,11 +52,60 @@ async function runWithBookingMutex(holder, callback) {
   throw lastErr || new Error('booking mutex failed')
 }
 
+async function fetchAll(collectionRef, where) {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await collectionRef.where(where).skip(skip).limit(PAGE_SIZE).get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
+async function ensureProjectActive(userId, projectId) {
+  if (!projectId) return businessError('PROJECT_INACTIVE', '请先绑定可用课题')
+  const [projectRes, pendingChangeRes] = await Promise.all([
+    db.collection('projects').doc(projectId).field({ status: true }).get(),
+    db.collection('project_applications').where({ userId, status: 'pending' }).limit(1).get(),
+  ])
+  const project = projectRes.data
+  if (!project || project.status !== 'active') {
+    return businessError('PROJECT_INACTIVE', '课题不可用')
+  }
+  if (pendingChangeRes.data.length > 0) {
+    return businessError('PROJECT_CHANGE_PENDING', '课题变更审核中，暂不可预约')
+  }
+  return null
+}
+
+function anyMaintenanceConflict(segments, maintenanceSlots) {
+  for (const segment of segments) {
+    const segmentStart = new Date(segment.startAt)
+    const segmentEnd = new Date(segment.endAt)
+    for (const slot of maintenanceSlots) {
+      const slotStart = new Date(slot.startAt)
+      const slotEnd = new Date(slot.endAt)
+      if (segmentStart < slotEnd && segmentEnd > slotStart) return true
+    }
+  }
+  return false
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const userRes = await db.collection('users').where({ openid: OPENID }).limit(1).get()
   const user = userRes.data[0]
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
+  {
+    const projectError = await ensureProjectActive(user._id, user.projectId || '')
+    if (projectError) return fail(projectError.code, projectError.message)
+  }
 
   if (!event.waitlistId || !['confirm', 'decline'].includes(event.action)) return fail('INVALID_PARAMS', '参数错误')
   const waitlist = (await db.collection('waitlists').doc(event.waitlistId).get()).data
@@ -117,6 +167,10 @@ exports.main = async (event) => {
         if (startAt <= now) throw businessError('INVALID_SEGMENTS', '时段已过期')
       }
 
+      const maintenanceSlots = await fetchAll(transaction.collection('maintenance_slots'), { status: 'active' })
+      if (anyMaintenanceConflict(segments, maintenanceSlots)) {
+        throw businessError('MAINTENANCE_CONFLICT', '任一时段命中维护')
+      }
       if (user.projectId && await checkProjectConflict(segments, user.projectId)) {
         throw businessError('PROJECT_BOOKING_CONFLICT', '该时段已被本课题预约')
       }

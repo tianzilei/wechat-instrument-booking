@@ -7,6 +7,7 @@ const _ = db.command
 
 const ACTIVE_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
 const BOOKING_MUTEX_DOC_ID = 'booking_schedule_mutex'
+const PAGE_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -143,6 +144,22 @@ async function getUser(openid) {
   return res.data[0]
 }
 
+async function ensureProjectActive(userId, projectId) {
+  if (!projectId) return businessError('PROJECT_INACTIVE', '请先绑定可用课题')
+  const [projectRes, pendingChangeRes] = await Promise.all([
+    db.collection('projects').doc(projectId).field({ status: true }).get(),
+    db.collection('project_applications').where({ userId, status: 'pending' }).limit(1).get(),
+  ])
+  const project = projectRes.data
+  if (!project || project.status !== 'active') {
+    return businessError('PROJECT_INACTIVE', '课题不可用')
+  }
+  if (pendingChangeRes.data.length > 0) {
+    return businessError('PROJECT_CHANGE_PENDING', '课题变更审核中，暂不可预约')
+  }
+  return null
+}
+
 async function runWithBookingMutex(holder, callback) {
   let lastErr = null
   for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -173,12 +190,32 @@ async function runWithBookingMutex(holder, callback) {
   throw lastErr || new Error('booking mutex failed')
 }
 
+async function fetchAll(collectionRef, where) {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await collectionRef.where(where).skip(skip).limit(PAGE_SIZE).get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const user = await getUser(OPENID)
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
   if (user.registrationStatus !== 'approved') return fail('REGISTRATION_REQUIRED', '注册审核通过后才能预约')
   if (user.accountStatus && user.accountStatus !== 'active') return fail('ACCOUNT_SUSPENDED', '账号状态异常')
+  {
+    const projectError = await ensureProjectActive(user._id, user.projectId || '')
+    if (projectError) return fail(projectError.code, projectError.message)
+  }
 
   if (!event.requestId || !event.segments || !Array.isArray(event.segments)) return fail('INVALID_PARAMS', '参数错误')
   if (event.segments.length > 10) return fail('INVALID_SEGMENTS', '单次最多预约 10 个时段')
@@ -256,8 +293,8 @@ exports.main = async (event) => {
         return { duplicateRequest: true, bookingId: booking._id, status: booking.status, bookingType: booking.bookingType }
       }
 
-      const maintenance = await db.collection('maintenance_slots').where({ status: 'active' }).limit(1000).get()
-      if (anyMaintenanceConflict(normalized, maintenance.data)) {
+      const maintenance = await fetchAll(db.collection('maintenance_slots'), { status: 'active' })
+      if (anyMaintenanceConflict(normalized, maintenance)) {
         throw businessError('MAINTENANCE_CONFLICT', '任一时段命中维护')
       }
       if (await anyProjectConflict(normalized, user.projectId || '', '')) {

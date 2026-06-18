@@ -3,7 +3,6 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
-const _ = db.command
 
 function ok(data) {
   return { success: true, data, error: null }
@@ -20,68 +19,55 @@ exports.main = async () => {
   if (!user) return fail('NOT_FOUND', '用户不存在')
   if (user.role === 'admin') return fail('PERMISSION_DENIED', '管理员不能注销账号')
 
-  const now = db.serverDate()
-  const activeBookingStatuses = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
-  const activeWaitlistStatuses = ['waitlisted', 'waitlist_confirming']
+  const now = new Date()
+  const nowServer = db.serverDate()
+  const existingTaskRes = await db.collection('deletion_tasks').where({ userId: user._id }).limit(1).get()
+  const existingTask = existingTaskRes.data[0] || null
 
-  const cancellations = []
-
-  const activeBookings = await db.collection('bookings').where({
-    userId: user._id,
-    status: _.in(activeBookingStatuses),
-  }).get()
-  if (activeBookings.data.length > 0) {
-    await Promise.all(activeBookings.data.map((b) => db.collection('bookings').doc(b._id).update({
-      data: {
-        status: 'cancelled',
-        cancellationNote: 'account_deleted',
-        updatedAt: now,
-      },
-    })))
-    cancellations.push(`已取消 ${activeBookings.data.length} 条预约`)
+  if (existingTask && existingTask.status === 'completed') {
+    return fail('STATE_CHANGED', '账号注销已完成，请重新登录')
   }
 
-  const activeWaitlists = await db.collection('waitlists').where({
-    userId: user._id,
-    status: _.nin(['cancelled']),
-  }).get()
-  if (activeWaitlists.data.length > 0) {
-    await Promise.all(activeWaitlists.data.map((w) => db.collection('waitlists').doc(w._id).update({
+  await db.collection('users').doc(user._id).update({
+    data: {
+      accountStatus: 'deleting',
+      updatedAt: nowServer,
+    },
+  })
+
+  if (existingTask) {
+    const leaseUntil = existingTask.leaseUntil ? new Date(existingTask.leaseUntil) : null
+    if (existingTask.status === 'running' && leaseUntil && leaseUntil > now) {
+      return ok({ queued: true, taskId: existingTask._id, alreadyQueued: true })
+    }
+    await db.collection('deletion_tasks').doc(existingTask._id).update({
       data: {
-        status: 'cancelled',
-        updatedAt: now,
+        status: 'created',
+        nextRetryAt: now,
+        leaseUntil: null,
+        lastErrorCode: '',
+        updatedAt: nowServer,
       },
-    })))
-    cancellations.push(`已取消 ${activeWaitlists.data.length} 条候补`)
+    })
+    return ok({ queued: true, taskId: existingTask._id, alreadyQueued: true })
   }
 
-  const historicalBookings = await db.collection('bookings').where({
-    userId: user._id,
-    status: _.nin(activeBookingStatuses),
-  }).get()
-  if (historicalBookings.data.length > 0) {
-    await Promise.all(historicalBookings.data.map((b) => db.collection('bookings').doc(b._id).update({
-      data: {
-        userId: '',
-        userName: '',
-        projectAbbr: '',
-        projectAbbrDisplayCache: '',
-        remark: '',
-        reviewReason: '',
-        cancellationNote: '',
-        cancelReason: '',
-        terminationReasonCode: '',
-        updatedAt: now,
-      },
-    })))
-  }
+  const taskRes = await db.collection('deletion_tasks').add({
+    data: {
+      userId: user._id,
+      status: 'created',
+      nextRetryAt: now,
+      leaseUntil: null,
+      attempt: 0,
+      lastErrorCode: '',
+      cancelledBookings: 0,
+      cancelledWaitlists: 0,
+      anonymizedBookings: 0,
+      cleanedUpNotifications: false,
+      createdAt: nowServer,
+      updatedAt: nowServer,
+    },
+  })
 
-  await db.collection('users').doc(user._id).remove()
-
-  try {
-    await db.collection('review_logs').where({ reviewerId: user._id }).remove()
-    await db.collection('review_logs').where({ targetId: user._id }).remove()
-  } catch (err) {}
-
-  return ok({ deleted: true, cancellations })
+  return ok({ queued: true, taskId: taskRes._id, alreadyQueued: false })
 }

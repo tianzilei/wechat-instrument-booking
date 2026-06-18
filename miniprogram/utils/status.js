@@ -10,6 +10,8 @@ const bookingStatusMap = {
   waitlisted: { text: '候补中', tone: 'accent' },
   waitlist_confirming: { text: '待确认', tone: 'accent' },
   waitlist_expired: { text: '已过期', tone: 'muted' },
+  waitlist_cancelled: { text: '已取消', tone: 'muted' },
+  waitlist_converted: { text: '已转预约', tone: 'success' },
 }
 
 const registrationStatusMap = {

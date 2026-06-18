@@ -7,11 +7,42 @@ const db = cloud.database()
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
+async function getOrCreateUser(openid, now, agreementVersion, privacyVersion) {
+  const userRes = await db.collection('users').where({ openid }).limit(1).get()
+  const existing = userRes.data[0]
+  if (existing) return existing
+
+  const addRes = await db.collection('users').add({
+    data: {
+      openid,
+      role: 'user',
+      registrationStatus: 'unsubmitted',
+      accountStatus: 'active',
+      name: '',
+      projectId: '',
+      projectName: '',
+      projectAbbr: '',
+      agreementVersion,
+      agreementAcceptedAt: now,
+      privacyVersion,
+      privacyAcceptedAt: now,
+      rejectReason: '',
+      lastLoginAt: now,
+      createdAt: now,
+      updatedAt: now,
+    },
+  })
+
+  return {
+    _id: addRes._id,
+    role: 'user',
+    registrationStatus: 'unsubmitted',
+    accountStatus: 'active',
+  }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
-  const userRes = await db.collection('users').where({ openid: OPENID }).limit(1).get()
-  const user = userRes.data[0]
-  if (!user) return fail('AUTH_REQUIRED', '请先登录')
 
   if (!event.projectId) return fail('INVALID_PARAMS', '请先选择课题')
   if (event.agreed !== true) return fail('LEGAL_ACCEPTANCE_REQUIRED', '请先同意协议')
@@ -32,6 +63,9 @@ exports.main = async (event) => {
   } catch (err) {}
   const agreementVersion = settings.serviceAgreementVersion || '1.0'
   const privacyVersion = settings.privacyPolicyVersion || '1.0'
+  const now = db.serverDate()
+
+  const user = await getOrCreateUser(OPENID, now, agreementVersion, privacyVersion)
 
   const existing = await db.collection('registration_applications').where({ userId: user._id, status: 'pending' }).limit(1).get()
   if (existing.data.length > 0) return fail('DUPLICATE', '已有待审核注册申请')
@@ -48,7 +82,6 @@ exports.main = async (event) => {
     return fail('CONTENT_CHECK_FAILED', '姓名内容安全校验失败，请稍后重试')
   }
 
-  const now = db.serverDate()
   const res = await db.collection('registration_applications').add({
     data: {
       userId: user._id,

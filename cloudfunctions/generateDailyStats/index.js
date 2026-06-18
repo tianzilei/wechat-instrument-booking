@@ -4,16 +4,42 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
+const PAGE_SIZE = 100
+
+async function fetchAll(collectionName, where, fields) {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await db.collection(collectionName)
+      .where(where)
+      .field(fields)
+      .skip(skip)
+      .limit(PAGE_SIZE)
+      .get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
 
 exports.main = async () => {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const yesterday = new Date(today.getTime() - 24 * 3600000)
 
-  const bookings = await db.collection('bookings').where({
+  const bookings = await fetchAll('bookings', {
     status: 'confirmed',
     lastEndAt: _.and(_.gte(yesterday), _.lt(today)),
-  }).limit(1000).get()
+  }, {
+    segments: true,
+    startAt: true,
+    endAt: true,
+  })
 
   let totalHours = 0
   let workingHours = 0
@@ -30,7 +56,7 @@ exports.main = async () => {
     openEnd = settings.openEndHour || 18
   } catch (err) {}
 
-  for (const b of bookings.data) {
+  for (const b of bookings) {
     const segments = b.segments || [{ startAt: b.startAt, endAt: b.endAt }]
     for (const s of segments) {
       if (s.state !== 'active') continue
@@ -52,11 +78,14 @@ exports.main = async () => {
   }).count()
   cancelCount = cancelled.total
 
-  const maintenance = await db.collection('maintenance_slots').where({
+  const maintenance = await fetchAll('maintenance_slots', {
     status: 'active',
     startAt: _.and(_.gte(yesterday), _.lt(today)),
-  }).limit(100).get()
-  maintenanceHours = maintenance.data.reduce((sum, m) => sum + (new Date(m.endAt) - new Date(m.startAt)) / 3600000, 0)
+  }, {
+    startAt: true,
+    endAt: true,
+  })
+  maintenanceHours = maintenance.reduce((sum, m) => sum + (new Date(m.endAt) - new Date(m.startAt)) / 3600000, 0)
 
   const monthKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}`
   await db.collection('monthly_stats').add({

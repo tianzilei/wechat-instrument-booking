@@ -4,6 +4,8 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
+const PAGE_SIZE = 100
+const IN_QUERY_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -13,6 +15,94 @@ async function getAdmin(openid) {
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
+}
+
+async function fetchAll(collectionName, where) {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await db.collection(collectionName).where(where).skip(skip).limit(PAGE_SIZE).get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
+function chunk(items, size) {
+  const batches = []
+  for (let index = 0; index < items.length; index += size) {
+    batches.push(items.slice(index, index + size))
+  }
+  return batches
+}
+
+function buildFutureCancellationUpdate(booking, nowServer, reasonCode) {
+  const currentTime = new Date()
+  const segments = Array.isArray(booking.segments) ? booking.segments : []
+  if (segments.length > 0) {
+    let changed = false
+    const nextSegments = segments.map((segment) => {
+      const state = segment.state || 'active'
+      const startAt = new Date(segment.startAt)
+      if (state !== 'active' || startAt <= currentTime) return segment
+      changed = true
+      return {
+        ...segment,
+        state: 'cancelled',
+        cancelledAt: nowServer,
+        cancelReasonCode: reasonCode,
+      }
+    })
+    if (!changed) return null
+    const activeSegments = nextSegments.filter((segment) => (segment.state || 'active') === 'active')
+    const updateData = {
+      status: 'cancelled',
+      segments: nextSegments,
+      cancellationNote: reasonCode,
+      updatedAt: nowServer,
+    }
+    if (activeSegments.length > 0) {
+      updateData.firstStartAt = activeSegments[0].startAt
+      updateData.lastEndAt = activeSegments[activeSegments.length - 1].endAt
+      updateData.durationHours = activeSegments.reduce((sum, item) => sum + ((new Date(item.endAt) - new Date(item.startAt)) / 3600000), 0)
+    }
+    return updateData
+  }
+
+  const startAt = new Date(booking.firstStartAt || booking.startAt)
+  if (startAt <= currentTime) return null
+  return {
+    status: 'cancelled',
+    cancellationNote: reasonCode,
+    updatedAt: nowServer,
+  }
+}
+
+async function fetchWaitlistsByUserIds(userIds) {
+  const items = []
+  for (const batchIds of chunk(userIds, IN_QUERY_SIZE)) {
+    if (batchIds.length === 0) continue
+    let skip = 0
+    let hasMore = true
+    while (hasMore) {
+      const batch = await db.collection('waitlists').where({
+        userId: _.in(batchIds),
+        status: _.nin(['cancelled', 'expired', 'converted']),
+      }).skip(skip).limit(PAGE_SIZE).get()
+      items.push(...batch.data)
+      if (batch.data.length < PAGE_SIZE) {
+        hasMore = false
+      } else {
+        skip += batch.data.length
+      }
+    }
+  }
+  return items
 }
 
 exports.main = async (event) => {
@@ -27,7 +117,7 @@ exports.main = async (event) => {
   if (!project) return fail('NOT_FOUND', '课题不存在')
 
   const now = db.serverDate()
-  const results = { cancelledBookings: 0, affectedUsers: 0 }
+  const results = { cancelledBookings: 0, cancelledWaitlists: 0, affectedUsers: 0 }
 
   if (event.action === 'inactive') {
     if (event.reason) {
@@ -41,23 +131,35 @@ exports.main = async (event) => {
       }
     }
 
-    const members = await db.collection('users').where({
+    const members = await fetchAll('users', {
       projectId: event.projectId,
       accountStatus: 'active',
-    }).limit(500).get()
-    await Promise.all(members.data.map((m) => db.collection('users').doc(m._id).update({
+    })
+    await Promise.all(members.map((m) => db.collection('users').doc(m._id).update({
       data: { accountStatus: 'project_reassignment_required', updatedAt: now },
     })))
-    results.affectedUsers = members.data.length
+    results.affectedUsers = members.length
 
-    const bookings = await db.collection('bookings').where({
+    const allProjectMembers = await fetchAll('users', {
       projectId: event.projectId,
-      status: _.in(['pending_review', 'confirmed', 'cancel_pending']),
-    }).limit(500).get()
-    await Promise.all(bookings.data.map((b) => db.collection('bookings').doc(b._id).update({
-      data: { status: 'cancelled', cancellationNote: 'project_inactive', updatedAt: now },
+    })
+    const bookings = await fetchAll('bookings', {
+      projectId: event.projectId,
+      status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']),
+    })
+    const bookingUpdates = bookings
+      .map((booking) => ({ booking, update: buildFutureCancellationUpdate(booking, now, 'project_inactive') }))
+      .filter((item) => !!item.update)
+    await Promise.all(bookingUpdates.map((item) => db.collection('bookings').doc(item.booking._id).update({
+      data: item.update,
     })))
-    results.cancelledBookings = bookings.data.length
+    results.cancelledBookings = bookingUpdates.length
+
+    const waitlists = await fetchWaitlistsByUserIds(allProjectMembers.map((member) => member._id))
+    await Promise.all(waitlists.map((waitlist) => db.collection('waitlists').doc(waitlist._id).update({
+      data: { status: 'cancelled', updatedAt: now },
+    })))
+    results.cancelledWaitlists = waitlists.length
 
     await projectRef.update({
       data: { status: 'inactive', inactiveReason: event.reason || '', updatedAt: now },

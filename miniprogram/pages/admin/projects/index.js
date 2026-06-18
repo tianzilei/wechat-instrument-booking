@@ -62,7 +62,7 @@ Page({
     }))
     if (!res.confirm) return
     try {
-      await api.callFunction('updateProject', { projectId: p._id, status: 'inactive', reason: '管理员停用' })
+      await api.callFunction('setProjectStatus', { projectId: p._id, action: 'inactive', reason: '管理员停用' })
       wx.showToast({ title: '已停用', icon: 'success' })
       this.loadProjects()
     } catch (err) { api.showError(err) }

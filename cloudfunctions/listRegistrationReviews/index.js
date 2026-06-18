@@ -3,6 +3,7 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
+const PAGE_SIZE = 100
 
 function ok(data) {
   return { success: true, data, error: null }
@@ -18,28 +19,44 @@ async function isAdmin(openid) {
   return user && user.role === 'admin'
 }
 
+async function fetchAllPendingApplications() {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await db.collection('registration_applications')
+      .where({ status: 'pending' })
+      .field({
+        _id: true,
+        userId: true,
+        nameSnapshot: true,
+        projectId: true,
+        projectNameSnapshot: true,
+        projectAbbrSnapshot: true,
+        status: true,
+        createdAt: true,
+        updatedAt: true,
+      })
+      .orderBy('createdAt', 'asc')
+      .skip(skip)
+      .limit(PAGE_SIZE)
+      .get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   if (!(await isAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
 
-  const res = await db.collection('registration_applications')
-    .where({ status: 'pending' })
-    .field({
-      _id: true,
-      userId: true,
-      nameSnapshot: true,
-      projectId: true,
-      projectNameSnapshot: true,
-      projectAbbrSnapshot: true,
-      status: true,
-      createdAt: true,
-      updatedAt: true,
-    })
-    .orderBy('createdAt', 'asc')
-    .limit(100)
-    .get()
-
-  const items = res.data.map((item) => ({
+  const applications = await fetchAllPendingApplications()
+  const items = applications.map((item) => ({
     _id: item._id,
     userId: item.userId,
     nameSnapshot: item.nameSnapshot,

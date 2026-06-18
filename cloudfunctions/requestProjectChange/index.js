@@ -44,12 +44,5 @@ exports.main = async (event) => {
     },
   })
 
-  await db.collection('users').doc(user._id).update({
-    data: {
-      accountStatus: 'project_reassignment_required',
-      updatedAt: now,
-    },
-  })
-
   return ok({ applicationId: res._id, status: 'pending' })
 }

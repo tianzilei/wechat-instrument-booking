@@ -4,6 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
+const PAGE_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -13,6 +14,64 @@ async function getAdmin(openid) {
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
+}
+
+async function fetchAll(collectionName, where) {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await db.collection(collectionName).where(where).skip(skip).limit(PAGE_SIZE).get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
+function buildFutureCancellationUpdate(booking, nowServer, reasonCode) {
+  const currentTime = new Date()
+  const segments = Array.isArray(booking.segments) ? booking.segments : []
+  if (segments.length > 0) {
+    let changed = false
+    const nextSegments = segments.map((segment) => {
+      const state = segment.state || 'active'
+      const startAt = new Date(segment.startAt)
+      if (state !== 'active' || startAt <= currentTime) return segment
+      changed = true
+      return {
+        ...segment,
+        state: 'cancelled',
+        cancelledAt: nowServer,
+        cancelReasonCode: reasonCode,
+      }
+    })
+    if (!changed) return null
+    const activeSegments = nextSegments.filter((segment) => (segment.state || 'active') === 'active')
+    const updateData = {
+      status: 'cancelled',
+      segments: nextSegments,
+      cancellationNote: reasonCode,
+      updatedAt: nowServer,
+    }
+    if (activeSegments.length > 0) {
+      updateData.firstStartAt = activeSegments[0].startAt
+      updateData.lastEndAt = activeSegments[activeSegments.length - 1].endAt
+      updateData.durationHours = activeSegments.reduce((sum, item) => sum + ((new Date(item.endAt) - new Date(item.startAt)) / 3600000), 0)
+    }
+    return updateData
+  }
+
+  const startAt = new Date(booking.firstStartAt || booking.startAt)
+  if (startAt <= currentTime) return null
+  return {
+    status: 'cancelled',
+    cancellationNote: reasonCode,
+    updatedAt: nowServer,
+  }
 }
 
 exports.main = async (event) => {
@@ -39,19 +98,22 @@ exports.main = async (event) => {
 
   const now = db.serverDate()
 
-  const bookings = await db.collection('bookings').where({
+  const bookings = await fetchAll('bookings', {
     userId: event.userId,
-    status: _.in(['pending_review', 'confirmed', 'cancel_pending']),
-  }).get()
-  await Promise.all(bookings.data.map((b) => db.collection('bookings').doc(b._id).update({
-    data: { status: 'cancelled', cancellationNote: 'account_suspended', updatedAt: now },
+    status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']),
+  })
+  const bookingUpdates = bookings
+    .map((booking) => ({ booking, update: buildFutureCancellationUpdate(booking, now, 'account_suspended') }))
+    .filter((item) => !!item.update)
+  await Promise.all(bookingUpdates.map((item) => db.collection('bookings').doc(item.booking._id).update({
+    data: item.update,
   })))
 
-  const waitlists = await db.collection('waitlists').where({
+  const waitlists = await fetchAll('waitlists', {
     userId: event.userId,
-    status: _.nin(['cancelled', 'expired']),
-  }).get()
-  await Promise.all(waitlists.data.map((w) => db.collection('waitlists').doc(w._id).update({
+    status: _.nin(['cancelled', 'expired', 'converted']),
+  })
+  await Promise.all(waitlists.map((w) => db.collection('waitlists').doc(w._id).update({
     data: { status: 'cancelled', updatedAt: now },
   })))
 
@@ -78,5 +140,5 @@ exports.main = async (event) => {
     data: { targetType: 'user', targetId: event.userId, action: 'suspend', reason: event.reason, reviewerId: admin._id, createdAt: now },
   })
 
-  return ok({ userId: event.userId, cancelledBookings: bookings.data.length, cancelledWaitlists: waitlists.data.length })
+  return ok({ userId: event.userId, cancelledBookings: bookingUpdates.length, cancelledWaitlists: waitlists.length })
 }

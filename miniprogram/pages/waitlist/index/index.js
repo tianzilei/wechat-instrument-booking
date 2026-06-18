@@ -15,7 +15,14 @@ Page({
     try {
       const data = await api.callFunction('listMyWaitlists')
       const items = (data.items || []).map((item) => {
-        const status = getBookingStatus(item.status === 'confirming' ? 'waitlist_confirming' : 'waitlisted')
+        const statusKeyMap = {
+          waitlisted: 'waitlisted',
+          confirming: 'waitlist_confirming',
+          expired: 'waitlist_expired',
+          cancelled: 'waitlist_cancelled',
+          converted: 'waitlist_converted',
+        }
+        const status = getBookingStatus(statusKeyMap[item.status] || 'waitlisted')
         return {
           ...item,
           timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,

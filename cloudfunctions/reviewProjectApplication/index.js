@@ -43,6 +43,25 @@ exports.main = async (event) => {
     return ok({ applicationId: event.applicationId, status: 'rejected' })
   }
 
+  if (application.approvedProjectId) {
+    const approvedProject = (await db.collection('projects').doc(application.approvedProjectId).get()).data
+    if (!approvedProject || approvedProject.status !== 'active') return fail('PROJECT_INACTIVE', '课题不可用')
+    await ref.update({
+      data: {
+        status: 'approved',
+        finalName: approvedProject.name,
+        finalAbbr: approvedProject.abbr,
+        reviewedBy: admin._id,
+        reviewedAt: now,
+        updatedAt: now,
+      },
+    })
+    await db.collection('review_logs').add({
+      data: { targetType: 'project_application', targetId: event.applicationId, action: 'approve', reason: '', reviewerId: admin._id, createdAt: now },
+    })
+    return ok({ applicationId: event.applicationId, status: 'approved', projectId: approvedProject._id })
+  }
+
   if (!event.finalName || !event.finalAbbr) return fail('INVALID_PARAMS', '请填写最终课题名称和缩写')
   const finalName = event.finalName.trim()
   const finalAbbr = event.finalAbbr.trim()

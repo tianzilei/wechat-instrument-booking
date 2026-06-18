@@ -4,6 +4,26 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
+const PAGE_SIZE = 50
+
+async function fetchAllFutureConfirmedBookings() {
+  const items = []
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('bookings').where({
+      status: 'confirmed',
+      firstStartAt: db.command.gt(new Date()),
+    }).skip(skip).limit(PAGE_SIZE).get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
 
 exports.main = async () => {
   let settings = null
@@ -44,49 +64,33 @@ exports.main = async () => {
 
   const OPEN_START_HOUR = settings.openStartHour || 9
   const OPEN_END_HOUR = settings.openEndHour || 18
-  let cursor = 0
   let affected = 0
 
-  let hasMore = true
-  while (hasMore) {
-    const batch = await db.collection('bookings').where({
-      status: 'confirmed',
-      firstStartAt: db.command.gt(new Date()),
-    }).skip(cursor).limit(50).get()
-
-    if (batch.data.length === 0) {
-      hasMore = false
-      break
-    }
-
-    for (const booking of batch.data) {
-      const segments = booking.segments || [{ startAt: booking.startAt, endAt: booking.endAt }]
-      const hitNewRule = segments.some((s) => {
-        const d = new Date(s.startAt)
-        if (d.getDay() === 0 || d.getDay() === 6) return true
-        if (d.getHours() < OPEN_START_HOUR || d.getHours() >= OPEN_END_HOUR) return true
-        return false
+  const futureBookings = await fetchAllFutureConfirmedBookings()
+  for (const booking of futureBookings) {
+    const segments = booking.segments || [{ startAt: booking.startAt, endAt: booking.endAt }]
+    const hitNewRule = segments.some((s) => {
+      const d = new Date(s.startAt)
+      if (d.getDay() === 0 || d.getDay() === 6) return true
+      if (d.getHours() < OPEN_START_HOUR || d.getHours() >= OPEN_END_HOUR) return true
+      return false
+    })
+    if (hitNewRule) {
+      await db.collection('bookings').doc(booking._id).update({
+        data: {
+          status: 'rule_review_pending',
+          previousStatus: booking.status,
+          updatedAt: now,
+        },
       })
-      if (hitNewRule) {
-        await db.collection('bookings').doc(booking._id).update({
-          data: {
-            status: 'rule_review_pending',
-            previousStatus: booking.status,
-            updatedAt: now,
-          },
-        })
-        affected += 1
-      }
+      affected += 1
     }
-
-    cursor += batch.data.length
-    if (batch.data.length < 50) hasMore = false
   }
 
   await db.collection('rule_migration_tasks').doc(taskRes._id).update({
     data: {
       status: 'completed',
-      cursor,
+      cursor: futureBookings.length,
       affectedBookings: affected,
       updatedAt: now,
     },

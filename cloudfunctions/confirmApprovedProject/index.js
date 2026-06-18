@@ -20,7 +20,20 @@ exports.main = async (event) => {
   if (app.status !== 'approved') return fail('STATE_CHANGED', '申请状态未就绪')
   if (!app.approvedProjectId) return fail('STATE_CHANGED', '课题尚未创建')
 
+  const project = (await db.collection('projects').doc(app.approvedProjectId).get()).data
+  if (!project || project.status !== 'active') return fail('PROJECT_INACTIVE', '课题不可用')
+
   const now = db.serverDate()
   await ref.update({ data: { userConfirmedAt: now, updatedAt: now } })
+  await db.collection('users').doc(user._id).update({
+    data: {
+      projectId: project._id,
+      projectName: project.name || '',
+      projectAbbr: project.abbr || '',
+      accountStatus: 'active',
+      registrationStatus: 'approved',
+      updatedAt: now,
+    },
+  })
   return ok({ applicationId: event.applicationId, projectId: app.approvedProjectId, confirmed: true })
 }

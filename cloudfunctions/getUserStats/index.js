@@ -4,6 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
+const PAGE_SIZE = 100
 
 function ok(data) {
   return { success: true, data, error: null }
@@ -25,6 +26,35 @@ function isWorking(date, openStart, openEnd) {
   return day !== 0 && day !== 6 && hour >= openStart && hour < openEnd
 }
 
+async function fetchAllUserBookings(userId) {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await db.collection('bookings').where({
+      userId,
+      status: _.in(['confirmed', 'completed']),
+    })
+      .field({
+        firstStartAt: true,
+        lastEndAt: true,
+        startAt: true,
+        endAt: true,
+        durationHours: true,
+      })
+      .skip(skip)
+      .limit(PAGE_SIZE)
+      .get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   const userRes = await db.collection('users').where({ openid: OPENID }).field({ _id: true }).limit(1).get()
@@ -40,10 +70,7 @@ exports.main = async () => {
     openEndHour = settings.openEndHour || 18
   } catch (err) {}
 
-  const res = await db.collection('bookings').where({
-    userId: user._id,
-    status: _.in(['confirmed', 'completed']),
-  }).limit(1000).get()
+  const bookings = await fetchAllUserBookings(user._id)
 
   const now = new Date()
   const weekStart = new Date(now)
@@ -57,7 +84,7 @@ exports.main = async () => {
   let workingHours = 0
   let nonWorkingHours = 0
 
-  res.data.forEach((booking) => {
+  bookings.forEach((booking) => {
     const startAt = booking.firstStartAt || booking.startAt
     const endAt = booking.lastEndAt || booking.endAt
     const hours = booking.durationHours || ((new Date(endAt) - new Date(startAt)) / 3600000)
