@@ -186,11 +186,6 @@
   color: var(--color-maintenance);
 }
 
-.calendar-cell--restricted {
-  background: var(--color-restricted-soft);
-  color: var(--color-restricted);
-}
-
 .calendar-cell--past {
   background: var(--color-surface-muted);
   color: var(--color-text-disabled);

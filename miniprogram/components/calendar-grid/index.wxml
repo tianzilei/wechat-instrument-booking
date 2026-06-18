@@ -25,7 +25,9 @@
         data-date="{{day.date}}"
         data-hour="{{hour}}"
         bindtouchstart="onTouchStart"
+        bindtouchmove="onTouchMove"
         bindtouchend="onTouchEnd"
+        bindtouchcancel="onTouchEnd"
         bindtap="onCellTap"
       >
         <view class="calendar-cell__text">{{cellMap[day.date + '-' + hour] ? cellMap[day.date + '-' + hour].text : ''}}</view>

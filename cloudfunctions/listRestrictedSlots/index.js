@@ -2,25 +2,10 @@ const cloud = require('wx-server-sdk')
 
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
-const db = cloud.database()
-
-function ok(data) {
-  return { success: true, data, error: null }
+function fail(code, message) {
+  return { success: false, data: null, error: { code, message } }
 }
 
 exports.main = async () => {
-  const res = await db.collection('restricted_slots')
-    .where({ status: 'active' })
-    .field({
-      _id: true,
-      startAt: true,
-      endAt: true,
-      reason: true,
-      status: true,
-      createdAt: true,
-    })
-    .orderBy('startAt', 'desc')
-    .limit(100)
-    .get()
-  return ok({ items: res.data })
+  return fail('DEPRECATED', '受限时段已下线，请改用维护时间')
 }

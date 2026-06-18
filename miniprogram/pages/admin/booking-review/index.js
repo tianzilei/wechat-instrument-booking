@@ -4,7 +4,6 @@ const dateUtils = require('../../../utils/date')
 const SPECIAL_RULE_LABELS = {
   night: '非工作时间',
   weekend: '周末',
-  restricted: '受限时段',
 }
 
 Page({
@@ -29,7 +28,9 @@ Page({
   async loadItems() {
     try {
       const data = await api.callFunction('listBookingReviews')
-      const items = (data.items || []).map((item) => ({
+      const items = (data.items || [])
+        .filter((item) => item.status === 'pending_review')
+        .map((item) => ({
         ...item,
         timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,
         ruleText: (item.specialReasons || []).map((reason) => SPECIAL_RULE_LABELS[reason] || reason).join('、') || '特殊审核规则',

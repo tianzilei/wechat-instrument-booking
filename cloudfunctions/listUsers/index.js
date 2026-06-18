@@ -22,10 +22,12 @@ exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   if (!(await isAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
   const res = await db.collection('users')
+    .where({ registrationStatus: 'approved' })
     .field({
       _id: true,
       role: true,
       registrationStatus: true,
+      accountStatus: true,
       name: true,
       projectName: true,
       projectAbbr: true,

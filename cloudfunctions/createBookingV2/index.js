@@ -5,7 +5,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
-const ACTIVE_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
+const ACTIVE_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -19,6 +19,12 @@ function isWeekend(date) {
   return day === 0 || day === 6
 }
 
+function startOfDay(date) {
+  const value = new Date(date)
+  value.setHours(0, 0, 0, 0)
+  return value
+}
+
 function getMinimumStartAt() {
   const now = new Date()
   now.setMinutes(0, 0, 0)
@@ -26,19 +32,10 @@ function getMinimumStartAt() {
   return now
 }
 
-function getWeekStart(date) {
-  const d = new Date(date)
-  d.setHours(0, 0, 0, 0)
-  const day = d.getDay()
-  const diff = day === 0 ? -6 : 1 - day
-  d.setDate(d.getDate() + diff)
-  return d
-}
-
-function getWeekEnd(weekStart) {
-  const end = new Date(weekStart)
-  end.setDate(end.getDate() + 7)
-  return end
+function getMaxAdvanceBoundary(now, maxAdvanceDays) {
+  const boundary = startOfDay(now)
+  boundary.setDate(boundary.getDate() + maxAdvanceDays + 1)
+  return boundary
 }
 
 function normalizeSegments(raw) {
@@ -68,16 +65,14 @@ function makeScheduleKey(segments) {
   return data
 }
 
-function getSpecialReasons(segments, restrictedSlots, openStartHour, openEndHour) {
+function getSpecialReasons(segments, openStartHour, openEndHour) {
   const reasons = new Set()
   for (const s of segments) {
-    if (isWeekend(s.startAt) || isWeekend(new Date(s.endAt.getTime() - 1))) reasons.add('weekend')
+    const endPoint = new Date(s.endAt.getTime() - 1)
+    if (isWeekend(s.startAt) || isWeekend(endPoint)) reasons.add('weekend')
     const startHour = s.startAt.getHours()
-    const endHour = s.endAt.getHours()
-    if (startHour < openStartHour || endHour > openEndHour) reasons.add('night')
-    for (const r of restrictedSlots) {
-      if (s.startAt < r.endAt && s.endAt > r.startAt) reasons.add('restricted')
-    }
+    const endHour = endPoint.getHours()
+    if (startHour < openStartHour || endHour >= openEndHour) reasons.add('night')
   }
   return [...reasons]
 }
@@ -108,6 +103,29 @@ async function anyBookingConflict(segments, excludeBookingId) {
   return res.data.length > 0
 }
 
+async function anyProjectConflict(segments, projectId, excludeBookingId) {
+  if (!projectId) return false
+  const v2Conditions = segments.map((s) => ({
+    firstStartAt: _.lt(s.endAt),
+    lastEndAt: _.gt(s.startAt),
+  }))
+  const v1Conditions = segments.map((s) => ({
+    startAt: _.lt(s.endAt),
+    endAt: _.gt(s.startAt),
+  }))
+  const allConditions = [...v2Conditions, ...v1Conditions]
+  if (allConditions.length === 0) return false
+  const timeFilter = allConditions.length === 1 ? allConditions[0] : _.or(allConditions)
+  const query = {
+    status: _.in(ACTIVE_STATUSES),
+    projectId,
+    _id: excludeBookingId ? _.neq(excludeBookingId) : _.exists(true),
+    ...timeFilter,
+  }
+  const res = await db.collection('bookings').where(query).limit(1).get()
+  return res.data.length > 0
+}
+
 async function getUser(openid) {
   const res = await db.collection('users').where({ openid }).limit(1).get()
   return res.data[0]
@@ -132,38 +150,37 @@ exports.main = async (event) => {
   const normalized = normalizeSegments(event.segments)
   if (!normalized) return fail('INVALID_SEGMENTS', '时段格式错误')
 
-  const minimumStartAt = getMinimumStartAt()
-  for (const s of normalized) {
-    if (!isWholeHour(s.startAt) || !isWholeHour(s.endAt)) return fail('INVALID_SEGMENTS', '预约时间必须为整点')
-    if (s.startAt < minimumStartAt) return fail('INVALID_SEGMENTS', '当前小时及过去时段不可预约')
-    const now = new Date()
-    const maxAdvance = new Date(now.getTime() + 7 * 24 * 3600000)
-    if (s.startAt > maxAdvance) return fail('INVALID_SEGMENTS', '只能提前7天预约')
-  }
-
-  const weekStart = getWeekStart(normalized[0].startAt)
-  const weekEnd = getWeekEnd(weekStart)
-  for (const s of normalized) {
-    if (s.startAt < weekStart || s.endAt > weekEnd) return fail('INVALID_SEGMENTS', '所有时段必须处于同一自然周')
-  }
-
-  const maintenance = await db.collection('maintenance_slots').where({ status: 'active' }).limit(1000).get()
-  if (anyMaintenanceConflict(normalized, maintenance.data)) return fail('MAINTENANCE_CONFLICT', '任一时段命中维护')
-
-  if (await anyBookingConflict(normalized)) return fail('BOOKING_CONFLICT', '任一时段发生占用冲突')
-
-  const restricted = await db.collection('restricted_slots').where({ status: 'active' }).limit(1000).get()
-
   let openStartHour = 9
   let openEndHour = 18
+  let maxAdvanceDays = 7
   try {
     const settingsRes = await db.collection('settings').doc('global').get()
     const settings = settingsRes.data || {}
     openStartHour = settings.openStartHour || 9
     openEndHour = settings.openEndHour || 18
+    maxAdvanceDays = settings.maxAdvanceDays || 7
   } catch (err) {}
 
-  const specialReasons = getSpecialReasons(normalized, restricted.data, openStartHour, openEndHour)
+  const minimumStartAt = getMinimumStartAt()
+  const maxAdvanceBoundary = getMaxAdvanceBoundary(new Date(), maxAdvanceDays)
+  for (const s of normalized) {
+    if (!isWholeHour(s.startAt) || !isWholeHour(s.endAt)) return fail('INVALID_SEGMENTS', '预约时间必须为整点')
+    if (s.startAt < minimumStartAt) return fail('INVALID_SEGMENTS', '当前小时及过去时段不可预约')
+    if (s.startAt >= maxAdvanceBoundary || s.endAt > maxAdvanceBoundary) {
+      return fail('INVALID_SEGMENTS', `只能提前${maxAdvanceDays}天预约`)
+    }
+  }
+
+  const maintenance = await db.collection('maintenance_slots').where({ status: 'active' }).limit(1000).get()
+  if (anyMaintenanceConflict(normalized, maintenance.data)) return fail('MAINTENANCE_CONFLICT', '任一时段命中维护')
+
+  if (await anyProjectConflict(normalized, user.projectId || '', '')) {
+    return fail('PROJECT_BOOKING_CONFLICT', '该时段已被本课题预约')
+  }
+
+  if (await anyBookingConflict(normalized)) return fail('BOOKING_CONFLICT', '任一时段发生占用冲突')
+
+  const specialReasons = getSpecialReasons(normalized, openStartHour, openEndHour)
   const status = specialReasons.length > 0 ? 'pending_review' : 'confirmed'
   const bookingType = specialReasons.length > 0 ? 'special' : 'normal'
   const scheduleKey = makeScheduleKey(normalized)

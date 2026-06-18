@@ -3,10 +3,21 @@
   padding-bottom: 24rpx;
 }
 
+.picker-field {
+  display: flex;
+  align-items: center;
+  min-height: var(--control-height);
+}
+
 .slot-card {
   margin-bottom: 0;
 }
 
 .slot-time {
   font-weight: 600;
+}
+
+.slot-card--focus {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
 }

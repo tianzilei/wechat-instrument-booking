@@ -64,4 +64,37 @@
       <button class="button button--secondary button--compact settings-action" loading="{{exporting}}" disabled="{{exporting}}" bindtap="exportData">导出</button>
     </view>
   </view>
+
+  <view class="section">
+    <view class="section-title">使用统计</view>
+    <view class="stat-grid">
+      <view class="stat-card">
+        <view class="stat-value">{{stats.totalHours || 0}}</view>
+        <view class="stat-label">总小时</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{stats.byTimeType.workingHours || 0}}</view>
+        <view class="stat-label">工作时间</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{stats.byTimeType.nonWorkingHours || 0}}</view>
+        <view class="stat-label">非工作时间</view>
+      </view>
+      <view class="stat-card">
+        <view class="stat-value">{{stats.monthCount || 0}}</view>
+        <view class="stat-label">统计月份</view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">月份统计</view>
+    <empty-state wx:if="{{stats.byMonth.length === 0}}" title="暂无月份统计" />
+    <view wx:if="{{stats.byMonth.length > 0}}" class="surface-section">
+      <view wx:for="{{stats.byMonth}}" wx:key="month" class="list-card stat-row">
+        <view class="stat-name">{{item.month}}</view>
+        <view class="stat-hours">{{item.hours}}h</view>
+      </view>
+    </view>
+  </view>
 </view>

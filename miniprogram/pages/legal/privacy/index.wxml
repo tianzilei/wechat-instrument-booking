@@ -23,7 +23,7 @@
       <view class="legal-text">• 用户内部 ID、角色（普通用户/管理员）、注册状态及账号状态。</view>
       <view class="legal-text">• 登录时间、记录创建时间和最后更新时间。</view>
       <view class="legal-text">• 协议版本号及同意时间。</view>
-      <view class="legal-text">• 预约时段、时长、状态、特殊审核原因（夜间、周末、受限时段）。</view>
+      <view class="legal-text">• 预约时段、时长、状态、特殊审核原因（夜间、周末）。</view>
       <view class="legal-text">• 随机请求 ID（用于防重复提交）和预约排期键。</view>
       <view class="legal-text">• 取消状态和取消说明。</view>
       <view class="legal-text">• 审核人内部 ID、审核结果和审核时间。</view>
@@ -32,7 +32,7 @@
 
       <view class="legal-text" style="font-weight:600;margin-top:16rpx">4. 管理员填写或产生</view>
       <view class="legal-text">• 注册、预约、取消、课题申请的拒绝原因。</view>
-      <view class="legal-text">• 维护时段、受限时段及原因说明。</view>
+      <view class="legal-text">• 维护时段及原因说明。</view>
       <view class="legal-text">• 用户暂停原因。</view>
       <view class="legal-text">• 隐私请求处理说明。</view>
       <view class="legal-text">• 课题名称、缩写和启停记录。</view>

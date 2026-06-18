@@ -10,3 +10,43 @@
 .settings-copy { flex: 1; min-width: 0; }
 .settings-action { flex: none; width: 184rpx; margin-left: auto; }
 .export-section { padding-top: 24rpx; padding-bottom: 24rpx; }
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}
+
+.stat-card {
+  padding: 24rpx;
+  border: 1rpx solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.stat-value {
+  color: var(--color-primary);
+  font-size: 48rpx;
+  font-weight: 700;
+}
+
+.stat-label {
+  margin-top: 8rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stat-name {
+  font-weight: 600;
+}
+
+.stat-hours {
+  color: var(--color-primary);
+  font-weight: 700;
+}

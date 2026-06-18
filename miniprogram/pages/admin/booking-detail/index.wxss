@@ -1,0 +1,15 @@
+.detail-card {
+  margin-bottom: 0;
+}
+
+.detail-title,
+.detail-segment,
+.detail-log {
+  font-weight: 600;
+}
+
+.detail-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
+}

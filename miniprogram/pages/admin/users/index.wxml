@@ -7,6 +7,24 @@
         <status-tag text="{{item.statusText}}" tone="{{item.statusTone}}" />
       </view>
       <view class="page-subtitle">{{item.projectName ? item.projectName + ' · ' + item.projectAbbr : '未关联课题'}}</view>
+      <view class="page-subtitle">注册状态：已通过</view>
+      <view class="review-actions">
+        <button wx:if="{{item.accountStatus !== 'suspended'}}" class="button button--danger button--compact" data-id="{{item._id}}" data-name="{{item.name}}" bindtap="suspendUser">暂停账号</button>
+        <button wx:if="{{item.accountStatus === 'suspended'}}" class="button button--secondary button--compact" data-id="{{item._id}}" data-name="{{item.name}}" bindtap="restoreUser">恢复账号</button>
+      </view>
     </view>
   </view>
+
+  <theme-modal
+    visible="{{modal.visible}}"
+    title="{{modal.title}}"
+    content="{{modal.content}}"
+    show-input="{{modal.showInput}}"
+    placeholder="{{modal.placeholder}}"
+    confirm-text="{{modal.confirmText}}"
+    confirm-tone="{{modal.confirmTone}}"
+    payload="{{modal.payload}}"
+    bind:cancel="closeModal"
+    bind:confirm="confirmModal"
+  />
 </view>

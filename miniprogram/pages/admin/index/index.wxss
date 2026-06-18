@@ -1,18 +1,23 @@
-.admin-summary__row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  min-height: 88rpx;
-  border-bottom: 1rpx solid var(--color-divider);
+.admin-todo-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
 }
 
-.admin-summary__row:last-child {
-  border-bottom: 0;
+.admin-todo-card {
+  min-height: 224rpx;
+  padding: 24rpx;
 }
 
-.admin-summary__value {
+.admin-todo-card__count {
   color: var(--color-primary);
-  font-size: var(--font-size-lg);
+  font-size: 56rpx;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.admin-todo-card__title {
+  margin-top: 16rpx;
   font-weight: 700;
 }
 
@@ -25,4 +30,10 @@
 
 .admin-nav__title {
   font-weight: 600;
+}
+
+@media (max-width: 620rpx) {
+  .admin-todo-grid {
+    grid-template-columns: 1fr;
+  }
 }

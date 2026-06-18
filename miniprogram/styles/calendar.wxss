@@ -110,11 +110,6 @@
   border-color: var(--color-maintenance);
 }
 
-.legend-dot--restricted {
-  background: var(--color-restricted-soft);
-  border-color: var(--color-restricted);
-}
-
 @media (max-width: 620rpx) {
   .calendar-control-row {
     grid-template-columns: 1fr;

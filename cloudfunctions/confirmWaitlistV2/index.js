@@ -41,8 +41,6 @@ exports.main = async (event) => {
   const hasConflict = await checkConflict(segments)
   if (hasConflict) return fail('BOOKING_CONFLICT', '时段已被占用')
 
-  const restricted = await db.collection('restricted_slots').where({ status: 'active' }).limit(100).get()
-
   let openStartHour = 9
   let openEndHour = 18
   try {
@@ -52,7 +50,7 @@ exports.main = async (event) => {
     openEndHour = settings.openEndHour || 18
   } catch (err) {}
 
-  const specialReasons = getSpecialReasons(segments, restricted.data, openStartHour, openEndHour)
+  const specialReasons = getSpecialReasons(segments, openStartHour, openEndHour)
   const bookingStatus = specialReasons.length > 0 ? 'pending_review' : 'confirmed'
   const bookingType = specialReasons.length > 0 ? 'special' : 'normal'
 
@@ -97,7 +95,7 @@ exports.main = async (event) => {
 }
 
 async function checkConflict(segments) {
-  const ACTIVE_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming']
+  const ACTIVE_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
   const conditions = segments.map((s) => ({
     status: _.in(ACTIVE_STATUSES),
     firstStartAt: _.lt(new Date(s.endAt)),
@@ -112,16 +110,13 @@ async function checkConflict(segments) {
   return res.data.length > 0
 }
 
-function getSpecialReasons(segments, restrictedSlots, openStartHour, openEndHour) {
+function getSpecialReasons(segments, openStartHour, openEndHour) {
   const reasons = new Set()
   for (const s of segments) {
-    const d = new Date(s.startAt)
-    if (d.getDay() === 0 || d.getDay() === 6) reasons.add('weekend')
-    const h = d.getHours()
-    if (h < openStartHour || h >= openEndHour) reasons.add('night')
-    for (const r of restrictedSlots) {
-      if (s.startAt < r.endAt && s.endAt > r.startAt) reasons.add('restricted')
-    }
+    const start = new Date(s.startAt)
+    const endPoint = new Date(new Date(s.endAt).getTime() - 1)
+    if (start.getDay() === 0 || start.getDay() === 6 || endPoint.getDay() === 0 || endPoint.getDay() === 6) reasons.add('weekend')
+    if (start.getHours() < openStartHour || endPoint.getHours() >= openEndHour) reasons.add('night')
   }
   return [...reasons]
 }

@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "取消审核",
+  "navigationBarTitleText": "取消待审",
   "usingComponents": {
     "empty-state": "../../../components/empty-state/index",
     "status-tag": "../../../components/status-tag/index",

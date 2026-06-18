@@ -1,1 +1,6 @@
-{"navigationBarTitleText":"系统维护"}
+{
+  "navigationBarTitleText": "系统设置",
+  "usingComponents": {
+    "empty-state": "../../../components/empty-state/index"
+  }
+}

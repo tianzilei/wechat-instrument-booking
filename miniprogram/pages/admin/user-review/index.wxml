@@ -1,12 +1,32 @@
 <view class="page">
-  <empty-state wx:if="{{items.length === 0}}" title="暂无注册待审" />
-  <view wx:if="{{items.length > 0}}" class="surface-section">
-    <view wx:for="{{items}}" wx:key="_id" class="list-card review-card">
-      <view class="review-title">{{item.nameSnapshot}}</view>
-      <view class="page-subtitle">{{item.projectName}} · {{item.projectAbbr}}</view>
-      <view class="review-actions">
-        <button class="button button--primary button--compact" data-id="{{item._id}}" data-action="approve" bindtap="review">通过</button>
-        <button class="button button--danger button--compact" data-id="{{item._id}}" data-action="reject" bindtap="review">拒绝</button>
+  <view class="page-intro">统一处理注册审核和课题申请，避免在首页重复分流。</view>
+
+  <view class="section">
+    <view class="section-title">用户待审</view>
+    <empty-state wx:if="{{userItems.length === 0}}" title="暂无注册待审" />
+    <view wx:if="{{userItems.length > 0}}" class="surface-section">
+      <view wx:for="{{userItems}}" wx:key="_id" class="list-card review-card">
+        <view class="review-title">{{item.nameSnapshot}}</view>
+        <view class="page-subtitle">{{item.projectName}} · {{item.projectAbbr}}</view>
+        <view class="review-actions">
+          <button class="button button--primary button--compact" data-id="{{item._id}}" data-action="approve" bindtap="review">通过</button>
+          <button class="button button--danger button--compact" data-id="{{item._id}}" data-action="reject" bindtap="review">拒绝</button>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view class="section">
+    <view class="section-title">课题待审</view>
+    <empty-state wx:if="{{projectItems.length === 0}}" title="暂无课题待审" />
+    <view wx:if="{{projectItems.length > 0}}" class="surface-section">
+      <view wx:for="{{projectItems}}" wx:key="_id" class="list-card review-card">
+        <view class="review-title">{{item.proposedName}}</view>
+        <view class="page-subtitle">缩写：{{item.proposedAbbr}}</view>
+        <view class="review-actions">
+          <button class="button button--primary button--compact" data-application="{{item}}" bindtap="approveProject">通过</button>
+          <button class="button button--danger button--compact" data-application="{{item}}" bindtap="rejectProject">拒绝</button>
+        </view>
       </view>
     </view>
   </view>

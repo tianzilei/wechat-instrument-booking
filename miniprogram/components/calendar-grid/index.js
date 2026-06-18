@@ -18,14 +18,14 @@ Component({
       type: Array,
       value: [],
     },
-    restrictedSlots: {
-      type: Array,
-      value: [],
+    isAdmin: {
+      type: Boolean,
+      value: false,
     },
   },
 
   observers: {
-    'days,hours,items,maintenanceSlots,restrictedSlots': function buildCells() {
+    'days,hours,items,maintenanceSlots,isAdmin': function buildCells() {
       this.buildCellMap()
     },
   },
@@ -41,6 +41,7 @@ Component({
     selectedCount: 0,
     suppressNextTap: false,
     suppressTapKey: '',
+    touchStartPoint: null,
   },
 
   lifetimes: {
@@ -125,10 +126,10 @@ Component({
           text: '维护',
           subtext: maintenance.reason || '',
           status: 'maintenance',
+          maintenanceId: maintenance.maintenanceId || maintenance._id || '',
         }
       }
 
-      const restricted = this.properties.restrictedSlots.find((slot) => this.overlaps(keyTime, nextTime, slot.startAt, slot.endAt))
       const booking = this.properties.items.find((item) => this.overlaps(keyTime, nextTime, item.startAt, item.endAt))
       if (booking) {
         return {
@@ -137,15 +138,6 @@ Component({
           subtext: booking.userName || '',
           status: booking.status,
           bookingId: booking.bookingId,
-        }
-      }
-
-      if (restricted) {
-        return {
-          className: getCellClass('restricted'),
-          text: '受限',
-          subtext: restricted.reason || '需审核',
-          status: 'restricted',
         }
       }
 
@@ -166,12 +158,19 @@ Component({
       }
     },
 
-    isCellDisabled(cell) {
+    getCellData(cell) {
       const key = `${cell.date}-${cell.hour}`
-      const cellData = this.data.cellMap[key]
-      if (!cellData) return true
-      const disabledStatuses = ['past', 'maintenance']
-      return disabledStatuses.includes(cellData.status)
+      return this.data.cellMap[key] || null
+    },
+
+    isSelectableCell(cell) {
+      const cellData = this.getCellData(cell)
+      if (!cellData) return false
+      if (cellData.status === 'past' || cellData.status === 'maintenance') return false
+      if (this.properties.isAdmin) {
+        return ['available', 'confirmed', 'pending_review'].includes(cellData.status)
+      }
+      return cellData.status === 'available'
     },
 
     getCellIndex(cell) {
@@ -215,7 +214,7 @@ Component({
       const selectedMap = {}
       for (let index = from; index <= to; index += 1) {
         const cell = this.getCellByIndex(index)
-        if (cell) selectedMap[`${cell.date}-${cell.hour}`] = true
+        if (cell && this.isSelectableCell(cell)) selectedMap[`${cell.date}-${cell.hour}`] = true
       }
       this.setData({
         selectedMap,
@@ -224,7 +223,7 @@ Component({
     },
 
     toggleSelectedCell(cell) {
-      if (this.isCellDisabled(cell)) return
+      if (!this.isSelectableCell(cell)) return
       const key = `${cell.date}-${cell.hour}`
       const selectedMap = { ...this.data.selectedMap }
       if (selectedMap[key]) {
@@ -241,7 +240,8 @@ Component({
     onTouchStart(event) {
       if (this.data.selecting) return
       const startCell = this.makeCell(event)
-      if (this.isCellDisabled(startCell)) return
+      if (!this.isSelectableCell(startCell)) return
+      const touch = (event.touches && event.touches[0]) || null
       const startKey = `${startCell.date}-${startCell.hour}`
       const timer = setTimeout(() => {
         this.setData({
@@ -249,10 +249,34 @@ Component({
           startCell,
           suppressNextTap: true,
           suppressTapKey: startKey,
-        }, () => this.updateSelectedMap(startCell, startCell))
+        }, () => {
+          this.updateSelectedMap(startCell, startCell)
+          this.triggerEvent('selectmodechange', { selecting: true })
+        })
         wx.vibrateShort({ type: 'light' })
       }, 350)
-      this.setData({ longPressTimer: timer, startCell, selectedMap: {}, selectedCount: 0 })
+      this.setData({
+        longPressTimer: timer,
+        startCell,
+        selectedMap: {},
+        selectedCount: 0,
+        touchStartPoint: touch ? { x: touch.clientX, y: touch.clientY } : null,
+      })
+    },
+
+    onTouchMove(event) {
+      if (!this.data.longPressTimer || !this.data.touchStartPoint) return
+      const touch = (event.touches && event.touches[0]) || null
+      if (!touch) return
+      const deltaX = Math.abs(touch.clientX - this.data.touchStartPoint.x)
+      const deltaY = Math.abs(touch.clientY - this.data.touchStartPoint.y)
+      if (deltaX >= 8 || deltaY >= 8) {
+        clearTimeout(this.data.longPressTimer)
+        this.setData({
+          longPressTimer: null,
+          touchStartPoint: null,
+        })
+      }
     },
 
     onTouchEnd() {
@@ -261,14 +285,16 @@ Component({
       }
       this.setData({
         longPressTimer: null,
+        touchStartPoint: null,
       })
     },
 
     onCellTap(event) {
       const cell = this.makeCell(event)
+      const cellData = this.getCellData(cell)
       const key = `${cell.date}-${cell.hour}`
 
-      if (this.isCellDisabled(cell)) return
+      if (!cellData || cellData.status === 'past') return
       if (this.data.suppressNextTap && this.data.suppressTapKey === key) {
         this.setData({
           suppressNextTap: false,
@@ -286,13 +312,14 @@ Component({
         this.toggleSelectedCell(cell)
         return
       }
-      this.triggerEvent('selectrange', {
-        startCell: cell,
-        endCell: cell,
+      this.triggerEvent('celltap', {
+        cell,
+        cellData,
       })
     },
 
     cancelMultiSelect() {
+      const wasSelecting = this.data.selecting
       this.setData({
         selecting: false,
         startCell: null,
@@ -301,6 +328,9 @@ Component({
         suppressNextTap: false,
         suppressTapKey: '',
       })
+      if (wasSelecting) {
+        this.triggerEvent('selectmodechange', { selecting: false })
+      }
     },
 
     confirmMultiSelect() {
@@ -325,6 +355,10 @@ Component({
         startCell: selectedCells[0],
         endCell: selectedCells[selectedCells.length - 1],
         selectedCells,
+        selectedEntries: selectedCells.map((cell) => ({
+          ...cell,
+          status: this.getCellData(cell).status,
+        })),
       })
       this.cancelMultiSelect()
     },

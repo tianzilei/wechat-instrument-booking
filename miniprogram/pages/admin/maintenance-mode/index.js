@@ -3,19 +3,46 @@ const api = require('../../../utils/api')
 Page({
   data: {
     settings: null,
+    stats: {
+      byMonth: [],
+      byTimeType: { workingHours: 0, nonWorkingHours: 0 },
+    },
     loading: false,
     exporting: false,
     form: { openStartHour: 9, openEndHour: 18, maxAdvanceDays: 7 },
     showForm: false,
   },
 
-  onShow() { this.loadSettings() },
+  onShow() {
+    this.loadSettings()
+    this.loadStats()
+  },
 
   async loadSettings() {
     try {
       const res = await api.callFunction('getSettings')
       this.setData({ settings: res, form: { openStartHour: res.openStartHour, openEndHour: res.openEndHour, maxAdvanceDays: res.maxAdvanceDays } })
     } catch (err) { this.setData({ settings: null }) }
+  },
+
+  async loadStats() {
+    try {
+      const stats = await api.callFunction('getAdminStats')
+      this.setData({
+        stats: {
+          byMonth: [],
+          byTimeType: { workingHours: 0, nonWorkingHours: 0 },
+          ...stats,
+        },
+      })
+    } catch (err) {
+      this.setData({
+        stats: {
+          byMonth: [],
+          byTimeType: { workingHours: 0, nonWorkingHours: 0 },
+        },
+      })
+    }
   },
 
   showForm() { this.setData({ showForm: true }) },

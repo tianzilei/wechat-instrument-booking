@@ -35,7 +35,6 @@ function getCellClass(status) {
     cancel_pending: 'calendar-cell--pending',
     rule_review_pending: 'calendar-cell--pending',
     maintenance: 'calendar-cell--maintenance',
-    restricted: 'calendar-cell--restricted',
     selected: 'calendar-cell--selected',
     past: 'calendar-cell--past',
   }

@@ -3,10 +3,11 @@
   <view class="calendar-toolbar">
     <view class="calendar-week-title">{{weekTitle}}</view>
     <view class="calendar-user-hint">{{userHint}}</view>
+    <view class="calendar-window-hint">{{bookingWindowHint}}</view>
     <view class="calendar-control-row">
       <view class="calendar-actions">
-        <button class="calendar-action" bindtap="prevWeek">上周</button>
-        <button class="calendar-action" bindtap="nextWeek">下周</button>
+        <button class="calendar-action {{isSelecting ? 'calendar-action--disabled' : ''}}" bindtap="prevWeek">上周</button>
+        <button class="calendar-action {{isSelecting ? 'calendar-action--disabled' : ''}}" bindtap="nextWeek">下周</button>
       </view>
       <view class="segmented calendar-mode">
         <view class="segmented-item {{!includeNight ? 'segmented-item--active' : ''}}" bindtap="showWorktime">工作时间</view>
@@ -21,7 +22,6 @@
       <view class="legend-item"><view class="legend-dot legend-dot--booked"></view>已预约</view>
       <view class="legend-item"><view class="legend-dot legend-dot--pending"></view>待审核</view>
       <view class="legend-item"><view class="legend-dot legend-dot--maintenance"></view>维护</view>
-      <view class="legend-item"><view class="legend-dot legend-dot--restricted"></view>受限</view>
     </view>
   </scroll-view>
 
@@ -30,8 +30,10 @@
     hours="{{hours}}"
     items="{{items}}"
     maintenance-slots="{{maintenanceSlots}}"
-    restricted-slots="{{restrictedSlots}}"
+    is-admin="{{isAdminView}}"
+    bind:celltap="onGridCellTap"
     bind:selectrange="onSelectRange"
+    bind:selectmodechange="onSelectModeChange"
   />
 
   <time-range-sheet
@@ -44,5 +46,16 @@
     disabled="{{sheet.disabled}}"
     bind:close="closeSheet"
     bind:submit="submitSheet"
+  />
+
+  <theme-modal
+    visible="{{maintenanceModal.visible}}"
+    title="{{maintenanceModal.title}}"
+    content="{{maintenanceModal.content}}"
+    confirm-text="{{maintenanceModal.confirmText}}"
+    confirm-tone="{{maintenanceModal.confirmTone}}"
+    payload="{{maintenanceModal.payload}}"
+    bind:cancel="closeMaintenanceModal"
+    bind:confirm="confirmMaintenanceModal"
   />
 </view>

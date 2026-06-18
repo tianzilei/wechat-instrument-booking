@@ -42,7 +42,6 @@ exports.main = async () => {
     data: { serviceMode: 'rule_migrating', updatedAt: now },
   })
 
-  const restricted = await db.collection('restricted_slots').where({ status: 'active' }).limit(100).get()
   const OPEN_START_HOUR = settings.openStartHour || 9
   const OPEN_END_HOUR = settings.openEndHour || 18
   let cursor = 0
@@ -66,7 +65,7 @@ exports.main = async () => {
         const d = new Date(s.startAt)
         if (d.getDay() === 0 || d.getDay() === 6) return true
         if (d.getHours() < OPEN_START_HOUR || d.getHours() >= OPEN_END_HOUR) return true
-        return restricted.data.some((r) => s.startAt < r.endAt && s.endAt > r.startAt)
+        return false
       })
       if (hitNewRule) {
         await db.collection('bookings').doc(booking._id).update({

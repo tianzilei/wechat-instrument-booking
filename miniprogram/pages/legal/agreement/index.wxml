@@ -14,7 +14,7 @@
       <view class="legal-text">2. 用户注册与管理员审核；</view>
       <view class="legal-text">3. 按小时预约仪器使用时段；</view>
       <view class="legal-text">4. 预约取消、候补与管理；</view>
-      <view class="legal-text">5. 维护时间与受限时段管理；</view>
+      <view class="legal-text">5. 维护时间管理；</view>
       <view class="legal-text">6. 个人预约记录与使用统计；</view>
       <view class="legal-text">7. 隐私请求提交与处理。</view>
     </view>
@@ -34,7 +34,7 @@
       <view class="legal-text">2. 可提前7个自然日预约，超出范围不可预约。</view>
       <view class="legal-text">3. 当前小时及过去时段不可预约。</view>
       <view class="legal-text">4. 同一预约单支持多个不连续时段选择。</view>
-      <view class="legal-text">5. 非工作时间、周末和受限时段的预约需管理员审核。</view>
+      <view class="legal-text">5. 非工作时间和周末预约需管理员审核。</view>
       <view class="legal-text">6. 预约成功后请按时使用仪器，避免资源浪费。</view>
       <view class="legal-text">7. 预约备注为选填项，最多 500 字，不对外公开。</view>
     </view>

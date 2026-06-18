@@ -1,6 +1,0 @@
-{
-  "navigationBarTitleText": "受限时段",
-  "usingComponents": {
-    "empty-state": "../../../components/empty-state/index"
-  }
-}

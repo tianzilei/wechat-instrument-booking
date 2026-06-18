@@ -2,18 +2,39 @@
   <view class="surface-section admin-form-section">
     <view class="section-title">新增维护时间</view>
     <view class="field">
-      <view class="field-label">开始时间</view>
-      <input class="input" value="{{form.startAt}}" data-field="startAt" bindinput="onInput" placeholder="例：2026-06-10 09:00" />
+      <view class="field-label">日期</view>
+      <picker mode="date" value="{{form.date}}" bindchange="onDateChange">
+        <view class="input picker-field">{{form.date}}</view>
+      </picker>
     </view>
     <view class="field">
-      <view class="field-label">结束时间</view>
-      <input class="input" value="{{form.endAt}}" data-field="endAt" bindinput="onInput" placeholder="例：2026-06-10 12:00" />
+      <view class="field-label">开始小时</view>
+      <picker mode="selector" range="{{hours}}" range-key="label" value="{{form.startHour}}" bindchange="onHourChange">
+        <view class="input picker-field">{{form.startHour < 10 ? '0' + form.startHour : form.startHour}}:00</view>
+      </picker>
+    </view>
+    <view class="field">
+      <view class="field-label">时长</view>
+      <picker mode="selector" range="{{durations}}" range-key="label" value="{{form.durationHours - 1}}" bindchange="onDurationChange">
+        <view class="input picker-field">{{form.durationHours}} 小时</view>
+      </picker>
     </view>
     <view class="field">
       <view class="field-label">原因</view>
-      <textarea class="textarea" value="{{form.reason}}" data-field="reason" bindinput="onInput" placeholder="维护原因"></textarea>
+      <textarea class="textarea" value="{{form.reason}}" bindinput="onReasonInput" placeholder="维护原因（选填）"></textarea>
     </view>
     <button class="button button--primary" bindtap="create">新增维护</button>
+  </view>
+
+  <view wx:if="{{focusItem}}" class="section">
+    <view class="section-title">当前维护信息</view>
+    <view class="surface-section">
+      <view class="list-card slot-card slot-card--focus">
+        <view class="slot-time">{{focusItem.timeText}}</view>
+        <view class="page-subtitle">{{focusItem.reason || '无原因'}}</view>
+        <view class="page-subtitle">{{focusItem.impactText}}</view>
+      </view>
+    </view>
   </view>
 
   <view class="section">
@@ -23,6 +44,10 @@
       <view wx:for="{{items}}" wx:key="_id" class="list-card slot-card">
         <view class="slot-time">{{item.timeText}}</view>
         <view class="page-subtitle">{{item.reason || '无原因'}}</view>
+        <view class="page-subtitle">{{item.impactText}}</view>
+        <view class="review-actions">
+          <button class="button button--danger button--compact" data-id="{{item._id}}" bindtap="deleteItem">删除</button>
+        </view>
       </view>
     </view>
   </view>
