@@ -1,12 +1,12 @@
 # PROJECT KNOWLEDGE BASE
 
-**Generated:** 2026-06-18T09:03:07Z
-**Commit:** e85d5c5
+**Generated:** 2026-06-18T13:06:14Z
+**Commit:** 5cd37d5
 **Branch:** main
 
 ## OVERVIEW
 
-仪器预约小程序 — WeChat Mini-Program instrument booking system with CloudBase backend. Public calendar view, registration with admin approval, hourly booking with review workflows, waitlist, maintenance/restricted time slots, usage statistics, project management, privacy/legal compliance, data lifecycle, and account lifecycle.
+仪器预约小程序 — WeChat Mini-Program instrument booking system with CloudBase backend. Public calendar view, registration with admin approval, hourly booking with review workflows, waitlist, maintenance-driven time-slot governance, usage statistics, project management, privacy/legal compliance, data lifecycle, and account lifecycle.
 
 **Stack:** WeChat Mini-Program (native WXML/WXSS/JS) + WeChat CloudBase (Node.js 18.15 cloud functions)
 
@@ -103,6 +103,7 @@ tcb fn deploy <function-name> --dir cloudfunctions/<function-name> -e <env-id>
 
 - `miniprogramRoot` is `miniprogram/` — app files are NOT at repo root
 - `booking/form` is a 7-line stub that redirects to calendar tab; safe to remove
+- Restricted-slot cloud functions are retained only as deprecated compatibility stubs; active admin flows use maintenance-only governance
 - `legacy-wechat-demo/` is a tracked archived reference directory and should not be treated as active app code
 - LSP unavailable (no TypeScript in project)
 - All cloud functions are self-contained — no shared `utils/` directory among them

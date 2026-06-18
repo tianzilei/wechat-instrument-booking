@@ -1,6 +1,6 @@
 # miniprogram/pages/admin/ — Admin Section
 
-Admin-only pages (tab 2: 管理). Registration review, booking review, cancel review, maintenance, restricted slots, user management, stats. v2 adds project management, privacy requests, rule review, and maintenance mode.
+Admin-only pages (tab 2: 管理). Registration review, booking review, cancel review, maintenance, user management, stats. v2 adds project management, privacy requests, rule review, and maintenance mode. Restricted-slot management has been retired from active UI.
 
 ## OVERVIEW
 
@@ -11,6 +11,7 @@ Admin-only pages (tab 2: 管理). Registration review, booking review, cancel re
 ```
 pages/admin/
 ├── index/              # Admin hub with dashboard stats + todo counts
+├── booking-detail/     # Booking detail and review actions
 ├── booking-review/     # Review special-time bookings
 ├── cancel-review/      # Review cancellation requests
 ├── maintenance/        # Create/delete maintenance slots
@@ -18,7 +19,6 @@ pages/admin/
 ├── privacy-review/     # Review and process privacy requests
 ├── project-review/     # Review project applications
 ├── projects/           # Manage project directory (create, edit, activate/deactivate)
-├── restricted/         # Create/delete restricted slots
 ├── rule-review/        # Review bookings flagged by rule changes
 ├── stats/              # Usage statistics
 ├── user-review/        # Review registration applications
@@ -30,6 +30,7 @@ pages/admin/
 | Page | Cloud Functions | Key UI |
 |------|----------------|--------|
 | `index/` | `getAdminDashboard` | Dashboard stats + todo counts |
+| `booking-detail/` | `getAdminBookingDetail`, `reviewBookingV2`, `reviewCancelV2` | Detail + review action bar |
 | `booking-review/` | `listBookingReviews`, `reviewBookingV2` | List + approve/reject with reason modal |
 | `cancel-review/` | `listCancelReviews`, `reviewCancelV2` | List + approve/reject |
 | `maintenance/` | `createMaintenance`, `listMaintenanceSlots` | Create form + list with delete |
@@ -37,7 +38,6 @@ pages/admin/
 | `privacy-review/` | `listPrivacyRequests`, `processPrivacyRequest` | List + process with status flow |
 | `project-review/` | `listProjectApplications`, `reviewProjectApplication` | List + approve/reject |
 | `projects/` | `listProjects`, `createProject`, `updateProject`, `setProjectStatus` | List + create/edit/activate/deactivate |
-| `restricted/` | `createRestrictedSlot`, `listRestrictedSlots` | Create form + list with delete |
 | `rule-review/` | `listBookingReviews` (rule_review_pending), `reviewBookingV2` | List + approve/reject rule-flagged bookings |
 | `stats/` | `getAdminStats` | Per-user hours, monthly breakdown |
 | `user-review/` | `listRegistrationReviews`, `reviewRegistrationV2` | List + approve/reject with reason modal |

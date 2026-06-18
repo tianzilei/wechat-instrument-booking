@@ -1,6 +1,6 @@
 # 仪器预约小程序实现前设计产物
 
-> **文档状态：v1 历史设计，仅用于理解现有代码。** 其中手机号、学号、学院、导师、连续拖动预约、单段 `startAt/endAt`、公开身份和用户维度统计等内容已经废弃。后续实现必须以 [`execution-baseline-v2.md`](./execution-baseline-v2.md) 为最高业务依据，以 [`style-guide.md`](./style-guide.md) 为视觉依据。
+> **文档状态：v1 历史设计，仅用于理解现有代码。** 其中手机号、学号、学院、导师、连续拖动预约、单段 `startAt/endAt`、公开身份、受限时段治理和用户维度统计等内容已经废弃。后续实现必须以 [`execution-baseline-v2.md`](./execution-baseline-v2.md) 为最高业务依据，以 [`style-guide.md`](./style-guide.md) 为视觉依据。
 
 版本：v1.0  
 技术栈：微信小程序 + 微信云开发  

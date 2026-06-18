@@ -303,11 +303,11 @@
 | --- | --- | --- | --- |
 | 正常/已确认 | `--color-primary-soft` | `--color-primary` | 已预约、本人预约 |
 | 信息/审核 | `--color-accent-soft` | `--color-accent` | 待审核、规则复审 |
-| 警示/受限 | `--color-warning-soft` | `--color-warning` | 周末、受限时段 |
+| 警示/特殊时段 | `--color-warning-soft` | `--color-warning` | 周末、非工作时间 |
 | 危险/维护 | `--color-danger-soft` 或维护浅底 | 危险/维护色 | 拒绝、维护取消 |
 | 结束/禁用 | `--color-past-soft` | `--color-past` | 已结束、不可编辑 |
 
-不得把审核中和受限时段使用同一颜色；不得把维护与普通禁用使用同一表现。
+不得把审核中和特殊时段使用同一颜色；不得把维护与普通禁用使用同一表现。
 
 ## 18. 响应式验收尺寸
 

@@ -66,7 +66,6 @@ npm install
 | `bookings` | 预约记录 |
 | `waitlists` | 候补记录 |
 | `maintenance_slots` | 维护时段 |
-| `restricted_slots` | 受限时段 |
 | `settings` | 全局工作时间、维护模式和协议版本 |
 | `system_locks` | 预约/候补关键写入互斥锁 |
 | `review_logs` | 审核与运维操作记录 |
@@ -77,6 +76,8 @@ npm install
 | `rule_migration_tasks` | 规则迁移任务 |
 | `monthly_stats` | 匿名月度统计 |
 | `error_logs` | 可清理的错误日志 |
+
+`restricted_slots` 仅在历史受限时段模型中使用；当前函数实现已退役为 `DEPRECATED` stub，新环境不需要创建该集合。
 
 `perm4` 仅被未部署的示例函数使用，不属于业务集合。
 
@@ -248,6 +249,12 @@ tcb fn log <function-name> --error --limit 20 --json -e <env-id>
 - `generate-daily-stats`
 - `cleanup-retention-data`
 
+当前任务口径：
+
+- `reconcileWaitlists` 只会推进同一 `scheduleKey` 的队首候补，并在超时后将 `confirming` 记录标记为 `expired`。
+- `processDeletionTasks` 除预约、候补、通知外，还会清理 `privacy_requests` 中的用户关联与自由文本。
+- `cleanupRetentionData` 采用分页迭代方式执行 30/90/365 天规则，避免固定 `limit` 漏清理。
+
 ### 5.4 CLI 调用限制
 
 `tcb fn invoke` 调用事件型云函数时没有小程序用户的微信 `OPENID` 上下文。因此：
@@ -377,7 +384,7 @@ tcb db nosql backup restore \
 - 管理员重新登录后能进入管理页，普通用户不能进入。
 - 游客只能查看公开周历，不返回姓名、备注或 `openid`。
 - 普通用户只能查看自己的预约、候补和隐私请求。
-- 预约冲突、维护时段、受限时段和取消审核规则正常。
+- 预约冲突、维护时段和取消审核规则正常。
 - 真机完成登录、注册、预约、审核、取消和候补测试。
 - 验收结束后删除虚构测试数据。
 - 最终确认 `serviceMode` 为 `normal`。
@@ -415,6 +422,7 @@ tcb db nosql backup restore \
 2. 逐个展开状态仍有效的 `segments`，避免不连续时段被渲染成一整段。
 3. 保留独立的 `startAt/endAt` 查询以兼容 V1 历史记录。
 4. 将 `pending_review`、`cancel_pending` 和 `waitlist_confirming` 映射为待审核占用，将 `confirmed` 映射为已预约占用。
+5. `listMyBookings` 和 `cancelBookingV2` 也必须兼容只包含 `startAt/endAt` 的 V1 历史预约，避免旧记录在“我的预约”中缺时段或无法取消。
 
 排查时可先查询待审核记录的字段结构，再调用公开周历函数验证返回的 `slots`：
 

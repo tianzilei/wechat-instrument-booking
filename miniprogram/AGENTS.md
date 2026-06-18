@@ -45,8 +45,8 @@ miniprogram/
 | `calendar/` | Main week-view (tab 0) | `getPublicCalendar`, `createBookingV2` |
 | `auth/` | Login, register | `login`, `submitRegistrationV2` |
 | `booking/` | Form stub (7 lines) | None (redirects to calendar) |
-| `profile/` | Hub (tab 1), bookings, stats, privacy | `getUserStats`, `listMyBookings`, `cancelBookingV2` |
-| `waitlist/` | My waitlist items | `listMyWaitlists`, `confirmWaitlistV2` |
+| `profile/` | Hub (tab 1), bookings, stats, privacy | `getUserStats`, `listMyBookings` (V1/V2 booking compatibility), `cancelBookingV2` |
+| `waitlist/` | My waitlist items | `listMyWaitlists`, `confirmWaitlistV2` (server-side deadline + queue-head recheck) |
 | `legal/` | User agreement, privacy policy | `getLegalDocuments`, `acceptLegalDocuments` |
 | `admin/` | 13 admin pages (tab 2) | See `pages/admin/AGENTS.md` |
 
@@ -69,7 +69,7 @@ Custom component at `custom-tab-bar/`. 3 text-only tabs matched to `app.json`. R
 - **Page pattern**: `pages/<feature>/<subpage>/index.{js,json,wxml,wxss}` — all 4 files mandatory
 - **Data loading**: Always in `onShow()`, never only in `onLoad()` — pages refresh on every visibility
 - **API layer**: ALL cloud function calls via `utils/api.js` — `callFunction(name, data)`
-- **Auth gating**: Pages check `getApp().needsLegalAcceptance()` before legal docs; `getApp().isApprovedUser()` (checks `accountStatus === 'active'` AND `registrationStatus === 'approved'`) / `isAdmin()` before operations. Booking and waitlist conversion are re-validated server-side against account status, legal version, and `serviceMode`.
+- **Auth gating**: Pages check `getApp().needsLegalAcceptance()` before legal docs; `getApp().isApprovedUser()` (checks `accountStatus === 'active'` AND `registrationStatus === 'approved'`) / `isAdmin()` before operations. Booking and waitlist conversion are re-validated server-side against account status, legal version, `serviceMode`, and waitlist confirmation deadline.
 - **Tab bar sync**: Every tab page calls `setTabBarSelected(this, index)` in `onShow()`
 - **Imports**: CommonJS `require`/`module.exports` only. No ES modules.
 - **WXSS**: Import chain tokens → base → components; page-specific WXSS for layout only

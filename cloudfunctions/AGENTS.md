@@ -26,8 +26,8 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 ### Waitlist
 | Function | Role |
 |----------|------|
-| `confirmWaitlistV2` | Confirm/decline available slot; converts to booking |
-| `confirmWaitlist` | Confirm/decline available slot; converts to booking |
+| `confirmWaitlistV2` | Confirm/decline available slot; enforces queue-head deadline and converts to booking |
+| `confirmWaitlist` | Legacy confirm/decline path with confirmation-deadline enforcement |
 | `listMyWaitlists` | User's waitlist entries |
 
 ### Slot Management
@@ -35,8 +35,8 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 |----------|------|
 | `createMaintenance` | Admin creates maintenance slot; cancels conflicting bookings |
 | `deleteMaintenance` | Admin soft-deletes maintenance |
-| `createRestrictedSlot` | Admin creates restricted slot (needs approval) |
-| `deleteRestrictedSlot` | Admin soft-deletes restricted slot |
+| `createRestrictedSlot` | Deprecated stub — returns `DEPRECATED` |
+| `deleteRestrictedSlot` | Deprecated stub — returns `DEPRECATED` |
 
 ### Project Management
 | Function | Role |
@@ -87,7 +87,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 |----------|------|--------|
 | `getCalendarBookings` | Weekly public calendar data | Public |
 | `listMaintenanceSlots` | All active maintenance slots | Public |
-| `listRestrictedSlots` | All active restricted slots | Public |
+| `listRestrictedSlots` | Deprecated stub — returns `DEPRECATED` | Public |
 | `listMyBookings` | User's bookings (filterable) | Self |
 | `getUserStats` | User's usage statistics | Self |
 | `getAdminDashboard` | Dashboard counts | Admin |
@@ -132,8 +132,8 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 | Booking conflict logic | `createBooking/index.js` | Maintenance/restriction/working-hour checks |
 | V2 booking logic | `createBookingV2/index.js` | Multi-segment model, requestId idempotency, server-side legal/service-mode enforcement, booking mutex |
 | Cancel threshold | `cancelBooking/index.js` | 12-hour rule; `cancel_pending` vs direct cancel |
-| V2 cancel logic | `cancelBookingV2/index.js` | 12-hour rule, segments model |
-| Waitlist conversion | `confirmWaitlistV2/index.js` | Confirming waitlist → booking conversion, server-side legal/service-mode enforcement, booking mutex |
+| V2 cancel logic | `cancelBookingV2/index.js` | 12-hour rule, segments model, V1/V2 booking compatibility |
+| Waitlist conversion | `confirmWaitlistV2/index.js` | Confirming waitlist → booking conversion, server-side legal/service-mode/deadline enforcement, booking mutex |
 | Review audit trail | `reviewBooking/`, `reviewCancel/`, `reviewRegistration/` | All write to `review_logs` collection |
 | Calendar data assembly | `getCalendarBookings/index.js` | Public weekly view with field whitelist |
 | V2 public calendar | `getPublicCalendar/index.js` | Weekly view, strict field whitelist |
@@ -144,7 +144,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 | Legal documents | `getLegalDocuments/`, `acceptLegalDocuments/` | Agreement + privacy policy versioning |
 | User lifecycle | `suspendUser/`, `restoreUser/`, `deleteAccount/` | Suspension, restoration, deletion |
 | Settings | `getSettings/`, `updateSettings/`, `scanSettingsVersion/` | System configuration, version migration |
-| Background tasks | `expireBookingReviews/`, `reconcileWaitlists/`, `cleanupRetentionData/` | Scheduled jobs; current implementations iterate in batches until exhausted |
+| Background tasks | `expireBookingReviews/`, `reconcileWaitlists/`, `cleanupRetentionData/` | Scheduled jobs; waitlists advance queue-head only, retention/deletion tasks iterate in batches until exhausted |
 | Operational export | `exportOperationalData/index.js` | Admin-only anonymized JSON export, 60s timeout |
 
 ## CONVENTIONS
@@ -156,6 +156,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 - **Field whitelist**: Never return raw DB records; always `.field({...})` filter
 - **Server time**: Use `new Date()` in cloud functions; never trust client timestamps
 - **Booking serialization**: `createBookingV2` and `confirmWaitlistV2` serialize conflicting writes through `system_locks/booking_schedule_mutex`
+- **Waitlist confirmation**: `reconcileWaitlists` only promotes the current queue head for a `scheduleKey`; `confirmWaitlistV2` re-checks `confirmDeadlineAt` before conversion
 - **Fail-closed text safety**: If `msgSecCheck` is unavailable, reject the write instead of proceeding
 - **Init**: Most use `cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })`
 
@@ -175,3 +176,4 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 - `exportOperationalData` has a 60-second timeout — the only function exceeding the default 15s
 - Only lint suppression in codebase is at `openapi/index.js:54`
 - `confirmWaitlist`, `getServerDataDemo`, `getTempFileURL`, `openapi`, and `wxContext` exist locally but are not in the active deployment manifest
+- `processDeletionTasks` now clears privacy-request user linkage during account deletion, and `cleanupRetentionData` paginates year-old data cleanup
