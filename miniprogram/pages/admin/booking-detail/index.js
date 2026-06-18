@@ -7,6 +7,33 @@ const SPECIAL_RULE_LABELS = {
   weekend: '周末',
 }
 
+const REVIEW_ACTION_LABELS = {
+  booking: {
+    approve: '预约审核通过',
+    reject: '预约审核拒绝',
+    auto_timeout: '预约审核超时',
+    rule_auto_timeout: '规则复审超时',
+  },
+  cancel: {
+    approve: '取消申请已通过',
+    reject: '取消申请已驳回',
+    auto_reject_timeout: '取消申请超时自动驳回',
+  },
+}
+
+function getReviewActionText(log) {
+  const targetType = log.targetType || 'booking'
+  return (REVIEW_ACTION_LABELS[targetType] && REVIEW_ACTION_LABELS[targetType][log.action]) || log.action || '未知操作'
+}
+
+function getReviewReasonText(log) {
+  if (log.reason) return log.reason
+  if (['auto_timeout', 'rule_auto_timeout', 'auto_reject_timeout'].includes(log.action)) {
+    return '系统自动处理'
+  }
+  return ''
+}
+
 Page({
   data: {
     bookingId: '',
@@ -48,6 +75,12 @@ Page({
         timeText: `${dateUtils.formatDateTime(item.startAt)} - ${dateUtils.formatDateTime(item.endAt)}`,
         cancelled: (item.state || 'active') === 'cancelled',
       }))
+      const reviewLogs = (booking.reviewLogs || []).map((item) => ({
+        ...item,
+        actionText: getReviewActionText(item),
+        reasonText: getReviewReasonText(item),
+        timeText: item.createdAt ? dateUtils.formatDateTime(item.createdAt) : '',
+      }))
       this.setData({
         booking: {
           ...booking,
@@ -56,6 +89,7 @@ Page({
           statusTone: status.tone,
           ruleText: (booking.specialReasons || []).map((item) => SPECIAL_RULE_LABELS[item] || item).join('、') || '无',
           segments,
+          reviewLogs,
           canReview: ['pending_review', 'cancel_pending', 'rule_review_pending'].includes(booking.status),
           approveText: booking.status === 'cancel_pending' ? '同意取消' : '通过',
           rejectText: '拒绝',
@@ -103,7 +137,9 @@ Page({
 
   async submitReview(action, reason) {
     try {
-      const functionName = this.data.booking && this.data.booking.status === 'cancel_pending'
+      const isCancelReview = this.data.booking && this.data.booking.status === 'cancel_pending'
+      const isRuleReview = this.data.booking && this.data.booking.status === 'rule_review_pending'
+      const functionName = isCancelReview
         ? 'reviewCancelV2'
         : 'reviewBookingV2'
       await api.callFunction(functionName, {
@@ -111,7 +147,15 @@ Page({
         action,
         reason,
       })
-      wx.showToast({ title: '已处理', icon: 'success' })
+      let toastTitle = '已处理'
+      if (isCancelReview) {
+        toastTitle = action === 'approve' ? '已同意取消' : '已驳回取消'
+      } else if (isRuleReview) {
+        toastTitle = action === 'approve' ? '已通过规则复审' : '已拒绝规则复审'
+      } else {
+        toastTitle = action === 'approve' ? '已通过审核' : '已拒绝预约'
+      }
+      wx.showToast({ title: toastTitle, icon: 'success' })
       this.loadBooking()
     } catch (err) {
       api.showError(err)

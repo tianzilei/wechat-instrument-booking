@@ -8,6 +8,11 @@
         <view class="waitlist-time">{{item.timeText}}</view>
         <status-tag text="{{item.statusText}}" tone="{{item.statusTone}}" />
       </view>
+      <view wx:if="{{item.segmentTexts.length > 1}}" class="waitlist-segments">
+        <view wx:for="{{item.segmentTexts}}" wx:key="*this" wx:for-item="segmentText" class="page-subtitle">{{segmentText}}</view>
+      </view>
+      <view wx:if="{{item.deadlineText}}" class="page-subtitle waitlist-deadline">确认截止：{{item.deadlineText}}</view>
+      <view wx:if="{{item.convertedHint}}" class="page-subtitle">{{item.convertedHint}}</view>
       <view class="page-subtitle">{{item.remark || '无备注'}}</view>
       <view wx:if="{{item.status === 'confirming'}}" class="waitlist-actions">
         <button class="button button--primary" data-id="{{item._id}}" data-action="confirm" bindtap="confirmWaitlist">确认</button>

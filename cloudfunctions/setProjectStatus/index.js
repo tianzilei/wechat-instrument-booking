@@ -55,6 +55,10 @@ function summarizeActiveSegments(segments) {
   }
 }
 
+function hasFutureActiveSegments(segments, currentTime) {
+  return (segments || []).some((segment) => isFutureActiveSegment(segment, currentTime))
+}
+
 function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCode) {
   const currentTime = new Date()
   const segments = Array.isArray(booking.segments) ? booking.segments : []
@@ -73,7 +77,7 @@ function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCo
     if (!changed) return null
     const remainingSummary = summarizeActiveSegments(nextSegments)
     const updateData = {
-      status: remainingSummary ? 'confirmed' : 'cancelled',
+      status: hasFutureActiveSegments(nextSegments, currentTime) ? booking.status : 'cancelled',
       segments: nextSegments,
       cancellationNote: reasonCode,
       previousStatus: '',
@@ -90,6 +94,15 @@ function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCo
     cancellationNote: reasonCode,
     updatedAt: nowServer,
   }
+}
+
+async function triggerWaitlistReconcile() {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source: 'setProjectStatus' },
+    })
+  } catch (err) {}
 }
 
 async function fetchWaitlistsByUserIds(userIds) {
@@ -177,6 +190,9 @@ exports.main = async (event) => {
     await db.collection('review_logs').add({
       data: { targetType: 'project', targetId: event.projectId, action: 'inactive', reason: event.reason || '', reviewerId: admin._id, createdAt: now },
     })
+    if (results.cancelledBookings > 0 || results.cancelledWaitlists > 0) {
+      await triggerWaitlistReconcile()
+    }
   } else {
     await projectRef.update({ data: { status: 'active', inactiveReason: '', updatedAt: now } })
     await db.collection('review_logs').add({

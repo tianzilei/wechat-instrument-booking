@@ -3,12 +3,11 @@
 
   <view wx:if="{{items.length > 0}}" class="surface-section">
     <view class="list-card" wx:for="{{items}}" wx:key="_id" data-id="{{item._id}}" bindtap="openDetail">
-      <view>
+      <view class="row-between">
         <view class="nav-title">{{item.userName || '未知用户'}}</view>
-        <view class="page-subtitle">{{item.timeText}}</view>
-        <view class="page-subtitle">状态：规则复审中</view>
-        <view class="page-subtitle">点击查看详情并处理</view>
+        <status-tag text="规则复审中" tone="warning" />
       </view>
+      <view class="page-subtitle">{{item.timeText}}</view>
     </view>
   </view>
 

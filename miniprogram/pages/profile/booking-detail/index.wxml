@@ -1,0 +1,68 @@
+<view class="page">
+  <empty-state wx:if="{{!booking}}" title="暂无预约信息" />
+
+  <block wx:else>
+    <view class="surface-section">
+      <view class="list-card detail-card">
+        <view class="row-between">
+          <view class="detail-title">{{booking.projectAbbr || '未关联课题'}}</view>
+          <status-tag text="{{booking.statusText}}" tone="{{booking.statusTone}}" />
+        </view>
+        <view class="page-subtitle">{{booking.timeText}}</view>
+        <view class="page-subtitle">提交时间：{{booking.createdAtText}}</view>
+        <view class="page-subtitle">预约类型：{{booking.bookingType === 'special' ? '特殊预约' : '常规预约'}}</view>
+        <view class="page-subtitle">触发规则：{{booking.ruleText}}</view>
+        <view class="page-subtitle">预约备注：{{booking.remark || '无备注'}}</view>
+        <view wx:if="{{booking.reviewReason}}" class="page-subtitle">审核说明：{{booking.reviewReason}}</view>
+        <view wx:if="{{booking.cancellationText}}" class="page-subtitle">取消说明：{{booking.cancellationText}}</view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">时段明细</view>
+      <view class="surface-section">
+        <view wx:for="{{booking.segmentGroups}}" wx:key="date" class="detail-group">
+          <view class="detail-group-title">{{item.title}}</view>
+          <view wx:for="{{item.items}}" wx:key="segmentKey" wx:for-item="segment" class="list-card detail-card">
+            <view class="row-between">
+              <view class="detail-segment">{{segment.timeText}}</view>
+              <status-tag text="{{segment.segmentStatusText}}" tone="{{segment.segmentStatusTone}}" />
+            </view>
+            <view wx:if="{{segment.segmentReasonText}}" class="page-subtitle">{{segment.segmentReasonText}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view class="section">
+      <view class="section-title">业务时间线</view>
+      <empty-state wx:if="{{booking.timeline.length === 0}}" title="暂无时间线记录" />
+      <view wx:if="{{booking.timeline.length > 0}}" class="surface-section">
+        <view wx:for="{{booking.timeline}}" wx:key="logKey" class="list-card detail-card">
+          <view class="row-between">
+            <view class="detail-log">{{item.title}}</view>
+            <view class="page-subtitle">{{item.timeText}}</view>
+          </view>
+          <view wx:if="{{item.detail}}" class="page-subtitle">{{item.detail}}</view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{booking.canCancel}}" class="section">
+      <view class="surface-section detail-actions">
+        <button class="button button--secondary" bindtap="cancelBooking">取消预约</button>
+      </view>
+    </view>
+  </block>
+
+  <theme-modal
+    visible="{{modal.visible}}"
+    title="{{modal.title}}"
+    content="{{modal.content}}"
+    confirm-text="{{modal.confirmText}}"
+    confirm-tone="{{modal.confirmTone}}"
+    payload="{{modal.payload}}"
+    bind:cancel="closeModal"
+    bind:confirm="confirmModal"
+  />
+</view>

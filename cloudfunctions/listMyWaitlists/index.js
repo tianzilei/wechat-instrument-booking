@@ -23,12 +23,16 @@ async function fetchAllWaitlists(userId) {
       .field({
         _id: true,
         userId: true,
+        scheduleKey: true,
         startAt: true,
         endAt: true,
+        segments: true,
         occupiedSegments: true,
         remark: true,
         status: true,
         queueOrder: true,
+        confirmDeadlineAt: true,
+        convertedBookingId: true,
         createdAt: true,
         updatedAt: true,
       })

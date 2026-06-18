@@ -101,12 +101,13 @@ exports.main = async (event) => {
     const segments = Array.isArray(item.segments) && item.segments.length > 0
       ? item.segments.filter((segment) => segment.state !== 'cancelled')
       : [{ startAt: item.firstStartAt, endAt: item.lastEndAt }]
-    const state = item.status === 'pending_review' ? 'pending' : 'occupied'
+    const state = item.status === 'pending_review' || item.status === 'rule_review_pending' ? 'pending' : 'occupied'
     segments.forEach((segment, index) => {
       const slot = {
         startAt: segment.startAt,
         endAt: segment.endAt,
         state,
+        status: item.status,
         projectAbbr: item.projectAbbrDisplayCache || '',
         publicRenderId: `slot-${slots.length}-${index}`,
       }
@@ -119,7 +120,8 @@ exports.main = async (event) => {
     const slot = {
       startAt: item.startAt,
       endAt: item.endAt,
-      state: item.status === 'pending_review' ? 'pending' : 'occupied',
+      state: item.status === 'pending_review' || item.status === 'rule_review_pending' ? 'pending' : 'occupied',
+      status: item.status,
       projectAbbr: item.projectAbbr || '',
       publicRenderId: `legacy-slot-${slots.length}`,
     }

@@ -5,10 +5,3 @@
 .review-title {
   font-weight: 600;
 }
-
-.review-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16rpx;
-  margin-top: 16rpx;
-}

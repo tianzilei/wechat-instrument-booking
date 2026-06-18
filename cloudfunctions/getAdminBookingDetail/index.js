@@ -55,6 +55,7 @@ exports.main = async (event) => {
     createdAt: booking.createdAt,
     updatedAt: booking.updatedAt,
     reviewLogs: reviewLogs.data.map((log) => ({
+      targetType: log.targetType || 'booking',
       action: log.action,
       reason: log.reason || '',
       createdAt: log.createdAt,

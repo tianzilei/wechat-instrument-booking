@@ -41,18 +41,107 @@ function normalizeSegments(raw) {
   return merged
 }
 
-function makeScheduleKey(segments) {
-  return segments.map((s) => `${s.startAt.toISOString()}|${s.endAt.toISOString()}`).join(';')
-}
-
-function isWholeHour(date) {
-  return date.getMinutes() === 0 && date.getSeconds() === 0 && date.getMilliseconds() === 0
-}
-
 function startOfDay(date) {
   const value = new Date(date)
   value.setHours(0, 0, 0, 0)
   return value
+}
+
+function getWeekStart(date) {
+  const value = startOfDay(date)
+  const day = value.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  value.setDate(value.getDate() + diff)
+  return value
+}
+
+function isSingleNaturalWeek(segments) {
+  if (!Array.isArray(segments) || segments.length === 0) return false
+  const anchorWeekStart = getWeekStart(segments[0].startAt).getTime()
+  return segments.every((segment) => {
+    const endPoint = new Date(segment.endAt.getTime() - 1)
+    return getWeekStart(segment.startAt).getTime() === anchorWeekStart
+      && getWeekStart(endPoint).getTime() === anchorWeekStart
+  })
+}
+
+function makeScheduleKey(segments) {
+  return segments.map((s) => `${s.startAt.toISOString()}|${s.endAt.toISOString()}`).join(';')
+}
+
+function getComparableSegments(segments) {
+  return (segments || [])
+    .map((segment) => ({
+      startAt: new Date(segment.startAt),
+      endAt: new Date(segment.endAt),
+    }))
+    .filter((segment) => segment.startAt < segment.endAt)
+}
+
+function getBookingActiveSegments(booking) {
+  if (Array.isArray(booking.segments) && booking.segments.length > 0) {
+    return getComparableSegments(
+      booking.segments.filter((segment) => (segment.state || 'active') !== 'cancelled')
+    )
+  }
+  return getComparableSegments([{
+    startAt: booking.firstStartAt || booking.startAt,
+    endAt: booking.lastEndAt || booking.endAt,
+  }])
+}
+
+function hasSegmentsOverlap(leftSegments, rightSegments) {
+  for (const left of leftSegments) {
+    for (const right of rightSegments) {
+      if (left.startAt < right.endAt && left.endAt > right.startAt) return true
+    }
+  }
+  return false
+}
+
+function buildConflictQueryConditions(segments) {
+  const sharedFilter = { status: _.in(ACTIVE_BOOKING_STATUSES) }
+  const v2Conditions = segments.map((s) => ({
+    ...sharedFilter,
+    firstStartAt: _.lt(s.endAt),
+    lastEndAt: _.gt(s.startAt),
+  }))
+  const v1Conditions = segments.map((s) => ({
+    ...sharedFilter,
+    startAt: _.lt(s.endAt),
+    endAt: _.gt(s.startAt),
+  }))
+  return [...v2Conditions, ...v1Conditions]
+}
+
+async function hasPreciseBookingConflict(segments) {
+  const requestSegments = getComparableSegments(segments)
+  const conditions = buildConflictQueryConditions(requestSegments)
+  if (conditions.length === 0) return false
+  const query = conditions.length === 1 ? conditions[0] : _.or(conditions)
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('bookings').where(query).field({
+      segments: true,
+      firstStartAt: true,
+      lastEndAt: true,
+      startAt: true,
+      endAt: true,
+    }).skip(skip).limit(100).get()
+    const conflictFound = batch.data.some((booking) => hasSegmentsOverlap(requestSegments, getBookingActiveSegments(booking)))
+    if (conflictFound) return true
+    if (batch.data.length < 100) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return false
+}
+
+function isWholeHour(date) {
+  return date.getMinutes() === 0 && date.getSeconds() === 0 && date.getMilliseconds() === 0
 }
 
 function getMinimumStartAt() {
@@ -99,15 +188,7 @@ async function hasDuplicateWaitlist(userId, scheduleKey) {
 }
 
 async function hasBookingConflict(segments) {
-  const conditions = segments.map((s) => ({
-    status: _.in(ACTIVE_BOOKING_STATUSES),
-    firstStartAt: _.lt(s.endAt),
-    lastEndAt: _.gt(s.startAt),
-  }))
-  if (conditions.length === 0) return false
-  const query = conditions.length === 1 ? conditions[0] : _.or(conditions)
-  const res = await db.collection('bookings').where(query).limit(1).get()
-  return res.data.length > 0
+  return hasPreciseBookingConflict(segments)
 }
 
 async function hasMaintenanceConflict(segments) {
@@ -145,6 +226,7 @@ exports.main = async (event) => {
   if (!event.segments || !Array.isArray(event.segments)) return fail('INVALID_PARAMS', '参数错误')
   const normalized = normalizeSegments(event.segments)
   if (!normalized) return fail('INVALID_SEGMENTS', '时段格式错误')
+  if (!isSingleNaturalWeek(normalized)) return fail('INVALID_SEGMENTS', '所有时段必须位于同一自然周')
 
   let maxAdvanceDays = 7
   let serviceMode = 'normal'

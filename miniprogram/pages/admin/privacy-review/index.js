@@ -3,7 +3,6 @@ const api = require('../../../utils/api')
 Page({
   data: {
     items: [],
-    modal: { visible: false, requestId: '', title: '', action: '' },
   },
 
   onShow() { this.loadItems() },
@@ -20,28 +19,9 @@ Page({
     return map[type] || type
   },
 
-  processing(e) {
-    this.setData({ modal: { visible: true, requestId: e.currentTarget.dataset.id, title: '标记处理中', action: 'processing' }})
-  },
-
-  complete(e) {
-    this.setData({ modal: { visible: true, requestId: e.currentTarget.dataset.id, title: '完成请求', action: 'complete' }})
-  },
-
-  reject(e) {
-    this.setData({ modal: { visible: true, requestId: e.currentTarget.dataset.id, title: '拒绝请求', action: 'reject' }})
-  },
-
-  closeModal() { this.setData({ 'modal.visible': false }) },
-
-  async confirmModal(e) {
-    const { requestId, action } = this.data.modal
-    const note = e.detail.value || ''
-    this.closeModal()
-    try {
-      await api.callFunction('processPrivacyRequest', { requestId, action, note })
-      wx.showToast({ title: '已处理', icon: 'success' })
-      this.loadItems()
-    } catch (err) { api.showError(err) }
+  openDetail(event) {
+    const requestId = event.currentTarget.dataset.id
+    if (!requestId) return
+    wx.navigateTo({ url: `/pages/admin/privacy-request-detail/index?requestId=${requestId}` })
   },
 })

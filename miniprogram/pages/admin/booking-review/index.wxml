@@ -9,7 +9,6 @@
       <view class="page-subtitle">{{item.timeText}}</view>
       <view class="page-subtitle">需审核规则：{{item.ruleText}}</view>
       <view class="page-subtitle">用户备注：{{item.remark || '无备注'}}</view>
-      <view class="page-subtitle">点击查看详情并处理</view>
     </view>
   </view>
 </view>

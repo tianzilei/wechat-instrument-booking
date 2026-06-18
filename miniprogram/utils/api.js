@@ -1,3 +1,10 @@
+function callFunctionRaw(name, data = {}) {
+  return wx.cloud.callFunction({
+    name,
+    data,
+  }).then((res) => res.result || {})
+}
+
 function callFunction(name, data = {}) {
   return callFunctionRaw(name, data).then((result) => {
     if (!result.success) {
@@ -5,15 +12,6 @@ function callFunction(name, data = {}) {
       throw new Error(message)
     }
     return result.data
-  })
-}
-
-function callFunctionRaw(name, data = {}) {
-  return wx.cloud.callFunction({
-    name,
-    data,
-  }).then((res) => {
-    return res.result || {}
   })
 }
 

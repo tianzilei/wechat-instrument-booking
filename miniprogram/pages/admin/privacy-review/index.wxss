@@ -1,1 +1,0 @@
-.review-actions { display: flex; gap: 8rpx; margin-top: 12rpx; flex-wrap: wrap; }

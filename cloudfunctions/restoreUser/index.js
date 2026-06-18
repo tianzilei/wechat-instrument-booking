@@ -23,19 +23,41 @@ exports.main = async (event) => {
   const userRef = db.collection('users').doc(event.userId)
   const user = (await userRef.get()).data
   if (!user) return fail('NOT_FOUND', '用户不存在')
+  if (user.role === 'admin') return fail('PERMISSION_DENIED', '管理员账号无需恢复')
   if (user.accountStatus !== 'suspended') return fail('STATE_CHANGED', '账号未被暂停')
 
+  const nowServer = db.serverDate()
   await userRef.update({
     data: {
       accountStatus: 'active',
       suspendedReason: '',
       suspendedAt: null,
-      updatedAt: db.serverDate(),
+      updatedAt: nowServer,
+    },
+  })
+
+  await db.collection('important_events').where({
+    userId: event.userId,
+    type: 'account_suspended',
+    readAt: null,
+  }).update({
+    data: {
+      readAt: nowServer,
+    },
+  })
+
+  await db.collection('important_events').add({
+    data: {
+      userId: event.userId,
+      type: 'account_restored',
+      summary: '账号已恢复，可继续正常使用预约服务',
+      readAt: null,
+      createdAt: nowServer,
     },
   })
 
   await db.collection('review_logs').add({
-    data: { targetType: 'user', targetId: event.userId, action: 'restore', reason: '管理员恢复账号', reviewerId: admin._id, createdAt: db.serverDate() },
+    data: { targetType: 'user', targetId: event.userId, action: 'restore', reason: '管理员恢复账号', reviewerId: admin._id, createdAt: nowServer },
   })
 
   return ok({ userId: event.userId, restored: true })

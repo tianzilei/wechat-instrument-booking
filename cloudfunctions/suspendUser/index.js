@@ -46,6 +46,10 @@ function summarizeActiveSegments(segments) {
   }
 }
 
+function hasFutureActiveSegments(segments, currentTime) {
+  return (segments || []).some((segment) => isFutureActiveSegment(segment, currentTime))
+}
+
 function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCode) {
   const currentTime = new Date()
   const segments = Array.isArray(booking.segments) ? booking.segments : []
@@ -64,7 +68,7 @@ function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCo
     if (!changed) return null
     const remainingSummary = summarizeActiveSegments(nextSegments)
     const updateData = {
-      status: remainingSummary ? 'confirmed' : 'cancelled',
+      status: hasFutureActiveSegments(nextSegments, currentTime) ? booking.status : 'cancelled',
       segments: nextSegments,
       cancellationNote: reasonCode,
       previousStatus: '',
@@ -81,6 +85,15 @@ function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCo
     cancellationNote: reasonCode,
     updatedAt: nowServer,
   }
+}
+
+async function triggerWaitlistReconcile() {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source: 'suspendUser' },
+    })
+  } catch (err) {}
 }
 
 exports.main = async (event) => {
@@ -103,6 +116,7 @@ exports.main = async (event) => {
   const userRef = db.collection('users').doc(event.userId)
   const user = (await userRef.get()).data
   if (!user) return fail('NOT_FOUND', '用户不存在')
+  if (user.role === 'admin') return fail('PERMISSION_DENIED', '不能暂停管理员账号')
   if (user.accountStatus === 'suspended') return fail('STATE_CHANGED', '账号已被暂停')
 
   const now = db.serverDate()
@@ -149,5 +163,8 @@ exports.main = async (event) => {
     data: { targetType: 'user', targetId: event.userId, action: 'suspend', reason: event.reason, reviewerId: admin._id, createdAt: now },
   })
 
+  if (bookingUpdates.length > 0 || waitlists.length > 0) {
+    await triggerWaitlistReconcile()
+  }
   return ok({ userId: event.userId, cancelledBookings: bookingUpdates.length, cancelledWaitlists: waitlists.length })
 }

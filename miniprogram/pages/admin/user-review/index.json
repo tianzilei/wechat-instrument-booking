@@ -2,6 +2,6 @@
   "navigationBarTitleText": "注册用户/课题待审",
   "usingComponents": {
     "empty-state": "../../../components/empty-state/index",
-    "theme-modal": "../../../components/theme-modal/index"
+    "status-tag": "../../../components/status-tag/index"
   }
 }

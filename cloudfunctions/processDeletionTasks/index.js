@@ -39,6 +39,70 @@ async function updateDocs(collectionName, docs, buildData) {
   }
 }
 
+function isFutureActiveSegment(segment, currentTime) {
+  return (segment.state || 'active') === 'active' && new Date(segment.startAt) > currentTime
+}
+
+function summarizeActiveSegments(segments) {
+  const activeSegments = (segments || []).filter((segment) => (segment.state || 'active') === 'active')
+  if (activeSegments.length === 0) return null
+  return {
+    firstStartAt: activeSegments[0].startAt,
+    lastEndAt: activeSegments[activeSegments.length - 1].endAt,
+    durationHours: activeSegments.reduce((sum, segment) => sum + ((new Date(segment.endAt) - new Date(segment.startAt)) / 3600000), 0),
+  }
+}
+
+function hasFutureActiveSegments(segments, currentTime) {
+  return (segments || []).some((segment) => isFutureActiveSegment(segment, currentTime))
+}
+
+function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCode) {
+  const currentTime = new Date()
+  const segments = Array.isArray(booking.segments) ? booking.segments : []
+  if (segments.length > 0) {
+    let changed = false
+    const nextSegments = segments.map((segment) => {
+      if (!isFutureActiveSegment(segment, currentTime)) return segment
+      changed = true
+      return {
+        ...segment,
+        state: 'cancelled',
+        cancelledAt: nowServer,
+        cancelReasonCode: reasonCode,
+      }
+    })
+    if (!changed) return null
+    const remainingSummary = summarizeActiveSegments(nextSegments)
+    const updateData = {
+      status: hasFutureActiveSegments(nextSegments, currentTime) ? booking.status : 'cancelled',
+      segments: nextSegments,
+      cancellationNote: reasonCode,
+      previousStatus: '',
+      updatedAt: nowServer,
+    }
+    Object.assign(updateData, remainingSummary || {})
+    return updateData
+  }
+
+  const startAt = new Date(booking.firstStartAt || booking.startAt)
+  if (startAt <= currentTime) return null
+  return {
+    status: 'cancelled',
+    cancellationNote: reasonCode,
+    updatedAt: nowServer,
+  }
+}
+
+async function triggerWaitlistReconcile() {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source: 'processDeletionTasks' },
+    })
+  } catch (err) {}
+}
+
 exports.main = async () => {
   const now = new Date()
   const leaseAt = new Date(now.getTime() + 4 * 60000)
@@ -68,14 +132,16 @@ exports.main = async () => {
           userId,
           status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']),
         })
-        await updateDocs('bookings', bookings, () => ({
-          status: 'cancelled',
-          cancellationNote: 'account_deleted',
-          updatedAt: db.serverDate(),
-        }))
+        const bookingUpdates = bookings
+          .map((booking) => ({ _id: booking._id, update: buildFutureActiveSegmentCancellationUpdate(booking, db.serverDate(), 'account_deleted') }))
+          .filter((item) => !!item.update)
+        await updateDocs('bookings', bookingUpdates, (item) => item.update)
         await db.collection('deletion_tasks').doc(task._id).update({
-          data: { cancelledBookings: bookings.length, updatedAt: db.serverDate() },
+          data: { cancelledBookings: bookingUpdates.length, updatedAt: db.serverDate() },
         })
+        if (bookingUpdates.length > 0) {
+          await triggerWaitlistReconcile()
+        }
       }
 
       if (!task.cancelledWaitlists) {
@@ -90,6 +156,9 @@ exports.main = async () => {
         await db.collection('deletion_tasks').doc(task._id).update({
           data: { cancelledWaitlists: waitlists.length, updatedAt: db.serverDate() },
         })
+        if (waitlists.length > 0) {
+          await triggerWaitlistReconcile()
+        }
       }
 
       if (!task.anonymizedBookings) {

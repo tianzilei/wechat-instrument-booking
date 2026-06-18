@@ -99,11 +99,11 @@ exports.main = async () => {
 
   const pending = await db.collection('bookings').where({
     userId: user._id,
-    status: _.in(['pending_review', 'cancel_pending']),
+    status: _.in(['pending_review', 'cancel_pending', 'rule_review_pending']),
   }).count()
   const cancelled = await db.collection('bookings').where({
     userId: user._id,
-    status: 'cancelled',
+    status: _.in(['cancelled', 'maintenance_cancelled']),
   }).count()
 
   return ok({

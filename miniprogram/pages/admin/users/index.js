@@ -1,5 +1,13 @@
 const api = require('../../../utils/api')
 
+function getAccountStatusMeta(accountStatus) {
+  const status = accountStatus || 'active'
+  if (status === 'suspended') return { text: '已暂停', tone: 'danger' }
+  if (status === 'deleting') return { text: '注销处理中', tone: 'warning' }
+  if (status === 'project_reassignment_required') return { text: '需重新选课题', tone: 'warning' }
+  return { text: '正常', tone: 'success' }
+}
+
 Page({
   data: {
     items: [],
@@ -22,12 +30,16 @@ Page({
   async loadItems() {
     try {
       const data = await api.callFunction('listUsers')
-      const items = (data.items || []).map((item) => ({
-        ...item,
-        accountStatus: item.accountStatus || 'active',
-        statusText: item.accountStatus === 'suspended' ? '已暂停' : '正常',
-        statusTone: item.accountStatus === 'suspended' ? 'danger' : 'success',
-      }))
+      const items = (data.items || []).map((item) => {
+        const accountStatus = item.accountStatus || 'active'
+        const status = getAccountStatusMeta(accountStatus)
+        return {
+          ...item,
+          accountStatus,
+          statusText: status.text,
+          statusTone: status.tone,
+        }
+      })
       this.setData({ items })
     } catch (err) {
       this.setData({ items: [] })

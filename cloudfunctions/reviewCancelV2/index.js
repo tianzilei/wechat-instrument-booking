@@ -21,6 +21,10 @@ function summarizeActiveSegments(segments) {
   }
 }
 
+function hasFutureActiveSegments(segments, currentTime) {
+  return (segments || []).some((segment) => isFutureActiveSegment(segment, currentTime))
+}
+
 function buildFutureActiveSegmentCancellationUpdate(booking, currentTime, nowServer, reasonCode, activeStatus) {
   let changed = false
   const nextSegments = (booking.segments || []).map((segment) => {
@@ -37,12 +41,21 @@ function buildFutureActiveSegmentCancellationUpdate(booking, currentTime, nowSer
 
   const remainingSummary = summarizeActiveSegments(nextSegments)
   return {
-    status: remainingSummary ? activeStatus : 'cancelled',
+    status: hasFutureActiveSegments(nextSegments, currentTime) ? activeStatus : 'cancelled',
     previousStatus: '',
     segments: nextSegments,
     ...(remainingSummary || {}),
     updatedAt: nowServer,
   }
+}
+
+async function triggerWaitlistReconcile() {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source: 'reviewCancelV2' },
+    })
+  } catch (err) {}
 }
 
 async function getAdmin(openid) {
@@ -88,9 +101,10 @@ exports.main = async (event) => {
     await db.collection('bookings').doc(event.bookingId).update({
       data: updateData,
     })
+    await triggerWaitlistReconcile()
   } else {
     const previousStatus = booking.previousStatus || 'confirmed'
-    if (!['confirmed', 'pending_review'].includes(previousStatus)) {
+    if (!['confirmed', 'pending_review', 'rule_review_pending'].includes(previousStatus)) {
       return fail('STATE_CHANGED', '预约状态异常')
     }
     resultStatus = previousStatus

@@ -2,18 +2,39 @@
   <empty-state wx:if="{{!booking}}" title="暂无预约信息" />
 
   <block wx:else>
-    <view class="surface-section">
-      <view class="list-card detail-card">
-        <view class="row-between">
-          <view class="detail-title">{{booking.userName || '未知用户'}} · {{booking.projectAbbr || '未关联课题'}}</view>
-          <status-tag text="{{booking.statusText}}" tone="{{booking.statusTone}}" />
+    <view class="section">
+      <view class="section-title">预约信息</view>
+      <view class="surface-section">
+        <view class="list-card detail-card">
+          <view class="row-between">
+            <view class="detail-title">{{booking.userName || '未知用户'}} · {{booking.projectAbbr || '未关联课题'}}</view>
+            <status-tag text="{{booking.statusText}}" tone="{{booking.statusTone}}" />
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">预约时段</view>
+            <view class="detail-value">{{booking.timeText}}</view>
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">预约类型</view>
+            <view class="detail-value">{{booking.bookingType === 'special' ? '特殊预约' : '常规预约'}}</view>
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">触发规则</view>
+            <view class="detail-value">{{booking.ruleText}}</view>
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">用户备注</view>
+            <view class="detail-value">{{booking.remark || '无备注'}}</view>
+          </view>
+          <view wx:if="{{booking.reviewReason}}" class="detail-line">
+            <view class="detail-label">审核说明</view>
+            <view class="detail-value">{{booking.reviewReason}}</view>
+          </view>
+          <view wx:if="{{booking.cancellationNote}}" class="detail-line">
+            <view class="detail-label">取消说明</view>
+            <view class="detail-value">{{booking.cancellationNote}}</view>
+          </view>
         </view>
-        <view class="page-subtitle">{{booking.timeText}}</view>
-        <view class="page-subtitle">预约类型：{{booking.bookingType === 'special' ? '特殊预约' : '常规预约'}}</view>
-        <view class="page-subtitle">触发规则：{{booking.ruleText}}</view>
-        <view class="page-subtitle">用户备注：{{booking.remark || '无备注'}}</view>
-        <view wx:if="{{booking.reviewReason}}" class="page-subtitle">审核说明：{{booking.reviewReason}}</view>
-        <view wx:if="{{booking.cancellationNote}}" class="page-subtitle">取消说明：{{booking.cancellationNote}}</view>
       </view>
     </view>
 
@@ -34,16 +55,20 @@
       <empty-state wx:if="{{booking.reviewLogs.length === 0}}" title="暂无处理记录" />
       <view wx:if="{{booking.reviewLogs.length > 0}}" class="surface-section">
         <view wx:for="{{booking.reviewLogs}}" wx:key="createdAt" class="list-card detail-card">
-          <view class="detail-log">{{item.action}}</view>
-          <view class="page-subtitle">{{item.reason || '无说明'}}</view>
+          <view class="row-between">
+            <view class="detail-log">{{item.actionText}}</view>
+            <view class="page-subtitle">{{item.timeText}}</view>
+          </view>
+          <view wx:if="{{item.reasonText}}" class="page-subtitle">{{item.reasonText}}</view>
         </view>
       </view>
     </view>
 
     <view wx:if="{{booking.canReview}}" class="section">
+      <view class="section-title">处理操作</view>
       <view class="surface-section detail-actions">
-        <button class="button button--primary" data-action="approve" bindtap="review">{{booking.approveText}}</button>
         <button class="button button--danger" data-action="reject" bindtap="review">{{booking.rejectText}}</button>
+        <button class="button button--primary" data-action="approve" bindtap="review">{{booking.approveText}}</button>
       </view>
     </view>
   </block>

@@ -1,0 +1,8 @@
+{
+  "navigationBarTitleText": "注册申请",
+  "usingComponents": {
+    "empty-state": "../../../components/empty-state/index",
+    "status-tag": "../../../components/status-tag/index",
+    "theme-modal": "../../../components/theme-modal/index"
+  }
+}

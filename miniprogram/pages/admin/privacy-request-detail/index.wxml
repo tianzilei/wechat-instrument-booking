@@ -1,0 +1,55 @@
+<view class="page">
+  <empty-state wx:if="{{!detail}}" title="暂无请求信息" />
+
+  <block wx:else>
+    <view class="section">
+      <view class="section-title">请求信息</view>
+      <view class="surface-section">
+        <view class="list-card detail-card">
+          <view class="row-between">
+            <view class="detail-title">{{detail.typeText}}</view>
+            <status-tag text="{{detail.statusText}}" tone="{{detail.statusTone}}" />
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">申请人</view>
+            <view class="detail-value">{{detail.userName || '未知用户'}}</view>
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">提交时间</view>
+            <view class="detail-value">{{detail.createdAtText}}</view>
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">请求说明</view>
+            <view class="detail-value">{{detail.note || '无说明'}}</view>
+          </view>
+          <view wx:if="{{detail.processNote}}" class="detail-line">
+            <view class="detail-label">处理说明</view>
+            <view class="detail-value">{{detail.processNote}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{detail.canReview}}" class="section">
+      <view class="section-title">处理操作</view>
+      <view class="surface-section detail-actions detail-actions--triple">
+        <button class="button button--secondary" data-action="processing" bindtap="openAction">处理中</button>
+        <button class="button button--primary" data-action="complete" bindtap="openAction">完成</button>
+        <button class="button button--danger" data-action="reject" bindtap="openAction">拒绝</button>
+      </view>
+    </view>
+  </block>
+
+  <theme-modal
+    visible="{{modal.visible}}"
+    title="{{modal.title}}"
+    content="{{modal.content}}"
+    show-input="{{modal.showInput}}"
+    placeholder="{{modal.placeholder}}"
+    confirm-text="{{modal.confirmText}}"
+    confirm-tone="{{modal.confirmTone}}"
+    payload="{{modal.payload}}"
+    bind:cancel="closeModal"
+    bind:confirm="confirmModal"
+  />
+</view>

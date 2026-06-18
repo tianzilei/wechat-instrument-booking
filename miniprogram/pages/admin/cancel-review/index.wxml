@@ -12,7 +12,6 @@
         </view>
         <view class="page-subtitle">{{item.timeText}}</view>
         <view class="page-subtitle">取消原因：{{item.cancelReason || '无'}}</view>
-        <view class="page-subtitle">点击查看详情并处理</view>
       </view>
     </view>
   </view>
@@ -27,7 +26,6 @@
           <status-tag text="规则复审中" tone="warning" />
         </view>
         <view class="page-subtitle">{{item.timeText}}</view>
-        <view class="page-subtitle">点击查看详情并处理</view>
       </view>
     </view>
   </view>

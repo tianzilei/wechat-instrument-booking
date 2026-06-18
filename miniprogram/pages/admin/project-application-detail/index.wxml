@@ -1,0 +1,68 @@
+<view class="page">
+  <empty-state wx:if="{{!detail}}" title="暂无申请信息" />
+
+  <block wx:else>
+    <view class="section">
+      <view class="section-title">申请信息</view>
+      <view class="surface-section">
+        <view class="list-card detail-card">
+          <view class="row-between">
+            <view class="detail-title">{{detail.proposedName || '未填写课题名称'}}</view>
+            <status-tag text="{{detail.statusText}}" tone="{{detail.statusTone}}" />
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">申请人</view>
+            <view class="detail-value">{{detail.userName || '未知用户'}}</view>
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">申请时间</view>
+            <view class="detail-value">{{detail.createdAtText}}</view>
+          </view>
+          <view class="detail-line">
+            <view class="detail-label">建议缩写</view>
+            <view class="detail-value">{{detail.proposedAbbr || '未填写'}}</view>
+          </view>
+          <view wx:if="{{detail.reviewReason}}" class="detail-line">
+            <view class="detail-label">拒绝原因</view>
+            <view class="detail-value">{{detail.reviewReason}}</view>
+          </view>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{detail.canReview}}" class="section">
+      <view class="section-title">审批设置</view>
+      <view class="surface-section">
+        <view class="field">
+          <view class="field-label">最终课题名称</view>
+          <input class="input" value="{{finalName}}" bindinput="onFinalNameInput" placeholder="请输入最终课题名称" />
+        </view>
+        <view class="field">
+          <view class="field-label">最终课题缩写</view>
+          <input class="input" value="{{finalAbbr}}" bindinput="onFinalAbbrInput" placeholder="请输入最终课题缩写" />
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{detail.canReview}}" class="section">
+      <view class="section-title">处理操作</view>
+      <view class="surface-section detail-actions">
+        <button class="button button--danger" bindtap="reject">拒绝</button>
+        <button class="button button--primary" bindtap="approve">通过</button>
+      </view>
+    </view>
+  </block>
+
+  <theme-modal
+    visible="{{modal.visible}}"
+    title="{{modal.title}}"
+    content="{{modal.content}}"
+    show-input="{{modal.showInput}}"
+    placeholder="{{modal.placeholder}}"
+    confirm-text="{{modal.confirmText}}"
+    confirm-tone="{{modal.confirmTone}}"
+    payload="{{modal.payload}}"
+    bind:cancel="closeModal"
+    bind:confirm="confirmModal"
+  />
+</view>

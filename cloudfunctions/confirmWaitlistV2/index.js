@@ -108,6 +108,111 @@ function getEarliestStartAt(segments) {
   }, new Date(segments[0].startAt))
 }
 
+function startOfDay(date) {
+  const value = new Date(date)
+  value.setHours(0, 0, 0, 0)
+  return value
+}
+
+function getWeekStart(date) {
+  const value = startOfDay(date)
+  const day = value.getDay()
+  const diff = day === 0 ? -6 : 1 - day
+  value.setDate(value.getDate() + diff)
+  return value
+}
+
+function isSingleNaturalWeek(segments) {
+  if (!Array.isArray(segments) || segments.length === 0) return false
+  const anchorWeekStart = getWeekStart(segments[0].startAt).getTime()
+  return segments.every((segment) => {
+    const endPoint = new Date(new Date(segment.endAt).getTime() - 1)
+    return getWeekStart(segment.startAt).getTime() === anchorWeekStart
+      && getWeekStart(endPoint).getTime() === anchorWeekStart
+  })
+}
+
+function getComparableSegments(segments) {
+  return (segments || [])
+    .map((segment) => ({
+      startAt: new Date(segment.startAt),
+      endAt: new Date(segment.endAt),
+    }))
+    .filter((segment) => segment.startAt < segment.endAt)
+}
+
+function getBookingActiveSegments(booking) {
+  if (Array.isArray(booking.segments) && booking.segments.length > 0) {
+    return getComparableSegments(
+      booking.segments.filter((segment) => (segment.state || 'active') !== 'cancelled')
+    )
+  }
+  return getComparableSegments([{
+    startAt: booking.firstStartAt || booking.startAt,
+    endAt: booking.lastEndAt || booking.endAt,
+  }])
+}
+
+function hasSegmentsOverlap(leftSegments, rightSegments) {
+  for (const left of leftSegments) {
+    for (const right of rightSegments) {
+      if (left.startAt < right.endAt && left.endAt > right.startAt) return true
+    }
+  }
+  return false
+}
+
+async function triggerWaitlistReconcile(source) {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source },
+    })
+  } catch (err) {}
+}
+
+function buildConflictQueryConditions(segments, projectId) {
+  const sharedFilter = { status: _.in(ACTIVE_BOOKING_STATUSES) }
+  if (projectId) sharedFilter.projectId = projectId
+  const v2Conditions = segments.map((segment) => ({
+    ...sharedFilter,
+    firstStartAt: _.lt(new Date(segment.endAt)),
+    lastEndAt: _.gt(new Date(segment.startAt)),
+  }))
+  const v1Conditions = segments.map((segment) => ({
+    ...sharedFilter,
+    startAt: _.lt(new Date(segment.endAt)),
+    endAt: _.gt(new Date(segment.startAt)),
+  }))
+  return [...v2Conditions, ...v1Conditions]
+}
+
+async function hasPreciseBookingConflict(segments, projectId) {
+  const requestSegments = getComparableSegments(segments)
+  const conditions = buildConflictQueryConditions(requestSegments, projectId)
+  if (conditions.length === 0) return false
+  const query = conditions.length === 1 ? conditions[0] : _.or(conditions)
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('bookings').where(query).field({
+      segments: true,
+      firstStartAt: true,
+      lastEndAt: true,
+      startAt: true,
+      endAt: true,
+    }).skip(skip).limit(PAGE_SIZE).get()
+    const conflictFound = batch.data.some((booking) => hasSegmentsOverlap(requestSegments, getBookingActiveSegments(booking)))
+    if (conflictFound) return true
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return false
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const userRes = await db.collection('users').where({ openid: OPENID }).limit(1).get()
@@ -126,6 +231,7 @@ exports.main = async (event) => {
     await db.collection('waitlists').doc(event.waitlistId).update({
       data: { status: 'cancelled', updatedAt: db.serverDate() },
     })
+    await triggerWaitlistReconcile('confirmWaitlistV2_decline')
     return ok({ waitlistId: event.waitlistId, status: 'cancelled' })
   }
 
@@ -141,6 +247,7 @@ exports.main = async (event) => {
       await db.collection('waitlists').doc(event.waitlistId).update({
         data: { status: 'expired', updatedAt: db.serverDate() },
       })
+      await triggerWaitlistReconcile('confirmWaitlistV2_expired_precheck')
       return fail('STATE_CHANGED', '候补确认已超时')
     }
   }
@@ -184,6 +291,9 @@ exports.main = async (event) => {
       }
 
       const segments = getWaitlistSegments(latestWaitlist)
+      if (!isSingleNaturalWeek(segments)) {
+        throw businessError('INVALID_SEGMENTS', '所有时段必须位于同一自然周')
+      }
       const now = new Date()
       const earliestStartAt = getEarliestStartAt(segments)
       const confirmDeadlineAt = latestWaitlist.confirmDeadlineAt ? new Date(latestWaitlist.confirmDeadlineAt) : earliestStartAt
@@ -268,40 +378,20 @@ exports.main = async (event) => {
       duplicateRequest: !!result.duplicateRequest,
     })
   } catch (err) {
+    if (err && err.code === 'STATE_CHANGED') {
+      await triggerWaitlistReconcile('confirmWaitlistV2_state_changed')
+    }
     if (err && err.code) return fail(err.code, err.message)
     return fail('SYSTEM_BUSY', '系统繁忙，请稍后重试')
   }
 }
 
 async function checkConflict(segments) {
-  const conditions = segments.map((s) => ({
-    status: _.in(ACTIVE_BOOKING_STATUSES),
-    firstStartAt: _.lt(new Date(s.endAt)),
-    lastEndAt: _.gt(new Date(s.startAt)),
-  }))
-  if (conditions.length === 0) return false
-  if (conditions.length === 1) {
-    const res = await db.collection('bookings').where(conditions[0]).limit(1).get()
-    return res.data.length > 0
-  }
-  const res = await db.collection('bookings').where(_.or(conditions)).limit(1).get()
-  return res.data.length > 0
+  return hasPreciseBookingConflict(segments, '')
 }
 
 async function checkProjectConflict(segments, projectId) {
-  const conditions = segments.map((s) => ({
-    status: _.in(ACTIVE_BOOKING_STATUSES),
-    projectId,
-    firstStartAt: _.lt(new Date(s.endAt)),
-    lastEndAt: _.gt(new Date(s.startAt)),
-  }))
-  if (conditions.length === 0) return false
-  if (conditions.length === 1) {
-    const res = await db.collection('bookings').where(conditions[0]).limit(1).get()
-    return res.data.length > 0
-  }
-  const res = await db.collection('bookings').where(_.or(conditions)).limit(1).get()
-  return res.data.length > 0
+  return hasPreciseBookingConflict(segments, projectId)
 }
 
 function getSpecialReasons(segments, openStartHour, openEndHour) {

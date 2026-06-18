@@ -43,6 +43,36 @@ function buildConfirmDeadline(now, earliestStartAt) {
   return earliestStartAt < twoHoursLater ? earliestStartAt : twoHoursLater
 }
 
+function getComparableSegments(segments) {
+  return (segments || [])
+    .map((segment) => ({
+      startAt: new Date(segment.startAt),
+      endAt: new Date(segment.endAt),
+    }))
+    .filter((segment) => segment.startAt < segment.endAt)
+}
+
+function getBookingActiveSegments(booking) {
+  if (Array.isArray(booking.segments) && booking.segments.length > 0) {
+    return getComparableSegments(
+      booking.segments.filter((segment) => (segment.state || 'active') !== 'cancelled')
+    )
+  }
+  return getComparableSegments([{
+    startAt: booking.firstStartAt || booking.startAt,
+    endAt: booking.lastEndAt || booking.endAt,
+  }])
+}
+
+function hasSegmentsOverlap(leftSegments, rightSegments) {
+  for (const left of leftSegments) {
+    for (const right of rightSegments) {
+      if (left.startAt < right.endAt && left.endAt > right.startAt) return true
+    }
+  }
+  return false
+}
+
 function sortWaitlists(left, right) {
   const leftQueue = typeof left.queueOrder === 'number' ? left.queueOrder : Number.MAX_SAFE_INTEGER
   const rightQueue = typeof right.queueOrder === 'number' ? right.queueOrder : Number.MAX_SAFE_INTEGER
@@ -114,14 +144,38 @@ exports.main = async () => {
 }
 
 async function checkSegmentConflict(segments) {
-  const conditions = segments.map((s) => ({
-    status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']),
-    firstStartAt: _.lt(new Date(s.endAt)),
-    lastEndAt: _.gt(new Date(s.startAt)),
+  const requestSegments = getComparableSegments(segments)
+  const sharedFilter = { status: _.in(['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']) }
+  const v2Conditions = requestSegments.map((segment) => ({
+    ...sharedFilter,
+    firstStartAt: _.lt(segment.endAt),
+    lastEndAt: _.gt(segment.startAt),
   }))
-  const query = conditions.length === 1
-    ? conditions[0]
-    : _.or(conditions)
-  const res = await db.collection('bookings').where(query).limit(1).get()
-  return res.data.length > 0
+  const v1Conditions = requestSegments.map((segment) => ({
+    ...sharedFilter,
+    startAt: _.lt(segment.endAt),
+    endAt: _.gt(segment.startAt),
+  }))
+  const conditions = [...v2Conditions, ...v1Conditions]
+  if (conditions.length === 0) return false
+  const query = conditions.length === 1 ? conditions[0] : _.or(conditions)
+  let skip = 0
+  let hasMore = true
+  while (hasMore) {
+    const batch = await db.collection('bookings').where(query).field({
+      segments: true,
+      firstStartAt: true,
+      lastEndAt: true,
+      startAt: true,
+      endAt: true,
+    }).skip(skip).limit(100).get()
+    const conflictFound = batch.data.some((booking) => hasSegmentsOverlap(requestSegments, getBookingActiveSegments(booking)))
+    if (conflictFound) return true
+    if (batch.data.length < 100) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return false
 }

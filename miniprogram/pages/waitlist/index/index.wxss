@@ -6,6 +6,14 @@
   font-weight: 600;
 }
 
+.waitlist-segments {
+  margin-top: 8rpx;
+}
+
+.waitlist-deadline {
+  color: var(--color-warning);
+}
+
 .waitlist-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

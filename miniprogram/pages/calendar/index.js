@@ -173,10 +173,11 @@ Page({
             status: 'maintenance',
           })
         } else {
+          const bookingStatus = slot.status || (slot.state === 'occupied' ? 'confirmed' : 'pending_review')
           items.push({
             type: 'booking',
             bookingId: slot.bookingId || '',
-            status: slot.state === 'occupied' ? 'confirmed' : 'pending_review',
+            status: bookingStatus,
             startAt: slot.startAt,
             endAt: slot.endAt,
             projectAbbr: slot.projectAbbr || '',
@@ -187,8 +188,10 @@ Page({
 
       const serviceMode = data.serviceMode || 'normal'
       let userHint = buildUserHint()
-      if (serviceMode === 'maintenance' || serviceMode === 'rule_migrating') {
+      if (serviceMode === 'maintenance') {
         userHint = '系统维护中，暂不支持预约'
+      } else if (serviceMode === 'rule_migrating') {
+        userHint = '预约规则更新中，暂不支持预约'
       }
 
       this.updateBookingWindowHint(data.serverNow, data.maxAdvanceDays || DEFAULT_MAX_ADVANCE_DAYS)
@@ -352,8 +355,8 @@ Page({
         wx.navigateTo({ url: `/pages/admin/maintenance/index?maintenanceId=${cellData.maintenanceId}` })
         return
       }
-      if ((cellData.status === 'confirmed' || cellData.status === 'pending_review') && cellData.bookingId) {
-        const mode = cellData.status === 'pending_review' ? '&mode=review' : ''
+      if ((cellData.status === 'confirmed' || cellData.status === 'pending_review' || cellData.status === 'rule_review_pending' || cellData.status === 'cancel_pending') && cellData.bookingId) {
+        const mode = cellData.status === 'pending_review' || cellData.status === 'rule_review_pending' || cellData.status === 'cancel_pending' ? '&mode=review' : ''
         wx.navigateTo({ url: `/pages/admin/booking-detail/index?bookingId=${cellData.bookingId}${mode}` })
         return
       }
@@ -361,7 +364,7 @@ Page({
       return
     }
     if (cellData.status !== 'available') {
-      if (cellData.status === 'confirmed' || cellData.status === 'pending_review') {
+      if (cellData.status === 'confirmed' || cellData.status === 'pending_review' || cellData.status === 'rule_review_pending' || cellData.status === 'cancel_pending') {
         this.openWaitlistSheet(cell)
       }
       return
@@ -420,16 +423,23 @@ Page({
         })),
         remark: event.detail.remark || '',
       }
+      let toastTitle = '已提交'
       if (this.data.sheet.mode === 'waitlist') {
-        await api.callFunction('createWaitlistV2', payload)
+        const result = await api.callFunction('createWaitlistV2', payload)
+        toastTitle = result && result.duplicateRequest ? '候补已存在' : '已加入候补'
       } else {
-        await api.callFunction('createBookingV2', {
+        const result = await api.callFunction('createBookingV2', {
           requestId,
           ...payload,
         })
+        if (result && result.status === 'pending_review') {
+          toastTitle = result.duplicateRequest ? '预约申请已存在' : '已提交审核'
+        } else {
+          toastTitle = result && result.duplicateRequest ? '预约已存在' : '预约成功'
+        }
       }
       wx.hideLoading()
-      wx.showToast({ title: '已提交', icon: 'success' })
+      wx.showToast({ title: toastTitle, icon: 'success' })
       this.closeSheet()
       this.loadCalendar()
     } catch (err) {

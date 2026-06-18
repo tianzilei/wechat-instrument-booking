@@ -1,0 +1,26 @@
+.detail-card {
+  margin-bottom: 0;
+}
+
+.detail-title,
+.detail-segment,
+.detail-log {
+  font-weight: 600;
+}
+
+.detail-group {
+  padding: 16rpx 0;
+}
+
+.detail-group-title {
+  margin-bottom: 8rpx;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.detail-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 16rpx;
+}

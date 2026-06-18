@@ -22,6 +22,10 @@ function summarizeActiveSegments(segments) {
   }
 }
 
+function hasFutureActiveSegments(segments, currentTime) {
+  return (segments || []).some((segment) => isFutureActiveSegment(segment, currentTime))
+}
+
 function cancelFutureActiveSegments(segments, currentTime, nowServer, reasonCode) {
   let changed = false
   const nextSegments = (segments || []).map((segment) => {
@@ -38,7 +42,17 @@ function cancelFutureActiveSegments(segments, currentTime, nowServer, reasonCode
     changed,
     nextSegments,
     remainingSummary: summarizeActiveSegments(nextSegments),
+    hasFutureActiveRemaining: hasFutureActiveSegments(nextSegments, currentTime),
   }
+}
+
+async function triggerWaitlistReconcile() {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source: 'cancelBookingV2' },
+    })
+  } catch (err) {}
 }
 
 function getBookingSegments(booking) {
@@ -67,7 +81,7 @@ exports.main = async (event) => {
   }).get()
   const booking = bookingRes.data
   if (!booking || booking.userId !== user._id) return fail('PERMISSION_DENIED', '只能取消自己的预约')
-  if (!['confirmed', 'pending_review'].includes(booking.status)) return fail('STATE_CHANGED', '当前状态不可取消')
+  if (!['confirmed', 'pending_review', 'rule_review_pending'].includes(booking.status)) return fail('STATE_CHANGED', '当前状态不可取消')
 
   const now = new Date()
   const bookingSegments = getBookingSegments(booking)
@@ -111,11 +125,12 @@ exports.main = async (event) => {
         updatedAt: nowServer,
       },
     })
+    await triggerWaitlistReconcile()
     return ok({ bookingId: event.bookingId, status: 'cancelled', needReview: false })
   }
 
   const cancellation = cancelFutureActiveSegments(booking.segments, now, nowServer, 'user_cancelled')
-  const nextStatus = cancellation.remainingSummary ? 'confirmed' : 'cancelled'
+  const nextStatus = cancellation.hasFutureActiveRemaining ? booking.status : 'cancelled'
 
   await db.collection('bookings').doc(event.bookingId).update({
     data: {
@@ -127,5 +142,6 @@ exports.main = async (event) => {
     },
   })
 
+  await triggerWaitlistReconcile()
   return ok({ bookingId: event.bookingId, status: nextStatus, needReview: false })
 }

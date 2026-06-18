@@ -12,6 +12,15 @@ function fail(code, message) {
   return { success: false, data: null, error: { code, message } }
 }
 
+async function triggerWaitlistReconcile() {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source: 'deleteMaintenance' },
+    })
+  } catch (err) {}
+}
+
 async function getAdmin(openid) {
   if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
@@ -27,5 +36,6 @@ exports.main = async (event) => {
   await db.collection('maintenance_slots').doc(event.maintenanceId).update({
     data: { status: 'deleted', updatedAt: db.serverDate() },
   })
+  await triggerWaitlistReconcile()
   return ok({ maintenanceId: event.maintenanceId, status: 'deleted' })
 }

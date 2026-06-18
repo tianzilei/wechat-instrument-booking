@@ -132,9 +132,10 @@ Component({
 
       const booking = this.properties.items.find((item) => this.overlaps(keyTime, nextTime, item.startAt, item.endAt))
       if (booking) {
+        const isPendingReview = ['pending_review', 'cancel_pending', 'rule_review_pending'].includes(booking.status)
         return {
           className: getCellClass(booking.status),
-          text: booking.projectAbbr || (booking.status === 'pending_review' ? '待审核' : '已占用'),
+          text: booking.projectAbbr || (isPendingReview ? '待审核' : '已占用'),
           subtext: booking.userName || '',
           status: booking.status,
           bookingId: booking.bookingId,
@@ -168,7 +169,7 @@ Component({
       if (!cellData) return false
       if (cellData.status === 'past' || cellData.status === 'maintenance') return false
       if (this.properties.isAdmin) {
-        return ['available', 'confirmed', 'pending_review'].includes(cellData.status)
+        return ['available', 'confirmed', 'pending_review', 'cancel_pending', 'rule_review_pending'].includes(cellData.status)
       }
       return cellData.status === 'available'
     },
@@ -202,6 +203,15 @@ Component({
           }
         })
         .sort((a, b) => this.getCellIndex(a) - this.getCellIndex(b))
+    },
+
+    isContinuousSelection(selectedCells) {
+      if (!Array.isArray(selectedCells) || selectedCells.length <= 1) return true
+      const indexes = selectedCells.map((cell) => this.getCellIndex(cell))
+      for (let i = 1; i < indexes.length; i += 1) {
+        if (indexes[i] !== indexes[i - 1] + 1) return false
+      }
+      return true
     },
 
     updateSelectedMap(startCell, endCell) {
@@ -338,6 +348,13 @@ Component({
       if (selectedCells.length === 0) {
         wx.showToast({
           title: '请先选择时间',
+          icon: 'none',
+        })
+        return
+      }
+      if (this.properties.isAdmin && !this.isContinuousSelection(selectedCells)) {
+        wx.showToast({
+          title: '维护请选择连续时间段',
           icon: 'none',
         })
         return

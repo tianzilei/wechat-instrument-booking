@@ -80,6 +80,13 @@ function summarizeActiveSegments(segments) {
   }
 }
 
+function hasFutureActiveSegments(segments, currentTime) {
+  return (segments || []).some((segment) => {
+    const state = segment.state || 'active'
+    return state !== 'cancelled' && new Date(segment.startAt) > currentTime
+  })
+}
+
 function buildPreview(booking, startAt, endAt, now) {
   const hasSegments = Array.isArray(booking.segments) && booking.segments.length > 0
   if (hasSegments) {
@@ -98,6 +105,7 @@ function buildPreview(booking, startAt, endAt, now) {
       hasSegments: true,
       affectedIndexes,
       affected: affectedIndexes.length > 0,
+      currentTime: now,
     }
   }
 
@@ -109,14 +117,15 @@ function buildPreview(booking, startAt, endAt, now) {
     hasSegments: false,
     affectedIndexes: affected ? [0] : [],
     affected,
+    currentTime: now,
   }
 }
 
 function buildBookingUpdate(preview, nowServer) {
-  const { booking, hasSegments, affectedIndexes } = preview
+  const { booking, hasSegments, affectedIndexes, currentTime } = preview
   if (!hasSegments) {
     return {
-      status: 'cancelled',
+      status: 'maintenance_cancelled',
       cancellationNote: 'maintenance_cancelled',
       updatedAt: nowServer,
     }
@@ -139,8 +148,12 @@ function buildBookingUpdate(preview, nowServer) {
     updatedAt: nowServer,
   }
   const remainingSummary = summarizeActiveSegments(nextSegments)
-  if (!remainingSummary) {
-    updateData.status = 'cancelled'
+  if (!hasFutureActiveSegments(nextSegments, currentTime)) {
+    updateData.status = 'maintenance_cancelled'
+    if (!remainingSummary) {
+      return updateData
+    }
+    Object.assign(updateData, remainingSummary)
     return updateData
   }
   Object.assign(updateData, remainingSummary)
@@ -150,18 +163,17 @@ function buildBookingUpdate(preview, nowServer) {
 async function listOverlappingBookings(collectionRef, startAt, endAt) {
   const conditions = [
     {
+      status: _.in(ACTIVE_BOOKING_STATUSES),
       firstStartAt: _.lt(endAt),
       lastEndAt: _.gt(startAt),
     },
     {
+      status: _.in(ACTIVE_BOOKING_STATUSES),
       startAt: _.lt(endAt),
       endAt: _.gt(startAt),
     },
   ]
-  const query = {
-    status: _.in(ACTIVE_BOOKING_STATUSES),
-    ...(conditions.length === 1 ? conditions[0] : _.or(conditions)),
-  }
+  const query = conditions.length === 1 ? conditions[0] : _.or(conditions)
   let skip = 0
   let hasMore = true
   let items = []

@@ -43,6 +43,15 @@ function getFutureSegmentReviewUpdate(booking, nowServer, reasonCode, nextStatus
   return updateData
 }
 
+async function triggerWaitlistReconcile(source) {
+  try {
+    await cloud.callFunction({
+      name: 'reconcileWaitlists',
+      data: { source },
+    })
+  } catch (err) {}
+}
+
 async function getAdmin(openid) {
   if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
@@ -92,6 +101,7 @@ exports.main = async (event) => {
           },
         })
       }
+      await triggerWaitlistReconcile('reviewBookingV2_rule_reject')
     } else {
       const segments = (booking.segments || []).map((s) => ({
         ...s,
@@ -102,6 +112,7 @@ exports.main = async (event) => {
       await db.collection('bookings').doc(event.bookingId).update({
         data: { status: 'rejected', previousStatus: '', segments, reviewReason: event.reason || '', reviewedBy: admin._id, reviewedAt: now, updatedAt: now },
       })
+      await triggerWaitlistReconcile('reviewBookingV2_reject')
     }
   } else {
     await db.collection('bookings').doc(event.bookingId).update({

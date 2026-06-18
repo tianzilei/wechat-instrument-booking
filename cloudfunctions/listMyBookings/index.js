@@ -81,9 +81,9 @@ exports.main = async (event) => {
   const user = userRes.data[0]
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
   let statusFilter = {}
-  if (event.status === 'upcoming') statusFilter = { status: _.in(['confirmed', 'pending_review']) }
-  if (event.status === 'pending') statusFilter = { status: _.in(['pending_review', 'cancel_pending']) }
-  if (event.status === 'cancelled') statusFilter = { status: 'cancelled' }
+  if (event.status === 'upcoming') statusFilter = { status: _.in(['confirmed', 'pending_review', 'rule_review_pending']) }
+  if (event.status === 'pending') statusFilter = { status: _.in(['pending_review', 'cancel_pending', 'rule_review_pending']) }
+  if (event.status === 'cancelled') statusFilter = { status: _.in(['cancelled', 'maintenance_cancelled', 'rejected', 'review_timeout', 'rule_rejected']) }
   const bookings = await fetchAllUserBookings(user._id, statusFilter)
   const items = bookings.map((item) => ({
     ...item,
