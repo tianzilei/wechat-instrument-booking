@@ -64,9 +64,10 @@ function buildFutureActiveSegmentCancellationUpdate(booking, nowServer, reasonCo
     if (!changed) return null
     const remainingSummary = summarizeActiveSegments(nextSegments)
     const updateData = {
-      status: remainingSummary ? 'cancelled' : 'cancelled',
+      status: remainingSummary ? 'confirmed' : 'cancelled',
       segments: nextSegments,
       cancellationNote: reasonCode,
+      previousStatus: '',
       updatedAt: nowServer,
     }
     Object.assign(updateData, remainingSummary || {})

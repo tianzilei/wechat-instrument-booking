@@ -4,6 +4,54 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
+const PAGE_SIZE = 500
+
+async function anonymizeOldBookings(cutoffDate) {
+  let total = 0
+  let skip = 0
+  while (true) {
+    const batch = await db.collection('bookings').where({
+      createdAt: _.lt(cutoffDate),
+    }).orderBy('createdAt', 'asc').skip(skip).limit(PAGE_SIZE).get()
+    if (batch.data.length === 0) break
+
+    await Promise.all(batch.data.map((booking) => db.collection('bookings').doc(booking._id).update({
+      data: {
+        userId: '',
+        projectId: '',
+        projectAbbrDisplayCache: '',
+        remark: '',
+        reviewReason: '',
+        cancellationNote: '',
+        updatedAt: db.serverDate(),
+      },
+    })))
+    total += batch.data.length
+    skip += batch.data.length
+  }
+  return total
+}
+
+async function scrubOldReviewLogs(cutoffDate) {
+  let total = 0
+  let skip = 0
+  while (true) {
+    const batch = await db.collection('review_logs').where({
+      createdAt: _.lt(cutoffDate),
+    }).orderBy('createdAt', 'asc').skip(skip).limit(PAGE_SIZE).get()
+    if (batch.data.length === 0) break
+
+    await Promise.all(batch.data.map((reviewLog) => db.collection('review_logs').doc(reviewLog._id).update({
+      data: {
+        reason: '',
+        updatedAt: db.serverDate(),
+      },
+    })))
+    total += batch.data.length
+    skip += batch.data.length
+  }
+  return total
+}
 
 exports.main = async () => {
   const now = new Date()
@@ -23,40 +71,8 @@ exports.main = async () => {
   results.privacyRequestsAnonymized = privacyDeleted.removed || 0
 
   const yearAgo = new Date(now.getTime() - 365 * 24 * 3600000)
-  const oldBookings = await db.collection('bookings').where({
-    createdAt: _.lt(yearAgo),
-  }).limit(500).get()
-  let anonymizedBookings = 0
-  for (const b of oldBookings.data) {
-    await db.collection('bookings').doc(b._id).update({
-      data: {
-        userId: '',
-        projectId: '',
-        projectAbbrDisplayCache: '',
-        remark: '',
-        reviewReason: '',
-        cancellationNote: '',
-        updatedAt: db.serverDate(),
-      },
-    })
-    anonymizedBookings += 1
-  }
-  results.bookingsAnonymized = anonymizedBookings
-
-  const oldReviews = await db.collection('review_logs').where({
-    createdAt: _.lt(yearAgo),
-  }).limit(500).get()
-  let deletedReviews = 0
-  for (const r of oldReviews.data) {
-    await db.collection('review_logs').doc(r._id).update({
-      data: {
-        reason: '',
-        updatedAt: db.serverDate(),
-      },
-    })
-    deletedReviews += 1
-  }
-  results.reviewLogsCleaned = deletedReviews
+  results.bookingsAnonymized = await anonymizeOldBookings(yearAgo)
+  results.reviewLogsCleaned = await scrubOldReviewLogs(yearAgo)
 
   return { success: true, data: results }
 }

@@ -14,21 +14,21 @@ function fail(code, message) {
   return { success: false, data: null, error: { code, message } }
 }
 
-async function fetchAllUserBookings(userId, statusFilter) {
+async function fetchAllUserBookingsByQuery(where, orderField) {
   let skip = 0
   let hasMore = true
   const items = []
   while (hasMore) {
-    const batch = await db.collection('bookings').where({
-      userId,
-      ...statusFilter,
-    })
+    const batch = await db.collection('bookings').where(where)
       .field({
         _id: true,
         userId: true,
         projectAbbrDisplayCache: true,
+        projectAbbr: true,
         firstStartAt: true,
         lastEndAt: true,
+        startAt: true,
+        endAt: true,
         segments: true,
         durationHours: true,
         remark: true,
@@ -40,7 +40,7 @@ async function fetchAllUserBookings(userId, statusFilter) {
         createdAt: true,
         updatedAt: true,
       })
-      .orderBy('firstStartAt', 'desc')
+      .orderBy(orderField, 'desc')
       .skip(skip)
       .limit(PAGE_SIZE)
       .get()
@@ -52,6 +52,27 @@ async function fetchAllUserBookings(userId, statusFilter) {
     }
   }
   return items
+}
+
+async function fetchAllUserBookings(userId, statusFilter) {
+  const [v2Items, legacyItems] = await Promise.all([
+    fetchAllUserBookingsByQuery({
+      userId,
+      ...statusFilter,
+      firstStartAt: _.exists(true),
+    }, 'firstStartAt'),
+    fetchAllUserBookingsByQuery({
+      userId,
+      ...statusFilter,
+      startAt: _.exists(true),
+      firstStartAt: _.exists(false),
+    }, 'startAt'),
+  ])
+  return [...v2Items, ...legacyItems].sort((left, right) => {
+    const leftStartAt = new Date(left.firstStartAt || left.startAt).getTime()
+    const rightStartAt = new Date(right.firstStartAt || right.startAt).getTime()
+    return rightStartAt - leftStartAt
+  })
 }
 
 exports.main = async (event) => {
@@ -66,9 +87,9 @@ exports.main = async (event) => {
   const bookings = await fetchAllUserBookings(user._id, statusFilter)
   const items = bookings.map((item) => ({
     ...item,
-    startAt: item.firstStartAt,
-    endAt: item.lastEndAt,
-    projectAbbr: item.projectAbbrDisplayCache || '',
+    startAt: item.firstStartAt || item.startAt,
+    endAt: item.lastEndAt || item.endAt,
+    projectAbbr: item.projectAbbrDisplayCache || item.projectAbbr || '',
   }))
 
   return ok({ items })

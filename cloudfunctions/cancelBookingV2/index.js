@@ -41,6 +41,20 @@ function cancelFutureActiveSegments(segments, currentTime, nowServer, reasonCode
   }
 }
 
+function getBookingSegments(booking) {
+  if (Array.isArray(booking.segments) && booking.segments.length > 0) {
+    return booking.segments
+  }
+  const startAt = booking.firstStartAt || booking.startAt
+  const endAt = booking.lastEndAt || booking.endAt
+  if (!startAt || !endAt) return []
+  return [{
+    startAt,
+    endAt,
+    state: 'active',
+  }]
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const userRes = await db.collection('users').where({ openid: OPENID }).field({ _id: true }).limit(1).get()
@@ -49,14 +63,15 @@ exports.main = async (event) => {
 
   if (!event.bookingId) return fail('INVALID_PARAMS', '参数错误')
   const bookingRes = await db.collection('bookings').doc(event.bookingId).field({
-    userId: true, status: true, segments: true, previousStatus: true,
+    userId: true, status: true, segments: true, previousStatus: true, firstStartAt: true, lastEndAt: true, startAt: true, endAt: true,
   }).get()
   const booking = bookingRes.data
   if (!booking || booking.userId !== user._id) return fail('PERMISSION_DENIED', '只能取消自己的预约')
   if (!['confirmed', 'pending_review'].includes(booking.status)) return fail('STATE_CHANGED', '当前状态不可取消')
 
   const now = new Date()
-  const futureActive = (booking.segments || []).filter((segment) => isFutureActiveSegment(segment, now))
+  const bookingSegments = getBookingSegments(booking)
+  const futureActive = bookingSegments.filter((segment) => isFutureActiveSegment(segment, now))
   if (futureActive.length === 0) return fail('STATE_CHANGED', '无未开始的有效时段')
 
   if (event.reason) {
@@ -86,6 +101,17 @@ exports.main = async (event) => {
       },
     })
     return ok({ bookingId: event.bookingId, status: 'cancel_pending', needReview: true })
+  }
+
+  if (!Array.isArray(booking.segments) || booking.segments.length === 0) {
+    await db.collection('bookings').doc(event.bookingId).update({
+      data: {
+        status: 'cancelled',
+        cancellationNote: event.reason || '',
+        updatedAt: nowServer,
+      },
+    })
+    return ok({ bookingId: event.bookingId, status: 'cancelled', needReview: false })
   }
 
   const cancellation = cancelFutureActiveSegments(booking.segments, now, nowServer, 'user_cancelled')

@@ -119,6 +119,19 @@ exports.main = async () => {
         })
       }
 
+      if (!task.cleanedUpPrivacyRequests) {
+        const privacyRequests = await fetchAll('privacy_requests', { userId })
+        await updateDocs('privacy_requests', privacyRequests, () => ({
+          userId: '',
+          note: '',
+          processNote: '',
+          updatedAt: db.serverDate(),
+        }))
+        await db.collection('deletion_tasks').doc(task._id).update({
+          data: { cleanedUpPrivacyRequests: true, updatedAt: db.serverDate() },
+        })
+      }
+
       try {
         await db.collection('users').doc(userId).remove()
       } catch (err) {}

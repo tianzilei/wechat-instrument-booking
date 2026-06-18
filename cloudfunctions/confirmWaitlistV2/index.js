@@ -97,6 +97,17 @@ function anyMaintenanceConflict(segments, maintenanceSlots) {
   return false
 }
 
+function getWaitlistSegments(waitlist) {
+  return waitlist.segments || waitlist.occupiedSegments || [{ startAt: waitlist.startAt, endAt: waitlist.endAt }]
+}
+
+function getEarliestStartAt(segments) {
+  return segments.reduce((min, segment) => {
+    const value = new Date(segment.startAt)
+    return value < min ? value : min
+  }, new Date(segments[0].startAt))
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const userRes = await db.collection('users').where({ openid: OPENID }).limit(1).get()
@@ -121,6 +132,18 @@ exports.main = async (event) => {
   if (user.registrationStatus !== 'approved') return fail('REGISTRATION_REQUIRED', '注册审核通过后才能预约')
   if (user.accountStatus && user.accountStatus !== 'active') return fail('ACCOUNT_SUSPENDED', '账号状态异常')
   if (waitlist.status !== 'confirming') return fail('STATE_CHANGED', '候补尚未进入确认状态')
+  {
+    const segments = getWaitlistSegments(waitlist)
+    const earliestStartAt = getEarliestStartAt(segments)
+    const confirmDeadlineAt = waitlist.confirmDeadlineAt ? new Date(waitlist.confirmDeadlineAt) : earliestStartAt
+    const now = new Date()
+    if (confirmDeadlineAt <= now || earliestStartAt <= now) {
+      await db.collection('waitlists').doc(event.waitlistId).update({
+        data: { status: 'expired', updatedAt: db.serverDate() },
+      })
+      return fail('STATE_CHANGED', '候补确认已超时')
+    }
+  }
 
   let openStartHour = 9
   let openEndHour = 18
@@ -160,11 +183,18 @@ exports.main = async (event) => {
         throw businessError('STATE_CHANGED', '候补尚未进入确认状态')
       }
 
-      const segments = latestWaitlist.segments || latestWaitlist.occupiedSegments || [{ startAt: latestWaitlist.startAt, endAt: latestWaitlist.endAt }]
+      const segments = getWaitlistSegments(latestWaitlist)
       const now = new Date()
-      for (const segment of segments) {
-        const startAt = new Date(segment.startAt)
-        if (startAt <= now) throw businessError('INVALID_SEGMENTS', '时段已过期')
+      const earliestStartAt = getEarliestStartAt(segments)
+      const confirmDeadlineAt = latestWaitlist.confirmDeadlineAt ? new Date(latestWaitlist.confirmDeadlineAt) : earliestStartAt
+      if (confirmDeadlineAt <= now || earliestStartAt <= now) {
+        await transaction.collection('waitlists').doc(event.waitlistId).update({
+          data: {
+            status: 'expired',
+            updatedAt: db.serverDate(),
+          },
+        })
+        throw businessError('STATE_CHANGED', '候补确认已超时')
       }
 
       const maintenanceSlots = await fetchAll(transaction.collection('maintenance_slots'), { status: 'active' })

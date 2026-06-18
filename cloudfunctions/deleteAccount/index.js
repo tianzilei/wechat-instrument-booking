@@ -64,6 +64,7 @@ exports.main = async () => {
       cancelledWaitlists: 0,
       anonymizedBookings: 0,
       cleanedUpNotifications: false,
+      cleanedUpPrivacyRequests: false,
       createdAt: nowServer,
       updatedAt: nowServer,
     },

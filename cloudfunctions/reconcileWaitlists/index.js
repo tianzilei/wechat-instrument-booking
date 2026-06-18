@@ -23,35 +23,69 @@ async function fetchAllWaitlists() {
   return items
 }
 
+function getWaitlistScheduleKey(waitlist) {
+  return waitlist.scheduleKey || `${waitlist.startAt}|${waitlist.endAt}`
+}
+
+function getWaitlistSegments(waitlist) {
+  return waitlist.segments || waitlist.occupiedSegments || [{ startAt: waitlist.startAt, endAt: waitlist.endAt }]
+}
+
+function getEarliestStartAt(segments) {
+  return segments.reduce((min, segment) => {
+    const value = new Date(segment.startAt)
+    return value < min ? value : min
+  }, new Date(segments[0].startAt))
+}
+
+function buildConfirmDeadline(now, earliestStartAt) {
+  const twoHoursLater = new Date(now.getTime() + 2 * 3600000)
+  return earliestStartAt < twoHoursLater ? earliestStartAt : twoHoursLater
+}
+
+function sortWaitlists(left, right) {
+  const leftQueue = typeof left.queueOrder === 'number' ? left.queueOrder : Number.MAX_SAFE_INTEGER
+  const rightQueue = typeof right.queueOrder === 'number' ? right.queueOrder : Number.MAX_SAFE_INTEGER
+  if (leftQueue !== rightQueue) return leftQueue - rightQueue
+  return new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime()
+}
+
 exports.main = async () => {
   const now = new Date()
   const results = { processed: 0, converted: 0, expired: 0, errors: 0 }
 
   const allWaitlists = await fetchAllWaitlists()
-  const scheduleKeys = [...new Set(allWaitlists.map((w) => w.scheduleKey || `${w.startAt}|${w.endAt}`))]
+  const scheduleKeys = [...new Set(allWaitlists.map((waitlist) => getWaitlistScheduleKey(waitlist)))]
   for (const sk of scheduleKeys) {
-    const waitlists = allWaitlists.filter((w) => (w.scheduleKey || `${w.startAt}|${w.endAt}`) === sk)
-    for (const w of waitlists) {
+    const waitlists = allWaitlists
+      .filter((waitlist) => getWaitlistScheduleKey(waitlist) === sk)
+      .sort(sortWaitlists)
+    let activeConfirming = false
+
+    for (const waitlist of waitlists) {
       results.processed += 1
       try {
-        if (w.status === 'confirming') {
-          if (w.confirmDeadlineAt && new Date(w.confirmDeadlineAt) <= now) {
-            await db.collection('waitlists').doc(w._id).update({
-              data: { status: 'cancelled', updatedAt: db.serverDate() },
+        const segments = getWaitlistSegments(waitlist)
+        const firstStartAt = getEarliestStartAt(segments)
+
+        if (waitlist.status === 'confirming') {
+          const confirmDeadlineAt = waitlist.confirmDeadlineAt ? new Date(waitlist.confirmDeadlineAt) : firstStartAt
+          if (confirmDeadlineAt <= now || firstStartAt <= now) {
+            await db.collection('waitlists').doc(waitlist._id).update({
+              data: { status: 'expired', updatedAt: db.serverDate() },
             })
             results.expired += 1
+            continue
           }
-          continue
+          activeConfirming = true
+          break
         }
-        if (w.status !== 'waitlisted') continue
 
-        const segments = w.segments || w.occupiedSegments || [{ startAt: w.startAt, endAt: w.endAt }]
-        const firstStartAt = segments.reduce((min, s) => {
-          const d = new Date(s.startAt)
-          return d < min ? d : min
-        }, new Date(segments[0].startAt))
+        if (waitlist.status !== 'waitlisted') continue
+        if (activeConfirming) break
+
         if (firstStartAt <= now) {
-          await db.collection('waitlists').doc(w._id).update({
+          await db.collection('waitlists').doc(waitlist._id).update({
             data: { status: 'expired', updatedAt: db.serverDate() },
           })
           results.expired += 1
@@ -59,16 +93,17 @@ exports.main = async () => {
         }
 
         const hasConflict = await checkSegmentConflict(segments)
-        if (!hasConflict) {
-          await db.collection('waitlists').doc(w._id).update({
-            data: {
-              status: 'confirming',
-              confirmDeadlineAt: new Date(now.getTime() + 2 * 3600000),
-              updatedAt: db.serverDate(),
-            },
-          })
-          results.converted += 1
-        }
+        if (hasConflict) break
+
+        await db.collection('waitlists').doc(waitlist._id).update({
+          data: {
+            status: 'confirming',
+            confirmDeadlineAt: buildConfirmDeadline(now, firstStartAt),
+            updatedAt: db.serverDate(),
+          },
+        })
+        results.converted += 1
+        break
       } catch (err) {
         results.errors += 1
         console.error('reconcile error:', err.errCode || err.message)

@@ -30,6 +30,13 @@ async function checkConflict(segments) {
   return res.data.length > 0
 }
 
+function getEarliestStartAt(segments) {
+  return segments.reduce((min, segment) => {
+    const value = new Date(segment.startAt)
+    return value < min ? value : min
+  }, new Date(segments[0].startAt))
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   if (!event.waitlistId || !['confirm', 'decline'].includes(event.action)) return fail('INVALID_PARAMS', '参数错误')
@@ -49,6 +56,12 @@ exports.main = async (event) => {
   if (waitlist.status !== 'confirming') return fail('STATE_CHANGED', '候补尚未进入确认状态')
 
   const segments = waitlist.segments || waitlist.occupiedSegments || [{ startAt: waitlist.startAt, endAt: waitlist.endAt }]
+  const earliestStartAt = getEarliestStartAt(segments)
+  const confirmDeadlineAt = waitlist.confirmDeadlineAt ? new Date(waitlist.confirmDeadlineAt) : earliestStartAt
+  if (confirmDeadlineAt <= new Date() || earliestStartAt <= new Date()) {
+    await ref.update({ data: { status: 'expired', updatedAt: now } })
+    return fail('STATE_CHANGED', '候补确认已超时')
+  }
 
   const hasConflict = await checkConflict(segments)
   if (hasConflict) return fail('BOOKING_CONFLICT', '时段已被占用')
