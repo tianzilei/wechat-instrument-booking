@@ -4,6 +4,7 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
+const IN_QUERY_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -60,10 +61,40 @@ async function fetchAll(collectionName, query, fields) {
   return items
 }
 
+function chunk(items, size) {
+  const batches = []
+  for (let index = 0; index < items.length; index += size) {
+    batches.push(items.slice(index, index + size))
+  }
+  return batches
+}
+
+async function fetchUserNameMap(userIds) {
+  const map = {}
+  const uniqueIds = [...new Set((userIds || []).filter(Boolean))]
+  for (const ids of chunk(uniqueIds, IN_QUERY_SIZE)) {
+    const batch = await db.collection('users').where({
+      _id: _.in(ids),
+    }).field({
+      _id: true,
+      name: true,
+    }).get()
+    batch.data.forEach((item) => {
+      map[item._id] = item.name || ''
+    })
+  }
+  return map
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const currentUser = await getCurrentUser(OPENID)
   const isAdmin = !!(currentUser && currentUser.role === 'admin')
+  const canViewSameProjectNames = !!(
+    currentUser
+    && currentUser.registrationStatus === 'approved'
+    && currentUser.projectId
+  )
   const weekStartDate = event.weekStartDate
   if (!isValidWeekStartDate(weekStartDate)) {
     return fail('INVALID_PARAMS', 'weekStartDate must be YYYY-MM-DD')
@@ -79,6 +110,8 @@ exports.main = async (event) => {
       lastEndAt: _.gt(weekStart),
     }, {
       _id: true,
+      userId: true,
+      projectId: true,
       status: true,
       segments: true,
       firstStartAt: true,
@@ -90,7 +123,7 @@ exports.main = async (event) => {
       startAt: _.lt(weekEnd),
       endAt: _.gt(weekStart),
     }, {
-      _id: true, status: true, startAt: true, endAt: true, projectAbbr: true,
+      _id: true, userId: true, projectId: true, status: true, startAt: true, endAt: true, projectAbbr: true,
     }),
     fetchAll('maintenance_slots', {
       status: 'active',
@@ -100,6 +133,22 @@ exports.main = async (event) => {
     db.collection('settings').doc('global').get(),
   ])
   const settings = settingsRes.data || {}
+  const shouldResolveNames = isAdmin || canViewSameProjectNames
+  const userNameMap = shouldResolveNames
+    ? await fetchUserNameMap([
+      ...bookingsRes.map((item) => item.userId),
+      ...legacyBookingsRes.map((item) => item.userId),
+    ])
+    : {}
+
+  function getVisibleUserName(item) {
+    if (!shouldResolveNames) return ''
+    if (isAdmin) return userNameMap[item.userId] || ''
+    if (canViewSameProjectNames && currentUser.projectId === item.projectId) {
+      return userNameMap[item.userId] || ''
+    }
+    return ''
+  }
 
   const slots = []
   bookingsRes.forEach((item) => {
@@ -108,6 +157,7 @@ exports.main = async (event) => {
       : [{ startAt: item.firstStartAt, endAt: item.lastEndAt }]
     const state = item.status === 'pending_review' ? 'pending' : 'occupied'
     segments.forEach((segment, index) => {
+      const userName = getVisibleUserName(item)
       const slot = {
         startAt: segment.startAt,
         endAt: segment.endAt,
@@ -116,12 +166,14 @@ exports.main = async (event) => {
         projectAbbr: item.projectAbbrDisplayCache || '',
         publicRenderId: `slot-${slots.length}-${index}`,
       }
+      if (userName) slot.userName = userName
       if (isAdmin) slot.bookingId = item._id
       slots.push(slot)
     })
   })
 
   legacyBookingsRes.forEach((item) => {
+    const userName = getVisibleUserName(item)
     const slot = {
       startAt: item.startAt,
       endAt: item.endAt,
@@ -130,6 +182,7 @@ exports.main = async (event) => {
       projectAbbr: item.projectAbbr || '',
       publicRenderId: `legacy-slot-${slots.length}`,
     }
+    if (userName) slot.userName = userName
     if (isAdmin) slot.bookingId = item._id
     slots.push(slot)
   })

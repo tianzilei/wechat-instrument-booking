@@ -100,7 +100,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 ### Data &amp; Calendar
 | Function | Role | Access |
 |----------|------|--------|
-| `getPublicCalendar` | Weekly public calendar with field whitelist | Public |
+| `getPublicCalendar` | Weekly public calendar with field whitelist and graded name visibility | Public |
 | `getMyBookingDetail` | User's full booking detail with timeline | Self |
 | `getAdminBookingDetail` | Admin booking detail with current user name | Admin |
 | `getSettings` | Get system settings (hours, versions, service mode) | Public (limited) |
@@ -110,7 +110,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 |----------|------|
 | `updateSettings` | Admin updates working hours, agreement versions, service mode |
 | `scanSettingsVersion` | Detect rules version changes, trigger migration |
-| `exportOperationalData` | Admin exports anonymized operational data to a temporary cloud file |
+| `exportOperationalData` | Admin exports operational data with booking user/project info to a temporary cloud file |
 
 ### Background Tasks
 | Function | Role |
@@ -136,7 +136,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 | Waitlist conversion | `confirmWaitlistV2/index.js` | Confirming waitlist → booking conversion, server-side legal/service-mode/deadline enforcement, booking mutex |
 | Review audit trail | `reviewBooking/`, `reviewCancel/`, `reviewRegistration/` | All write to `review_logs` collection |
 | Calendar data assembly | `getCalendarBookings/index.js` | Public weekly view with field whitelist |
-| V2 public calendar | `getPublicCalendar/index.js` | Weekly view, strict field whitelist |
+| V2 public calendar | `getPublicCalendar/index.js` | Weekly view, strict field whitelist, visitor/member/admin visibility tiers |
 | Booking detail | `getMyBookingDetail/index.js`, `getAdminBookingDetail/index.js` | User vs admin detail views |
 | Admin stats | `getAdminStats/index.js` | Monthly aggregation + working/non-working hour totals |
 | Project management | `createProject/`, `submitProjectApplication/`, `reviewProjectApplication/` | Full project lifecycle |
@@ -145,7 +145,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 | User lifecycle | `suspendUser/`, `restoreUser/`, `deleteAccount/` | Suspension, restoration, deletion |
 | Settings | `getSettings/`, `updateSettings/`, `scanSettingsVersion/` | System configuration, version migration |
 | Background tasks | `expireBookingReviews/`, `reconcileWaitlists/`, `cleanupRetentionData/` | Scheduled jobs; waitlists advance queue-head only, retention/deletion tasks iterate in batches until exhausted |
-| Operational export | `exportOperationalData/index.js` | Admin-only anonymized JSON export, 60s timeout |
+| Operational export | `exportOperationalData/index.js` | Admin-only JSON export with user/project fields, 60s timeout |
 
 ## CONVENTIONS
 
@@ -173,7 +173,7 @@ WeChat CloudBase cloud functions. Node.js 18.15 runtime, default 15s timeout. Al
 ## NOTES
 
 - All functions use `wx-server-sdk` (`latest` or `~2.5.3`)
-- `exportOperationalData` has a 60-second timeout — the only function exceeding the default 15s
+- `exportOperationalData` has a 60-second timeout and includes user names/project affiliation for admin-only internal export
 - Only lint suppression in codebase is at `openapi/index.js:54`
 - `confirmWaitlist`, `getServerDataDemo`, `getTempFileURL`, `openapi`, and `wxContext` exist locally but are not in the active deployment manifest
 - `processDeletionTasks` now clears privacy-request user linkage during account deletion, and `cleanupRetentionData` paginates year-old data cleanup

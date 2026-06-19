@@ -213,6 +213,7 @@ Page({
             startAt: slot.startAt,
             endAt: slot.endAt,
             projectAbbr: slot.projectAbbr || '',
+            userName: slot.userName || '',
             publicRenderId: slot.publicRenderId || '',
           })
         }
@@ -378,6 +379,10 @@ Page({
         label: '课题',
         value: cellData.projectAbbr || '已占用',
       },
+      ...(cellData.userName ? [{
+        label: '预约人',
+        value: cellData.userName,
+      }] : []),
       {
         label: '状态',
         value: status.text,

@@ -4,17 +4,17 @@
 
 ## OVERVIEW
 
-Native WeChat Mini-Program source. 24 pages across 7 feature groups, 5 custom components, custom tab bar, CSS token system, 4 utility modules. All cloud calls through `utils/api.js`. Pure JS (CommonJS), no TypeScript.
+Native WeChat Mini-Program source. 26 pages across 7 feature groups, 5 custom components, custom tab bar, CSS token system, 4 utility modules. All cloud calls through `utils/api.js`. Pure JS (CommonJS), no TypeScript.
 
 ## STRUCTURE
 
 ```
 miniprogram/
 ├── app.js              # App() lifecycle, cloud.init, globalData, auth helpers
-├── app.json            # 24 pages, custom tabBar (3 tabs), window config
+├── app.json            # 26 pages, custom tabBar (3 tabs), window config
 ├── app.wxss            # @import tokens → base → components
 ├── config.js           # envId, host, demo asset IDs
-├── pages/              # 7 feature groups (24 pages)
+├── pages/              # 7 feature groups (26 pages)
 ├── components/         # 5 reusable components
 ├── custom-tab-bar/     # Custom text-only tab bar component
 ├── styles/             # Global stylesheets (tokens, base, components, calendar)
@@ -26,7 +26,7 @@ miniprogram/
 | Task | Location | Notes |
 |------|----------|-------|
 | App bootstrap | `app.js` | Cloud init, login session, `globalData` (`hasLogin`, `needsLegalAcceptance`, `user`), `isApprovedUser()`, `isAdmin()`, `needsLegalAcceptance()` |
-| Page/tab registration | `app.json` | 24 pages, 3 tabs (周历/我的/管理), v2 style |
+| Page/tab registration | `app.json` | 26 pages, 3 tabs (周历/我的/管理), v2 style |
 | Global styles import | `app.wxss` | 3 @import chain: tokens → base → components |
 | Service config | `config.js` | Cloud envId, host URL |
 | Cloud call wrapper | `utils/api.js` | `callFunction(name, data)` + `showError(err)` |
@@ -42,10 +42,10 @@ miniprogram/
 
 | Group | Pages | Key Cloud Functions |
 |-------|-------|-------------------|
-| `calendar/` | Main week-view (tab 0) | `getPublicCalendar`, `createBookingV2` |
+| `calendar/` | Main week-view (tab 0) | `getPublicCalendar` (graded guest/member/admin visibility), `createBookingV2` |
 | `auth/` | Login, register | `login`, `submitRegistrationV2` |
 | `booking/` | Form stub (7 lines) | None (redirects to calendar) |
-| `profile/` | Hub (tab 1), bookings, stats, privacy | `getUserStats`, `listMyBookings` (V1/V2 booking compatibility), `cancelBookingV2` |
+| `profile/` | Hub (tab 1), bookings, project, stats, privacy | `getUserStats`, `listMyBookings` (V1/V2 booking compatibility), `cancelBookingV2`, `getMyProjectOverview` |
 | `waitlist/` | My waitlist items | `listMyWaitlists`, `confirmWaitlistV2` (server-side deadline + queue-head recheck) |
 | `legal/` | User agreement, privacy policy | `getLegalDocuments`, `acceptLegalDocuments` |
 | `admin/` | 13 admin pages (tab 2) | See `pages/admin/AGENTS.md` |

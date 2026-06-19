@@ -1,10 +1,10 @@
 # miniprogram/pages/admin/ — Admin Section
 
-Admin-only pages (tab 2: 管理). Registration review, booking review, cancel review, maintenance, user management, stats. v2 adds project management, privacy requests, rule review, and maintenance mode. Restricted-slot management has been retired from active UI.
+Admin-only pages (tab 2: 管理). Registration review, booking review, cancel review, maintenance, user management, project management, privacy requests, and maintenance mode. Restricted-slot management and the old standalone review/stats pages have been retired from active UI.
 
 ## OVERVIEW
 
-13 admin pages, all gated by `getApp().isAdmin()`. Shared patterns: `onShow()` data reload, `theme-modal` for reject reasons, `status-tag` + `empty-state` for UI. v2 added project management, privacy request processing, booking rule review, and system-wide maintenance mode toggle.
+Current admin pages are all gated by `getApp().isAdmin()`. Shared patterns: `onShow()` data reload, `theme-modal` for reject reasons, `status-tag` + `empty-state` for UI. Project management, privacy request processing, booking rule review, and system-wide maintenance mode are folded into the current hub and detail flows.
 
 ## STRUCTURE
 
@@ -16,11 +16,11 @@ pages/admin/
 ├── cancel-review/      # Review cancellation requests
 ├── maintenance/        # Create/delete maintenance slots
 ├── maintenance-mode/   # Toggle system maintenance mode (blocks all booking)
+├── privacy-request-detail/ # Privacy request detail + processing
 ├── privacy-review/     # Review and process privacy requests
-├── project-review/     # Review project applications
+├── project-application-detail/ # Project application detail + review
 ├── projects/           # Manage project directory (create, edit, activate/deactivate)
-├── rule-review/        # Review bookings flagged by rule changes
-├── stats/              # Usage statistics
+├── registration-detail/ # Registration detail + review
 ├── user-review/        # Review registration applications
 └── users/              # List all users, suspend/restore
 ```
@@ -34,13 +34,13 @@ pages/admin/
 | `booking-review/` | `listBookingReviews`, `reviewBookingV2` | List + approve/reject with reason modal |
 | `cancel-review/` | `listCancelReviews`, `reviewCancelV2` | List + approve/reject |
 | `maintenance/` | `createMaintenance`, `listMaintenanceSlots` | Create form + list with delete |
-| `maintenance-mode/` | `getSettings`, `updateSettings`, `exportOperationalData` | Toggle, working hours, anonymized export |
+| `maintenance-mode/` | `getSettings`, `updateSettings`, `exportOperationalData`, `getAdminStats` | Toggle, working hours, internal export, aggregated stats |
+| `privacy-request-detail/` | `getPrivacyRequestDetail`, `processPrivacyRequest` | Request detail + handling |
 | `privacy-review/` | `listPrivacyRequests`, `processPrivacyRequest` | List + process with status flow |
-| `project-review/` | `listProjectApplications`, `reviewProjectApplication` | List + approve/reject |
+| `project-application-detail/` | `getProjectApplicationDetail`, `reviewProjectApplication` | Application detail + review |
 | `projects/` | `listProjects`, `createProject`, `updateProject`, `setProjectStatus` | List + create/edit/activate/deactivate |
-| `rule-review/` | `listBookingReviews` (rule_review_pending), `reviewBookingV2` | List + approve/reject rule-flagged bookings |
-| `stats/` | `getAdminStats` | Per-user hours, monthly breakdown |
-| `user-review/` | `listRegistrationReviews`, `reviewRegistrationV2` | List + approve/reject with reason modal |
+| `registration-detail/` | `getRegistrationReviewDetail`, `reviewRegistrationV2` | Registration detail + review |
+| `user-review/` | `listRegistrationReviews`, `listProjectApplications`, `reviewRegistrationV2`, `reviewProjectApplication` | Unified registration + project-application intake |
 | `users/` | `listUsers`, `suspendUser`, `restoreUser` | User list with `status-tag`, suspend/restore |
 
 ## CONVENTIONS
@@ -57,4 +57,4 @@ pages/admin/
 - **Never** perform review actions inline in list rows — always navigate to detail first (v2 target)
 - **Never** skip server-side role re-verification in cloud functions
 - **Never** expose reviewed-by admin name to non-admin users in review results
-- **Never** show personal stats (name, project, user rankings) in admin stats page; v2 admin stats are monthly + working/non-working totals only
+- **Never** reintroduce retired standalone entry pages (`project-review/`, `rule-review/`, `stats/`) into `app.json` or the admin hub

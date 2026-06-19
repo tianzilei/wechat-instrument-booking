@@ -1,7 +1,0 @@
-{
-  "navigationBarTitleText": "规则复审",
-  "usingComponents": {
-    "empty-state": "../../../components/empty-state/index",
-    "status-tag": "../../../components/status-tag/index"
-  }
-}

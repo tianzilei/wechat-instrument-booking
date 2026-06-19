@@ -19,7 +19,7 @@
 │   │   ├── calendar/      # Main week-view calendar (primary UI)
 │   │   ├── auth/          # Login + registration (login, register)
 │   │   ├── booking/       # Booking form (stub — redirects to calendar)
-│   │   ├── profile/       # User profile hub (index, bookings, stats, privacy)
+│   │   ├── profile/       # User profile hub (index, bookings, project, stats, privacy)
 │   │   ├── waitlist/      # User waitlist management
 │   │   ├── legal/         # Legal documents (agreement, privacy)
 │   │   └── admin/         # Admin: 13 sub-pages (reviews, maintenance, projects, users, stats, privacy, governance) → AGENTS.md
@@ -41,7 +41,7 @@
 | Task | Location | Notes |
 |------|----------|-------|
 | App entry / global state | `miniprogram/app.js` | `App()`, cloud init, `globalData`, `isAdmin()` / `isApprovedUser()` / `needsLegalAcceptance()` |
-| Page registry / tab config | `miniprogram/app.json` | 24 pages, custom tabBar (3 tabs: 周历/我的/管理) |
+| Page registry / tab config | `miniprogram/app.json` | 26 pages, custom tabBar (3 tabs: 周历/我的/管理) |
 | Config (envId, host) | `miniprogram/config.js` | Cloud env ID, request host |
 | Design tokens | `miniprogram/styles/tokens.wxss` | All colors, fonts, spacing, radii — hardcoded hex ONLY here |
 | Shared UI classes | `miniprogram/styles/components.wxss` | `.card`, `.list-card`, `.button--*`, `.surface-section`, `.status-tag--*` |
@@ -77,7 +77,7 @@ Must NOT implement: collecting phone/email/studentId/college/supervisor, storing
 No images, illustrations, decorative icons, icon grids, gradients, animations, card nesting, theme-color hardcoding outside `tokens.wxss`, page title duplication with native nav bar.
 
 ### Privacy/security
-Never return raw DB records to client (field whitelists only), never trust client time (use server time), never expose `openid`/names/notes in public APIs, never skip content safety checks on user text input, and fail closed when the content safety API is unavailable.
+Never return raw DB records to client (field whitelists only), never trust client time (use server time), never expose `openid` or notes in public APIs, only expose names through server-enforced graded visibility rules, never skip content safety checks on user text input, and fail closed when the content safety API is unavailable.
 
 ### Code hygiene
 - Only lint suppression: `cloudfunctions/openapi/index.js:54` (`// eslint-disable-next-line`)
