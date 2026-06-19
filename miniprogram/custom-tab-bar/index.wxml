@@ -7,6 +7,9 @@
     data-path="{{item.pagePath}}"
     bindtap="switchTab"
   >
-    <text class="tab-bar__text {{selected === index ? 'tab-bar__text--active' : ''}}">{{item.text}}</text>
+    <text
+      class="tab-bar__text {{selected === index ? 'tab-bar__text--active' : ''}}"
+      style="color: {{selected === index ? item.activeColor : '#566762'}};"
+    >{{item.text}}</text>
   </view>
 </view>
