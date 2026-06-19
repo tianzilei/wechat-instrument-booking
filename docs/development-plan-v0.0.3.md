@@ -869,3 +869,5 @@
 3. 单元格详情弹层与更细粒度的周历交互扩展
 
 后续如推进，应单独形成下一版本的业务设计文档，不在本版本内混合实现。
+
+2026-06-19 衔接说明：`v0.0.4` 已单独立项，见 [`development-plan-v0.0.4.md`](./development-plan-v0.0.4.md) 与 [`development-tasks-v0.0.4.md`](./development-tasks-v0.0.4.md)。

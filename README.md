@@ -101,6 +101,18 @@ tcb fn deploy --all --force -e <env-id>
 - 部署、管理员和数据库运维以 `docs/deployment-and-operations.md` 为准
 - `docs/implementation-design.md` 保留为历史设计说明
 
+## 版本文档
+
+- `v0.0.3` 计划与任务：
+  - `docs/development-plan-v0.0.3.md`
+  - `docs/development-tasks-v0.0.3.md`
+  - `docs/development-plan-v0.0.3-supplement.md`
+  - `docs/version-description-v0.0.3.md`
+- `v0.0.4` 计划与任务：
+  - `docs/development-plan-v0.0.4.md`
+  - `docs/development-tasks-v0.0.4.md`
+  - `docs/version-description-v0.0.4.md`
+
 ## 项目特性
 
 - 周历为主界面，强调按天分列、按小时分行的预约视图
