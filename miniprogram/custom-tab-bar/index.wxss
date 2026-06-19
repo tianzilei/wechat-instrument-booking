@@ -38,8 +38,13 @@
 }
 
 .tab-bar__text {
+  color: inherit;
   font-size: 28rpx;
   font-weight: 600;
   line-height: 1;
   text-align: center;
+}
+
+.tab-bar__text--active {
+  color: var(--tab-bar-accent);
 }

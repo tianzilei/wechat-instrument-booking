@@ -50,8 +50,10 @@ Component({
 
     switchTab(event) {
       const { index, path } = event.currentTarget.dataset
+      const nextIndex = Number(index)
       this.setData({
-        selected: Number(index),
+        selected: nextIndex,
+        theme: (this.data.list[nextIndex] && this.data.list[nextIndex].theme) || 'calendar',
       })
       wx.switchTab({ url: path })
     },
