@@ -61,6 +61,9 @@ function buildUserHint() {
   if (app.isAdmin()) {
     return '管理员可查看预约人并直接创建维护'
   }
+  if (user && app.needsLegalAcceptance()) {
+    return '请先同意最新协议与隐私政策后再预约'
+  }
   if (user && user.registrationStatus === 'approved') {
     return `${user.name || '已登录'}，可预约仪器`
   }
@@ -90,6 +93,9 @@ function buildOccupiedHint(user) {
   if (!user) {
     return '登录并通过注册审核后，可在这里加入候补排队。'
   }
+  if (app.needsLegalAcceptance()) {
+    return '请先同意最新协议与隐私政策后，再加入候补排队。'
+  }
   if (user.accountStatus && user.accountStatus !== 'active') {
     return '当前账号状态异常，暂不可加入候补。'
   }
@@ -97,6 +103,10 @@ function buildOccupiedHint(user) {
     return '注册审核通过并关联课题后，可在这里加入候补排队。'
   }
   return '该时段已被占用，可加入候补排队；时段释放后将按顺序确认。'
+}
+
+function goLegalAcceptance() {
+  wx.navigateTo({ url: '/pages/auth/login/index' })
 }
 
 Page({
@@ -203,7 +213,6 @@ Page({
             startAt: slot.startAt,
             endAt: slot.endAt,
             projectAbbr: slot.projectAbbr || '',
-            userName: slot.userName || '',
             publicRenderId: slot.publicRenderId || '',
           })
         }
@@ -279,6 +288,11 @@ Page({
       wx.showToast({ title: '账号状态异常，暂不可预约', icon: 'none' })
       return
     }
+    if (app.needsLegalAcceptance()) {
+      wx.showToast({ title: '请先同意最新协议', icon: 'none' })
+      goLegalAcceptance()
+      return
+    }
     if (!app.isApprovedUser()) {
       wx.navigateTo({ url: '/pages/auth/register/index' })
       return
@@ -321,6 +335,11 @@ Page({
       wx.showToast({ title: '账号状态异常，暂不可候补', icon: 'none' })
       return
     }
+    if (app.needsLegalAcceptance()) {
+      wx.showToast({ title: '请先同意最新协议', icon: 'none' })
+      goLegalAcceptance()
+      return
+    }
     if (!app.isApprovedUser()) {
       wx.navigateTo({ url: '/pages/auth/register/index' })
       return
@@ -353,7 +372,7 @@ Page({
     if (!range) return
     const user = app.globalData.user
     const status = getBookingStatus(cellData.status)
-    const allowWaitlist = !!(user && app.isApprovedUser() && !app.isAdmin())
+    const allowWaitlist = !!(user && app.isApprovedUser() && !app.isAdmin() && !app.needsLegalAcceptance())
     const detailLines = [
       {
         label: '课题',
@@ -364,12 +383,6 @@ Page({
         value: status.text,
       },
     ]
-    if (cellData.userName) {
-      detailLines.splice(1, 0, {
-        label: '预约人',
-        value: cellData.userName,
-      })
-    }
     this.setData({
       selectedRange: null,
       selectedSegments: allowWaitlist ? [range] : [],
@@ -518,6 +531,18 @@ Page({
       this.loadCalendar()
     } catch (err) {
       wx.hideLoading()
+      if (err && err.code === 'LEGAL_ACCEPTANCE_REQUIRED') {
+        app.globalData.needsLegalAcceptance = true
+        this.refreshUserHint()
+        wx.showToast({ title: '请先同意最新协议', icon: 'none' })
+        goLegalAcceptance()
+        return
+      }
+      if (err && err.code === 'STATE_CHANGED') {
+        wx.showToast({ title: err.message || '状态已变化，请刷新后重试', icon: 'none' })
+        this.loadCalendar()
+        return
+      }
       api.showError(err)
     }
   },

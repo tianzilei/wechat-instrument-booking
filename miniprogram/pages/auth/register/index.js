@@ -24,7 +24,7 @@ Page({
     this.projectSearchTimer = null
     this.projectSearchToken = 0
     const user = app.globalData.user || {}
-    const alreadyAccepted = !!(user.agreementVersion && user.privacyVersion)
+    const alreadyAccepted = !app.needsLegalAcceptance() && !!(user.agreementVersion && user.privacyVersion)
     this.setData({
       'form.name': user.name || '',
       'form.agreed': alreadyAccepted,

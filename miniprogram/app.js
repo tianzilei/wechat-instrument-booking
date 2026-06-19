@@ -38,7 +38,9 @@ App({
       }
       return result
     } catch (err) {
+      this.globalData.user = null
       this.globalData.hasLogin = false
+      this.globalData.needsLegalAcceptance = false
       return {
         success: false,
         error: {

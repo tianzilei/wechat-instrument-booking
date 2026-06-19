@@ -4,7 +4,6 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 const _ = db.command
-const IN_QUERY_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -40,14 +39,6 @@ function addDays(date, days) {
   return d
 }
 
-function chunk(items, size) {
-  const batches = []
-  for (let index = 0; index < items.length; index += size) {
-    batches.push(items.slice(index, index + size))
-  }
-  return batches
-}
-
 async function fetchAll(collectionName, query, fields) {
   const items = []
   let skip = 0
@@ -67,32 +58,6 @@ async function fetchAll(collectionName, query, fields) {
     }
   }
   return items
-}
-
-async function fetchUserMap(userIds) {
-  const map = {}
-  const uniqueIds = [...new Set((userIds || []).filter(Boolean))]
-  for (const ids of chunk(uniqueIds, IN_QUERY_SIZE)) {
-    const batch = await db.collection('users').where({
-      _id: _.in(ids),
-    }).field({
-      _id: true,
-      name: true,
-      projectId: true,
-    }).get()
-    batch.data.forEach((item) => {
-      map[item._id] = item
-    })
-  }
-  return map
-}
-
-function canExposeUserName(currentUser, bookingProjectId) {
-  if (!currentUser) return false
-  if (currentUser.role === 'admin') return true
-  if ((currentUser.accountStatus || 'active') !== 'active') return false
-  if (currentUser.registrationStatus !== 'approved') return false
-  return !!(currentUser.projectId && bookingProjectId && currentUser.projectId === bookingProjectId)
 }
 
 exports.main = async (event) => {
@@ -115,8 +80,6 @@ exports.main = async (event) => {
     }, {
       _id: true,
       status: true,
-      userId: true,
-      projectId: true,
       segments: true,
       firstStartAt: true,
       lastEndAt: true,
@@ -127,7 +90,7 @@ exports.main = async (event) => {
       startAt: _.lt(weekEnd),
       endAt: _.gt(weekStart),
     }, {
-      _id: true, status: true, userId: true, projectId: true, startAt: true, endAt: true, projectAbbr: true,
+      _id: true, status: true, startAt: true, endAt: true, projectAbbr: true,
     }),
     fetchAll('maintenance_slots', {
       status: 'active',
@@ -137,10 +100,6 @@ exports.main = async (event) => {
     db.collection('settings').doc('global').get(),
   ])
   const settings = settingsRes.data || {}
-  const bookingUserMap = await fetchUserMap([
-    ...bookingsRes.map((item) => item.userId),
-    ...legacyBookingsRes.map((item) => item.userId),
-  ])
 
   const slots = []
   bookingsRes.forEach((item) => {
@@ -148,8 +107,6 @@ exports.main = async (event) => {
       ? item.segments.filter((segment) => segment.state !== 'cancelled')
       : [{ startAt: item.firstStartAt, endAt: item.lastEndAt }]
     const state = item.status === 'pending_review' ? 'pending' : 'occupied'
-    const bookingUser = bookingUserMap[item.userId]
-    const userName = canExposeUserName(currentUser, item.projectId) ? (bookingUser && bookingUser.name ? bookingUser.name : '') : ''
     segments.forEach((segment, index) => {
       const slot = {
         startAt: segment.startAt,
@@ -157,7 +114,6 @@ exports.main = async (event) => {
         state,
         status: item.status,
         projectAbbr: item.projectAbbrDisplayCache || '',
-        userName,
         publicRenderId: `slot-${slots.length}-${index}`,
       }
       if (isAdmin) slot.bookingId = item._id
@@ -166,14 +122,12 @@ exports.main = async (event) => {
   })
 
   legacyBookingsRes.forEach((item) => {
-    const bookingUser = bookingUserMap[item.userId]
     const slot = {
       startAt: item.startAt,
       endAt: item.endAt,
       state: item.status === 'pending_review' ? 'pending' : 'occupied',
       status: item.status,
       projectAbbr: item.projectAbbr || '',
-      userName: canExposeUserName(currentUser, item.projectId) ? (bookingUser && bookingUser.name ? bookingUser.name : '') : '',
       publicRenderId: `legacy-slot-${slots.length}`,
     }
     if (isAdmin) slot.bookingId = item._id

@@ -18,6 +18,10 @@ Page({
     this.loadStats()
   },
 
+  isRuleMigrating() {
+    return !!(this.data.settings && this.data.settings.serviceMode === 'rule_migrating')
+  },
+
   async loadSettings() {
     try {
       const res = await api.callFunction('getSettings')
@@ -45,13 +49,23 @@ Page({
     }
   },
 
-  showForm() { this.setData({ showForm: true }) },
+  showForm() {
+    if (this.isRuleMigrating()) {
+      wx.showToast({ title: '规则迁移中，暂不可修改', icon: 'none' })
+      return
+    }
+    this.setData({ showForm: true })
+  },
   hideForm() { this.setData({ showForm: false }) },
 
   onHourInput(e) { this.setData({ [`form.${e.currentTarget.dataset.field}`]: parseInt(e.detail.value) || 0 }) },
   onDaysInput(e) { this.setData({ 'form.maxAdvanceDays': parseInt(e.detail.value) || 7 }) },
 
   async toggleServiceMode() {
+    if (this.isRuleMigrating()) {
+      wx.showToast({ title: '规则迁移中，暂不可切换服务模式', icon: 'none' })
+      return
+    }
     const current = this.data.settings.serviceMode || 'normal'
     const newMode = current === 'normal' ? 'maintenance' : 'normal'
     wx.showModal({
@@ -69,6 +83,10 @@ Page({
   },
 
   async saveHours() {
+    if (this.isRuleMigrating()) {
+      wx.showToast({ title: '规则迁移中，暂不可修改', icon: 'none' })
+      return
+    }
     const { openStartHour, openEndHour, maxAdvanceDays } = this.data.form
     if (openStartHour >= openEndHour) { wx.showToast({ title: '时间范围无效', icon: 'none' }); return }
     this.setData({ loading: true })

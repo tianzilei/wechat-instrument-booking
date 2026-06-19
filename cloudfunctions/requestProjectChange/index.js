@@ -17,7 +17,12 @@ exports.main = async (event) => {
 
   if (!event.projectId) return fail('INVALID_PARAMS', '请选择课题')
 
-  const project = (await db.collection('projects').doc(event.projectId).field({ _id: true, status: true }).get()).data
+  const project = (await db.collection('projects').doc(event.projectId).field({
+    _id: true,
+    name: true,
+    abbr: true,
+    status: true,
+  }).get()).data
   if (!project || project.status !== 'active') return fail('PROJECT_INACTIVE', '课题不可用')
   if (user.projectId === event.projectId) return fail('STATE_CHANGED', '已是该课题成员')
 

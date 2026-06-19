@@ -135,11 +135,10 @@ Component({
         return {
           className: getCellClass(booking.status),
           text: booking.projectAbbr || (booking.status === 'pending_review' ? '待审核' : '已占用'),
-          subtext: booking.userName || '',
+          subtext: '',
           status: booking.status,
           bookingId: booking.bookingId,
           projectAbbr: booking.projectAbbr || '',
-          userName: booking.userName || '',
         }
       }
 

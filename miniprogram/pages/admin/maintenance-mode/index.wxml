@@ -9,7 +9,7 @@
             <view class="nav-title">服务模式</view>
             <view class="page-subtitle">{{settings.serviceMode === 'maintenance' ? '维护中' : settings.serviceMode === 'rule_migrating' ? '规则迁移中' : '正常'}}</view>
           </view>
-          <button class="button button--secondary button--compact settings-action" bindtap="toggleServiceMode">{{settings.serviceMode === 'normal' ? '开启维护' : '恢复'}}</button>
+          <button class="button button--secondary button--compact settings-action" disabled="{{settings.serviceMode === 'rule_migrating'}}" bindtap="toggleServiceMode">{{settings.serviceMode === 'normal' ? '开启维护' : settings.serviceMode === 'maintenance' ? '恢复' : '迁移中'}}</button>
         </view>
       </view>
 
@@ -19,7 +19,7 @@
             <view class="nav-title">工作时间</view>
             <view class="page-subtitle">{{settings.openStartHour}}:00 - {{settings.openEndHour}}:00</view>
           </view>
-          <button class="button button--secondary button--compact settings-action" bindtap="showForm">修改</button>
+          <button class="button button--secondary button--compact settings-action" disabled="{{settings.serviceMode === 'rule_migrating'}}" bindtap="showForm">修改</button>
         </view>
       </view>
 

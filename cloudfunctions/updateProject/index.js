@@ -27,22 +27,21 @@ exports.main = async (event) => {
   const now = db.serverDate()
   const data = { updatedAt: now, updatedBy: admin._id }
 
-  if (event.name || event.abbr) {
-    const newName = (event.name || project.name).trim()
-    const newAbbr = (event.abbr || project.abbr).trim()
-    if (event.abbr && newAbbr !== project.abbr) {
+  if (event.name !== undefined || event.abbr !== undefined) {
+    const newName = event.name === undefined ? project.name : String(event.name).trim()
+    const newAbbr = event.abbr === undefined ? project.abbr : String(event.abbr).trim()
+    if (!newName || !newAbbr) return fail('INVALID_PARAMS', '课题名称和缩写不能为空')
+    if (event.abbr !== undefined && newAbbr !== project.abbr) {
       const dup = await db.collection('projects').where({ abbr: newAbbr, _id: db.command.neq(event.projectId) }).limit(1).get()
       if (dup.data.length > 0) return fail('DUPLICATE', '课题缩写已存在')
     }
-    if (newName || newAbbr) {
-      try {
-        const checkRes = await cloud.openapi.security.msgSecCheck({ content: [newName, newAbbr].filter(Boolean).join(' ') })
-        if (checkRes.result && checkRes.result.suggest === 'risky') {
-          return fail('CONTENT_UNSAFE', '课题信息包含违规内容')
-        }
-      } catch (err) {
-        return fail('CONTENT_CHECK_FAILED', '课题信息内容安全校验失败，请稍后重试')
+    try {
+      const checkRes = await cloud.openapi.security.msgSecCheck({ content: [newName, newAbbr].join(' ') })
+      if (checkRes.result && checkRes.result.suggest === 'risky') {
+        return fail('CONTENT_UNSAFE', '课题信息包含违规内容')
       }
+    } catch (err) {
+      return fail('CONTENT_CHECK_FAILED', '课题信息内容安全校验失败，请稍后重试')
     }
     data.name = newName
     data.abbr = newAbbr

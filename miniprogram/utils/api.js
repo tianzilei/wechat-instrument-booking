@@ -9,7 +9,10 @@ function callFunction(name, data = {}) {
   return callFunctionRaw(name, data).then((result) => {
     if (!result.success) {
       const message = result.error && result.error.message ? result.error.message : '操作失败'
-      throw new Error(message)
+      const err = new Error(message)
+      err.code = result.error && result.error.code ? result.error.code : 'CALL_FUNCTION_FAILED'
+      err.result = result
+      throw err
     }
     return result.data
   })

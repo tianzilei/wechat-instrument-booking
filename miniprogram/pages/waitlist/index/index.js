@@ -1,3 +1,4 @@
+const app = getApp()
 const api = require('../../../utils/api')
 const dateUtils = require('../../../utils/date')
 const { getBookingStatus } = require('../../../utils/status')
@@ -67,6 +68,11 @@ Page({
   },
 
   async confirmWaitlist(event) {
+    if (app.needsLegalAcceptance()) {
+      wx.showToast({ title: '请先同意最新协议', icon: 'none' })
+      wx.navigateTo({ url: '/pages/auth/login/index' })
+      return
+    }
     try {
       const action = event.currentTarget.dataset.action
       const result = await api.callFunction('confirmWaitlistV2', {
@@ -82,6 +88,17 @@ Page({
       wx.showToast({ title: toastTitle, icon: 'success' })
       this.loadItems()
     } catch (err) {
+      if (err && err.code === 'LEGAL_ACCEPTANCE_REQUIRED') {
+        app.globalData.needsLegalAcceptance = true
+        wx.showToast({ title: '请先同意最新协议', icon: 'none' })
+        wx.navigateTo({ url: '/pages/auth/login/index' })
+        return
+      }
+      if (err && err.code === 'STATE_CHANGED') {
+        wx.showToast({ title: err.message || '状态已变化，请刷新后重试', icon: 'none' })
+        this.loadItems()
+        return
+      }
       api.showError(err)
     }
   },
