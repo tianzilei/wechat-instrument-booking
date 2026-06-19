@@ -3,6 +3,7 @@ const cloud = require('wx-server-sdk')
 cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
+const PAGE_SIZE = 100
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -12,6 +13,39 @@ async function getAdmin(openid) {
   const res = await db.collection('users').where({ openid }).limit(1).get()
   const user = res.data[0]
   return user && user.role === 'admin' ? user : null
+}
+
+async function fetchAllUsersByProjectId(projectId) {
+  let skip = 0
+  let hasMore = true
+  const items = []
+  while (hasMore) {
+    const batch = await db.collection('users').where({ projectId })
+      .field({ _id: true })
+      .skip(skip)
+      .limit(PAGE_SIZE)
+      .get()
+    items.push(...batch.data)
+    if (batch.data.length < PAGE_SIZE) {
+      hasMore = false
+    } else {
+      skip += batch.data.length
+    }
+  }
+  return items
+}
+
+async function syncProjectDisplayCaches(projectId) {
+  let hasMore = true
+  while (hasMore) {
+    const res = await cloud.callFunction({
+      name: 'syncProjectDisplayCaches',
+      data: { projectId },
+    })
+    const result = res.result || {}
+    const data = result.data || {}
+    hasMore = !!data.hasMore && (data.synced || 0) > 0
+  }
 }
 
 exports.main = async (event) => {
@@ -26,6 +60,9 @@ exports.main = async (event) => {
 
   const now = db.serverDate()
   const data = { updatedAt: now, updatedBy: admin._id }
+  let renamed = false
+  let nextName = project.name
+  let nextAbbr = project.abbr
 
   if (event.name !== undefined || event.abbr !== undefined) {
     const newName = event.name === undefined ? project.name : String(event.name).trim()
@@ -48,6 +85,9 @@ exports.main = async (event) => {
     data.normalizedName = newName.replace(/\s+/g, '').toLowerCase()
     data.normalizedAbbr = newAbbr.replace(/\s+/g, '').toLowerCase()
     data.displayVersion = db.command.inc(1)
+    renamed = newName !== project.name || newAbbr !== project.abbr
+    nextName = newName
+    nextAbbr = newAbbr
   }
 
   if (event.status && ['active', 'inactive'].includes(event.status)) {
@@ -56,5 +96,18 @@ exports.main = async (event) => {
   }
 
   await ref.update({ data })
+
+  if (renamed) {
+    const members = await fetchAllUsersByProjectId(event.projectId)
+    await Promise.all(members.map((member) => db.collection('users').doc(member._id).update({
+      data: {
+        projectName: nextName,
+        projectAbbr: nextAbbr,
+        updatedAt: db.serverDate(),
+      },
+    })))
+    await syncProjectDisplayCaches(event.projectId)
+  }
+
   return ok({ updated: true })
 }

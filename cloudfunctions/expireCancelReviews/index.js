@@ -4,7 +4,21 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 
 const db = cloud.database()
 
+function fail(code, message) {
+  return { success: false, data: null, error: { code, message } }
+}
+
+async function ensureInternalOrAdmin() {
+  const { OPENID } = cloud.getWXContext()
+  if (!OPENID) return true
+  const user = (await db.collection('users').where({ openid: OPENID }).field({ role: true }).limit(1).get()).data[0]
+  return !!(user && user.role === 'admin')
+}
+
 exports.main = async () => {
+  if (!(await ensureInternalOrAdmin())) {
+    return fail('PERMISSION_DENIED', '无权限操作')
+  }
   const results = { processed: 0, autoRejected: 0 }
   while (true) {
     const now = new Date()

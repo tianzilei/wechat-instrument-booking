@@ -43,6 +43,7 @@ async function getOrCreateUser(openid, now, agreementVersion, privacyVersion) {
 
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
+  const name = (event.name || '').trim()
   const proposedName = (event.proposedName || '').trim()
   const proposedAbbr = (event.proposedAbbr || '').trim()
   if (!proposedName || !proposedAbbr) return fail('INVALID_PARAMS', '课题名称和缩写不能为空')
@@ -57,9 +58,14 @@ exports.main = async (event) => {
   const privacyVersion = settings.privacyPolicyVersion || '1.0'
   const now = db.serverDate()
   const user = await getOrCreateUser(OPENID, now, agreementVersion, privacyVersion)
+  if (user.registrationStatus !== 'approved' && !name) {
+    return fail('INVALID_PARAMS', '请填写姓名')
+  }
 
   try {
-    const checkRes = await cloud.openapi.security.msgSecCheck({ content: [proposedName, proposedAbbr].join(' ') })
+    const checkRes = await cloud.openapi.security.msgSecCheck({
+      content: [name, proposedName, proposedAbbr].filter(Boolean).join(' '),
+    })
     if (checkRes.result && checkRes.result.suggest === 'risky') {
       return fail('CONTENT_UNSAFE', '课题信息包含违规内容')
     }
@@ -73,6 +79,7 @@ exports.main = async (event) => {
   const res = await db.collection('project_applications').add({
     data: {
       userId: user._id,
+      nameSnapshot: name || user.name || '',
       proposedName, proposedAbbr,
       status: 'pending',
       reviewedBy: '', reviewReason: '',
@@ -84,6 +91,7 @@ exports.main = async (event) => {
   })
   await db.collection('users').doc(user._id).update({
     data: {
+      ...(name ? { name } : {}),
       ...(user.registrationStatus === 'approved' ? {} : {
         registrationStatus: 'project_pending',
         rejectReason: '',

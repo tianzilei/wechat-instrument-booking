@@ -7,8 +7,12 @@ const db = cloud.database()
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
 
-function needsRegistrationCompletion(user) {
-  return !!user && (user.registrationStatus !== 'approved' || !user.projectId)
+function shouldRequireProjectConfirmation(user, application) {
+  if (!user || !application) return false
+  if (user.registrationStatus !== 'approved') return true
+  if (!user.projectId) return true
+  if (user.accountStatus === 'project_reassignment_required') return true
+  return !!application.approvedProjectId || !!application.finalName || !!application.finalAbbr
 }
 
 async function getAdmin(openid) {
@@ -44,7 +48,7 @@ exports.main = async (event) => {
       }
     }
     await ref.update({ data: { status: 'rejected', reviewReason: event.reason || '', reviewedBy: admin._id, reviewedAt: now, updatedAt: now } })
-    if (needsRegistrationCompletion(user)) {
+    if (user.registrationStatus !== 'approved' || !user.projectId) {
       await userRef.update({
         data: {
           registrationStatus: 'rejected',
@@ -72,7 +76,7 @@ exports.main = async (event) => {
         updatedAt: now,
       },
     })
-    if (needsRegistrationCompletion(user)) {
+    if (shouldRequireProjectConfirmation(user, application)) {
       await userRef.update({
         data: {
           registrationStatus: 'project_confirm_required',
@@ -119,7 +123,12 @@ exports.main = async (event) => {
       reviewedBy: admin._id, reviewedAt: now, updatedAt: now,
     },
   })
-  if (needsRegistrationCompletion(user)) {
+  if (shouldRequireProjectConfirmation(user, {
+    ...application,
+    approvedProjectId: projectRes._id,
+    finalName,
+    finalAbbr,
+  })) {
     await userRef.update({
       data: {
         registrationStatus: 'project_confirm_required',

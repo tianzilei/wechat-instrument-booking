@@ -13,7 +13,9 @@ exports.main = async (event) => {
   const user = userRes.data[0]
   if (!user) return fail('AUTH_REQUIRED', '请先登录')
   if (!user.registrationStatus || user.registrationStatus !== 'approved') return fail('REGISTRATION_REQUIRED', '注册审核通过后才能申请课题变更')
-  if (user.accountStatus && user.accountStatus !== 'active') return fail('ACCOUNT_SUSPENDED', '账号状态异常')
+  if (user.accountStatus && !['active', 'project_reassignment_required'].includes(user.accountStatus)) {
+    return fail('ACCOUNT_SUSPENDED', '账号状态异常')
+  }
 
   if (!event.projectId) return fail('INVALID_PARAMS', '请选择课题')
 

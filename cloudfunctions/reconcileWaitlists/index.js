@@ -5,6 +5,17 @@ cloud.init({ env: cloud.DYNAMIC_CURRENT_ENV })
 const db = cloud.database()
 const _ = db.command
 
+function fail(code, message) {
+  return { success: false, data: null, error: { code, message } }
+}
+
+async function ensureInternalOrAdmin() {
+  const { OPENID } = cloud.getWXContext()
+  if (!OPENID) return true
+  const user = (await db.collection('users').where({ openid: OPENID }).field({ role: true }).limit(1).get()).data[0]
+  return !!(user && user.role === 'admin')
+}
+
 async function fetchAllWaitlists() {
   const items = []
   let skip = 0
@@ -81,6 +92,9 @@ function sortWaitlists(left, right) {
 }
 
 exports.main = async () => {
+  if (!(await ensureInternalOrAdmin())) {
+    return fail('PERMISSION_DENIED', '无权限操作')
+  }
   const now = new Date()
   const results = { processed: 0, converted: 0, expired: 0, errors: 0 }
 
@@ -124,6 +138,7 @@ exports.main = async () => {
 
         const hasConflict = await checkSegmentConflict(segments)
         if (hasConflict) break
+        if (await checkMaintenanceConflict(segments)) break
 
         await db.collection('waitlists').doc(waitlist._id).update({
           data: {
@@ -140,7 +155,7 @@ exports.main = async () => {
       }
     }
   }
-  return { success: true, data: results }
+  return { success: true, data: results, error: null }
 }
 
 async function checkSegmentConflict(segments) {
@@ -178,4 +193,17 @@ async function checkSegmentConflict(segments) {
     }
   }
   return false
+}
+
+async function checkMaintenanceConflict(segments) {
+  const requestSegments = getComparableSegments(segments)
+  const conditions = requestSegments.map((segment) => ({
+    status: 'active',
+    startAt: _.lt(segment.endAt),
+    endAt: _.gt(segment.startAt),
+  }))
+  if (conditions.length === 0) return false
+  const query = conditions.length === 1 ? conditions[0] : _.or(conditions)
+  const res = await db.collection('maintenance_slots').where(query).limit(1).get()
+  return res.data.length > 0
 }

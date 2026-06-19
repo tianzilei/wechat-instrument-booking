@@ -92,6 +92,7 @@ exports.main = async (event) => {
   const isAdmin = !!(currentUser && currentUser.role === 'admin')
   const canViewSameProjectNames = !!(
     currentUser
+    && (!currentUser.accountStatus || currentUser.accountStatus === 'active')
     && currentUser.registrationStatus === 'approved'
     && currentUser.projectId
   )

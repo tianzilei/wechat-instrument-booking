@@ -26,11 +26,15 @@ async function fetchAllMonthlyStats() {
   while (hasMore) {
     const batch = await db.collection('monthly_stats')
       .field({
+        _id: true,
         month: true,
         date: true,
+        dateKey: true,
         totalHours: true,
         workingHours: true,
         nonWorkingHours: true,
+        createdAt: true,
+        updatedAt: true,
       })
       .orderBy('date', 'asc')
       .skip(skip)
@@ -46,16 +50,41 @@ async function fetchAllMonthlyStats() {
   return items
 }
 
+function getDateKey(item) {
+  if (item.dateKey) return item.dateKey
+  if (item.date) {
+    const value = new Date(item.date)
+    if (!Number.isNaN(value.getTime())) {
+      return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`
+    }
+  }
+  return item._id || ''
+}
+
+function getComparableTimestamp(item) {
+  const value = new Date(item.updatedAt || item.createdAt || item.date || 0).getTime()
+  return Number.isNaN(value) ? 0 : value
+}
+
 exports.main = async () => {
   const { OPENID } = cloud.getWXContext()
   if (!(await getAdmin(OPENID))) return fail('PERMISSION_DENIED', '无权限操作')
 
   const dailyStats = await fetchAllMonthlyStats()
+  const uniqueDailyStats = {}
+  dailyStats.forEach((item) => {
+    const key = getDateKey(item)
+    if (!key) return
+    const existing = uniqueDailyStats[key]
+    if (!existing || getComparableTimestamp(item) >= getComparableTimestamp(existing)) {
+      uniqueDailyStats[key] = item
+    }
+  })
   const byMonthMap = {}
   let totalHours = 0
   let workingHours = 0
   let nonWorkingHours = 0
-  dailyStats.forEach((item) => {
+  Object.values(uniqueDailyStats).forEach((item) => {
     const month = item.month || ''
     const hours = item.totalHours || 0
     totalHours += hours

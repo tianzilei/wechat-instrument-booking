@@ -7,6 +7,7 @@ const _ = db.command
 
 const ACTIVE_WAITLIST_STATUSES = ['waitlisted', 'confirming']
 const ACTIVE_BOOKING_STATUSES = ['pending_review', 'confirmed', 'cancel_pending', 'waitlist_confirming', 'rule_review_pending']
+const BOOKING_MUTEX_DOC_ID = 'booking_schedule_mutex'
 
 function ok(data) { return { success: true, data, error: null } }
 function fail(code, message) { return { success: false, data: null, error: { code, message } } }
@@ -15,6 +16,11 @@ function businessError(code, message) {
   const err = new Error(message)
   err.code = code
   return err
+}
+
+function isWriteConflictError(err) {
+  const text = String((err && (err.errMsg || err.message || err.code)) || '').toLowerCase()
+  return text.includes('conflict')
 }
 
 function normalizeSegments(raw) {
@@ -157,6 +163,36 @@ function getMaxAdvanceBoundary(now, maxAdvanceDays) {
   return boundary
 }
 
+async function runWithBookingMutex(holder, callback) {
+  let lastErr = null
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const transaction = await db.startTransaction()
+    try {
+      const mutexRef = transaction.collection('system_locks').doc(BOOKING_MUTEX_DOC_ID)
+      await mutexRef.get()
+      await mutexRef.set({
+        data: {
+          _id: BOOKING_MUTEX_DOC_ID,
+          holder,
+          updatedAt: db.serverDate(),
+        },
+      })
+      const result = await callback(transaction)
+      await transaction.commit()
+      return result
+    } catch (err) {
+      lastErr = err
+      try {
+        await transaction.rollback()
+      } catch (rollbackErr) {}
+      if (!isWriteConflictError(err) || attempt === 2) {
+        throw err
+      }
+    }
+  }
+  throw lastErr || new Error('waitlist mutex failed')
+}
+
 async function getUser(openid) {
   const res = await db.collection('users').where({ openid }).limit(1).get()
   return res.data[0]
@@ -176,15 +212,6 @@ async function ensureProjectActive(userId, projectId) {
     return businessError('PROJECT_CHANGE_PENDING', '课题变更审核中，暂不可加入候补')
   }
   return null
-}
-
-async function hasDuplicateWaitlist(userId, scheduleKey) {
-  const res = await db.collection('waitlists').where({
-    userId,
-    scheduleKey,
-    status: _.in(ACTIVE_WAITLIST_STATUSES),
-  }).limit(1).get()
-  return res.data[0] || null
 }
 
 async function hasBookingConflict(segments) {
@@ -270,41 +297,63 @@ exports.main = async (event) => {
   }
 
   const scheduleKey = makeScheduleKey(normalized)
-  const duplicate = await hasDuplicateWaitlist(user._id, scheduleKey)
-  if (duplicate) {
-    return ok({ waitlistId: duplicate._id, status: duplicate.status, queueOrder: duplicate.queueOrder, duplicateRequest: true })
-  }
-
-  if (await hasMaintenanceConflict(normalized)) return fail('MAINTENANCE_CONFLICT', '该时段正在维护，不能加入候补')
-  if (!await hasBookingConflict(normalized)) return fail('SLOT_AVAILABLE', '该时段当前可预约，请直接预约')
-
   try {
-    const queueOrder = await getNextQueueOrder(scheduleKey)
-    const segments = normalized.map((s) => ({
-      startAt: s.startAt,
-      endAt: s.endAt,
-      state: 'active',
-    }))
-    const res = await db.collection('waitlists').add({
-      data: {
+    const result = await runWithBookingMutex(`waitlist:create:${user._id}:${scheduleKey}`, async (transaction) => {
+      const duplicate = await db.collection('waitlists').where({
         userId: user._id,
-        projectId: user.projectId || '',
-        projectAbbrDisplayCache: user.projectAbbr || '',
         scheduleKey,
-        segments,
-        occupiedSegments: segments,
-        startAt: segments[0].startAt,
-        endAt: segments[segments.length - 1].endAt,
-        remark,
+        status: _.in(ACTIVE_WAITLIST_STATUSES),
+      }).limit(1).get()
+      if (duplicate.data[0]) {
+        const item = duplicate.data[0]
+        return {
+          duplicateRequest: true,
+          waitlistId: item._id,
+          status: item.status,
+          queueOrder: item.queueOrder,
+        }
+      }
+
+      if (await hasMaintenanceConflict(normalized)) {
+        throw businessError('MAINTENANCE_CONFLICT', '该时段正在维护，不能加入候补')
+      }
+      if (!await hasBookingConflict(normalized)) {
+        throw businessError('SLOT_AVAILABLE', '该时段当前可预约，请直接预约')
+      }
+
+      const queueOrder = await getNextQueueOrder(scheduleKey)
+      const segments = normalized.map((s) => ({
+        startAt: s.startAt,
+        endAt: s.endAt,
+        state: 'active',
+      }))
+      const res = await transaction.collection('waitlists').add({
+        data: {
+          userId: user._id,
+          projectId: user.projectId || '',
+          projectAbbrDisplayCache: user.projectAbbr || '',
+          scheduleKey,
+          segments,
+          occupiedSegments: segments,
+          startAt: segments[0].startAt,
+          endAt: segments[segments.length - 1].endAt,
+          remark,
+          status: 'waitlisted',
+          queueOrder,
+          confirmDeadlineAt: null,
+          convertedBookingId: '',
+          createdAt: db.serverDate(),
+          updatedAt: db.serverDate(),
+        },
+      })
+      return {
+        duplicateRequest: false,
+        waitlistId: res._id,
         status: 'waitlisted',
         queueOrder,
-        confirmDeadlineAt: null,
-        convertedBookingId: '',
-        createdAt: db.serverDate(),
-        updatedAt: db.serverDate(),
-      },
+      }
     })
-    return ok({ waitlistId: res._id, status: 'waitlisted', queueOrder, scheduleKey })
+    return ok({ ...result, scheduleKey })
   } catch (err) {
     if (err && err.code) return fail(err.code, err.message)
     return fail('SYSTEM_BUSY', '系统繁忙，请稍后重试')

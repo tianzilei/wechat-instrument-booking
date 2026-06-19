@@ -4,11 +4,17 @@ const { getRegistrationStatus } = require('../../../utils/status')
 const { setTabBarSelected } = require('../../../utils/tabbar')
 
 function buildPrimaryAction(user) {
-  if (!user || user.role === 'admin' || user.registrationStatus === 'approved') {
+  if (!user || user.role === 'admin') {
     return { visible: false, text: '', mode: '' }
   }
   if (user.registrationStatus === 'project_confirm_required') {
     return { visible: true, text: '确认课题并完成注册', mode: 'confirm-project' }
+  }
+  if (user.accountStatus === 'project_reassignment_required') {
+    return { visible: true, text: '重新选择课题', mode: 'change-project' }
+  }
+  if (user.registrationStatus === 'approved') {
+    return { visible: false, text: '', mode: '' }
   }
   if (['unsubmitted', 'rejected'].includes(user.registrationStatus || 'unsubmitted')) {
     return { visible: true, text: '提交注册申请', mode: 'register' }
@@ -50,7 +56,11 @@ Page({
     } else if (user && user.accountStatus === 'deleting') {
       statusText = '注销处理中'
       statusTone = 'warning'
-    } else if (user && user.accountStatus === 'project_reassignment_required') {
+    } else if (
+      user
+      && user.accountStatus === 'project_reassignment_required'
+      && user.registrationStatus !== 'project_confirm_required'
+    ) {
       statusText = '需重新选课题'
       statusTone = 'warning'
     }
@@ -102,6 +112,10 @@ Page({
   handlePrimaryAction() {
     if (this.data.primaryActionMode === 'confirm-project') {
       this.confirmProject()
+      return
+    }
+    if (this.data.primaryActionMode === 'change-project') {
+      wx.navigateTo({ url: '/pages/auth/register/index?mode=change-project' })
       return
     }
     this.goRegister()

@@ -6,6 +6,22 @@ const db = cloud.database()
 const _ = db.command
 const PAGE_SIZE = 100
 
+function fail(code, message) {
+  return { success: false, data: null, error: { code, message } }
+}
+
+async function ensureInternalOrAdmin() {
+  const { OPENID } = cloud.getWXContext()
+  if (!OPENID) return true
+  const user = (await db.collection('users').where({ openid: OPENID }).field({ role: true }).limit(1).get()).data[0]
+  return !!(user && user.role === 'admin')
+}
+
+function getDateKey(date) {
+  const value = new Date(date)
+  return `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, '0')}-${String(value.getDate()).padStart(2, '0')}`
+}
+
 async function fetchAll(collectionName, where, fields) {
   let skip = 0
   let hasMore = true
@@ -28,6 +44,9 @@ async function fetchAll(collectionName, where, fields) {
 }
 
 exports.main = async () => {
+  if (!(await ensureInternalOrAdmin())) {
+    return fail('PERMISSION_DENIED', '无权限操作')
+  }
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   const yesterday = new Date(today.getTime() - 24 * 3600000)
@@ -88,18 +107,35 @@ exports.main = async () => {
   maintenanceHours = maintenance.reduce((sum, m) => sum + (new Date(m.endAt) - new Date(m.startAt)) / 3600000, 0)
 
   const monthKey = `${yesterday.getFullYear()}-${String(yesterday.getMonth() + 1).padStart(2, '0')}`
-  await db.collection('monthly_stats').add({
-    data: {
-      month: monthKey,
-      date: yesterday,
-      totalHours,
-      workingHours,
-      nonWorkingHours,
-      cancelCount,
-      maintenanceHours,
-      createdAt: db.serverDate(),
-    },
-  })
+  const dateKey = getDateKey(yesterday)
+  const existingStats = await db.collection('monthly_stats').where({
+    date: _.and(_.gte(yesterday), _.lt(today)),
+  }).field({
+    _id: true,
+  }).limit(10).get()
+  const statData = {
+    month: monthKey,
+    date: yesterday,
+    dateKey,
+    totalHours,
+    workingHours,
+    nonWorkingHours,
+    cancelCount,
+    maintenanceHours,
+    updatedAt: db.serverDate(),
+  }
+  if (existingStats.data.length > 0) {
+    await db.collection('monthly_stats').doc(existingStats.data[0]._id).update({
+      data: statData,
+    })
+  } else {
+    await db.collection('monthly_stats').add({
+      data: {
+        ...statData,
+        createdAt: db.serverDate(),
+      },
+    })
+  }
 
-  return { success: true, data: { month: monthKey, totalHours } }
+  return { success: true, data: { month: monthKey, dateKey, totalHours } }
 }

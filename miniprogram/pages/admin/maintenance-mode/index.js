@@ -91,10 +91,19 @@ Page({
     if (openStartHour >= openEndHour) { wx.showToast({ title: '时间范围无效', icon: 'none' }); return }
     this.setData({ loading: true })
     try {
-      await api.callFunction('updateSettings', { openStartHour, openEndHour, maxAdvanceDays })
+      const currentSettings = this.data.settings || {}
+      const result = await api.callFunction('updateSettings', { openStartHour, openEndHour, maxAdvanceDays })
       wx.showToast({ title: '已保存', icon: 'success' })
       this.hideForm()
       this.loadSettings()
+      if (
+        (currentSettings.openStartHour !== openStartHour || currentSettings.openEndHour !== openEndHour)
+        && result
+        && result.triggered
+        && result.migrationStarted === false
+      ) {
+        wx.showToast({ title: '规则迁移触发失败，请稍后重试', icon: 'none' })
+      }
     } catch (err) { api.showError(err) }
     this.setData({ loading: false })
   },

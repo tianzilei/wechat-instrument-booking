@@ -40,6 +40,7 @@ exports.main = async (event) => {
   await db.collection('project_applications').doc(app._id).update({ data: { userConfirmedAt: now, updatedAt: now } })
   await db.collection('users').doc(user._id).update({
     data: {
+      name: app.nameSnapshot || user.name || '',
       projectId: project._id,
       projectName: project.name || '',
       projectAbbr: project.abbr || '',

@@ -6,6 +6,17 @@ const db = cloud.database()
 const _ = db.command
 const PAGE_SIZE = 500
 
+function fail(code, message) {
+  return { success: false, data: null, error: { code, message } }
+}
+
+async function ensureInternalOrAdmin() {
+  const { OPENID } = cloud.getWXContext()
+  if (!OPENID) return true
+  const user = (await db.collection('users').where({ openid: OPENID }).field({ role: true }).limit(1).get()).data[0]
+  return !!(user && user.role === 'admin')
+}
+
 async function anonymizeOldBookings(cutoffDate) {
   let total = 0
   let skip = 0
@@ -54,6 +65,9 @@ async function scrubOldReviewLogs(cutoffDate) {
 }
 
 exports.main = async () => {
+  if (!(await ensureInternalOrAdmin())) {
+    return fail('PERMISSION_DENIED', '无权限操作')
+  }
   const now = new Date()
   const results = {}
 

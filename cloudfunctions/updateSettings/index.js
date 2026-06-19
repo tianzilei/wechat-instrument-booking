@@ -26,6 +26,29 @@ async function getAdmin(openid) {
   return user && user.role === 'admin' ? user : null
 }
 
+async function triggerRulesMigrationIfNeeded(workingHoursChanged) {
+  if (!workingHoursChanged) return { triggered: false }
+  try {
+    const res = await cloud.callFunction({
+      name: 'scanSettingsVersion',
+      data: {},
+    })
+    const result = res.result || {}
+    const data = result.data || {}
+    return {
+      triggered: true,
+      migrationStarted: data.reason !== 'up_to_date',
+      migrationReason: data.reason || '',
+    }
+  } catch (err) {
+    return {
+      triggered: true,
+      migrationStarted: false,
+      migrationReason: 'trigger_failed',
+    }
+  }
+}
+
 exports.main = async (event) => {
   const { OPENID } = cloud.getWXContext()
   const admin = await getAdmin(OPENID)
@@ -97,5 +120,6 @@ exports.main = async (event) => {
       data: { _id: 'global', ...current, ...data },
     })
   }
-  return ok({ updated: true })
+  const migration = await triggerRulesMigrationIfNeeded(workingHoursChanged)
+  return ok({ updated: true, ...migration })
 }

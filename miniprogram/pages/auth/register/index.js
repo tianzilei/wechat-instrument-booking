@@ -5,6 +5,7 @@ Page({
   data: {
     loading: false,
     canSubmit: false,
+    changeProjectFlow: false,
     form: {
       name: '',
       agreed: false,
@@ -20,12 +21,14 @@ Page({
     searching: false,
   },
 
-  onLoad() {
+  onLoad(options) {
     this.projectSearchTimer = null
     this.projectSearchToken = 0
     const user = app.globalData.user || {}
     const alreadyAccepted = !app.needsLegalAcceptance() && !!(user.agreementVersion && user.privacyVersion)
+    const changeProjectFlow = options && options.mode === 'change-project'
     this.setData({
+      changeProjectFlow,
       'form.name': user.name || '',
       'form.agreed': alreadyAccepted,
       legalAlreadyAccepted: alreadyAccepted,
@@ -125,23 +128,46 @@ Page({
     }
     this.setData({ loading: true })
     try {
-      const { form, projectMode, selectedProjectId, newProjectName, newProjectAbbr } = this.data
+      const {
+        form,
+        projectMode,
+        selectedProjectId,
+        newProjectName,
+        newProjectAbbr,
+        changeProjectFlow,
+      } = this.data
       if (projectMode === 'new') {
         await api.callFunction('submitProjectApplication', {
+          name: form.name.trim(),
           proposedName: newProjectName.trim(),
           proposedAbbr: newProjectAbbr.trim(),
           agreed: true,
         })
-        wx.showToast({ title: '课题申请已提交，等待管理员审核', icon: 'none', duration: 2500 })
-      } else {
-        await api.callFunction('submitRegistrationV2', {
-          name: form.name.trim(),
-          projectId: selectedProjectId,
-          agreed: true,
+        wx.showToast({
+          title: changeProjectFlow ? '课题申请已提交，审核通过后需再次确认' : '课题申请已提交，等待管理员审核',
+          icon: 'none',
+          duration: 2500,
         })
+      } else {
+        if (changeProjectFlow) {
+          await api.callFunction('requestProjectChange', {
+            projectId: selectedProjectId,
+          })
+        } else {
+          await api.callFunction('submitRegistrationV2', {
+            name: form.name.trim(),
+            projectId: selectedProjectId,
+            agreed: true,
+          })
+        }
       }
       await app.refreshSession()
-      wx.showToast({ title: projectMode === 'new' ? '已提交课题申请' : '已提交注册审核', icon: 'success' })
+      wx.showToast({
+        title: projectMode === 'new'
+          ? '已提交课题申请'
+          : (changeProjectFlow ? '已提交课题变更' : '已提交注册审核'),
+        icon: 'success',
+      })
       setTimeout(() => wx.navigateBack(), 800)
     } catch (err) {
       api.showError(err)

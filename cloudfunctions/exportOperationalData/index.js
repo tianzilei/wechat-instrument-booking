@@ -61,13 +61,12 @@ async function getSettings() {
 }
 
 function buildMap(items, keyField) {
-  return (items || []).reduce((map, item) => {
-    if (!item || !item[keyField]) return map
-    return {
-      ...map,
-      [item[keyField]]: item,
-    }
-  }, {})
+  const map = {}
+  ;(items || []).forEach((item) => {
+    if (!item || !item[keyField]) return
+    map[item[keyField]] = item
+  })
+  return map
 }
 
 function chunk(items, size) {
