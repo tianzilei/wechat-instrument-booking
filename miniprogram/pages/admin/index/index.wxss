@@ -11,16 +11,6 @@
   font-weight: 700;
 }
 
-.admin-todo-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16rpx;
-}
-
-.admin-todo-card {
-  min-height: 224rpx;
-}
-
 .admin-nav {
   display: flex;
   align-items: center;
@@ -34,10 +24,4 @@
 
 .admin-nav-panel {
   --dashboard-accent: var(--color-maintenance);
-}
-
-@media (max-width: 620rpx) {
-  .admin-todo-grid {
-    grid-template-columns: 1fr;
-  }
 }

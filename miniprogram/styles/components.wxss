@@ -161,12 +161,15 @@
 
 .dashboard-grid {
   --dashboard-accent: var(--color-primary);
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16rpx;
 }
 
 .dashboard-stat {
   position: relative;
   overflow: hidden;
-  min-height: 152rpx;
+  min-height: 224rpx;
   padding-top: 30rpx;
 }
 
