@@ -90,7 +90,7 @@ async function fetchUserMap(userIds) {
 function canExposeUserName(currentUser, bookingProjectId) {
   if (!currentUser) return false
   if (currentUser.role === 'admin') return true
-  if (currentUser.accountStatus !== 'active') return false
+  if ((currentUser.accountStatus || 'active') !== 'active') return false
   if (currentUser.registrationStatus !== 'approved') return false
   return !!(currentUser.projectId && bookingProjectId && currentUser.projectId === bookingProjectId)
 }
