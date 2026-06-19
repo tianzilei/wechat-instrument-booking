@@ -15,7 +15,7 @@ function getMemberTag(member) {
   if (member.accountStatus === 'deleting') {
     return { text: '注销中', tone: 'warning' }
   }
-  return { text: '正常', tone: 'success' }
+  return { text: '可预约', tone: 'success' }
 }
 
 function getProjectTag(project) {

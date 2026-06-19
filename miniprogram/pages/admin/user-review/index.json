@@ -1,5 +1,5 @@
 {
-  "navigationBarTitleText": "注册用户/课题待审",
+  "navigationBarTitleText": "注册与课题待审",
   "usingComponents": {
     "empty-state": "../../../components/empty-state/index",
     "status-tag": "../../../components/status-tag/index"

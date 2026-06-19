@@ -1,8 +1,8 @@
 <view class="page">
-  <view class="page-intro">统一处理注册审核和课题申请，避免在首页重复分流。</view>
+  <view class="page-intro">统一处理注册审核和课题申请。</view>
 
   <view class="section">
-    <view class="section-title">用户待审</view>
+    <view class="section-title">注册待审</view>
     <empty-state wx:if="{{userItems.length === 0}}" title="暂无注册待审" />
     <view wx:if="{{userItems.length > 0}}" class="surface-section">
       <view wx:for="{{userItems}}" wx:key="_id" class="list-card review-card" data-id="{{item._id}}" bindtap="openRegistrationDetail">
@@ -17,7 +17,7 @@
   </view>
 
   <view class="section">
-    <view class="section-title">课题待审</view>
+    <view class="section-title">课题申请待审</view>
     <empty-state wx:if="{{projectItems.length === 0}}" title="暂无课题待审" />
     <view wx:if="{{projectItems.length > 0}}" class="surface-section">
       <view wx:for="{{projectItems}}" wx:key="_id" class="list-card review-card" data-id="{{item._id}}" bindtap="openProjectDetail">

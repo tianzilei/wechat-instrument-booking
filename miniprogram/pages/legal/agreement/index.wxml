@@ -36,7 +36,7 @@
       <view class="legal-text">4. 同一预约单支持多个不连续时段选择。</view>
       <view class="legal-text">5. 非工作时间和周末预约需管理员审核。</view>
       <view class="legal-text">6. 预约成功后请按时使用仪器，避免资源浪费。</view>
-      <view class="legal-text">7. 预约备注为选填项，最多 500 字，不对外公开。</view>
+      <view class="legal-text">7. 预约备注为选填项，最多 100 字，不对外公开。</view>
     </view>
 
     <view class="legal-section">
@@ -44,7 +44,7 @@
       <view class="legal-text">1. 距预约开始时间不少于12小时的取消请求直接生效。</view>
       <view class="legal-text">2. 距开始不足12小时的取消需管理员审核，审核通过前该时段仍会占用。</view>
       <view class="legal-text">3. 已占用时段可加入候补，候补成功后有确认期限。</view>
-      <view class="legal-text">4. 取消原因为选填项，最多 500 字。</view>
+      <view class="legal-text">4. 用户取消通过确认弹窗发起，系统记录取消说明。</view>
     </view>
 
     <view class="legal-section">

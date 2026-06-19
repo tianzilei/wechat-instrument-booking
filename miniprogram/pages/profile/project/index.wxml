@@ -42,7 +42,7 @@
         <view wx:for="{{members}}" wx:key="_id" class="list-card project-row">
           <view>
             <view class="project-row__title">{{item.name || '未命名成员'}}</view>
-            <view class="page-subtitle">{{item.role === 'admin' ? '管理员成员' : '课题成员'}}</view>
+            <view class="page-subtitle">{{item.role === 'admin' ? '管理员' : '课题成员'}}</view>
           </view>
           <status-tag text="{{item.tagText}}" tone="{{item.tagTone}}" />
         </view>

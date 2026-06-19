@@ -1,6 +1,6 @@
 <view class="page">
   <view class="tab-bar-scrim"></view>
-  <view class="page-intro">优先从待办直达处理，再进入维护和系统设置等非待办功能。</view>
+  <view class="page-intro">优先处理待办事项；维护、设置和导出放在其他功能中。</view>
 
   <empty-state wx:if="{{!isAdmin}}" title="暂无管理权限" description="管理员身份需要在数据库中手动设置。" />
 
@@ -8,7 +8,7 @@
     <view class="surface-section dashboard-summary admin-summary admin-dashboard">
       <view>
         <view class="admin-summary__title">当前待办 {{totalTodoCount}} 项</view>
-        <view class="page-subtitle">审核、取消与隐私请求优先从下方 dashboard 进入。</view>
+        <view class="page-subtitle">注册、预约、取消和隐私请求统一从待办区进入。</view>
       </view>
       <status-tag text="管理员" tone="danger" />
     </view>

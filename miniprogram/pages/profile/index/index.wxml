@@ -55,7 +55,7 @@
         <view wx:if="{{showProjectEntry}}" class="list-card nav-row" bindtap="goProject">
           <view>
             <view class="nav-title">我的课题</view>
-            <view class="page-subtitle">课题成员与课题内近期预约记录</view>
+            <view class="page-subtitle">课题成员、未来预约与近期开启记录</view>
           </view>
         </view>
         <view class="list-card nav-row" bindtap="goStats">

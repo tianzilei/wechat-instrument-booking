@@ -10,7 +10,7 @@
       <view class="legal-text">• 真实姓名：用于管理员核验用户身份和管理预约记录。</view>
       <view class="legal-text">• 所属课题、课题名称、课题缩写：用于课题归属管理和周历公开展示。</view>
       <view class="legal-text">• 预约日期、开始/结束时间：用于创建和管理仪器预约。</view>
-      <view class="legal-text">• 预约备注（选填，最多 500 字）：用于预约说明，不对外公开。</view>
+      <view class="legal-text">• 预约备注（选填，最多 100 字）：用于预约说明，不对外公开。</view>
       <view class="legal-text">• 隐私请求类型和补充说明：用于处理您的隐私相关诉求。</view>
       <view class="legal-text">• 协议及隐私政策同意操作：用于记录您的授权同意。</view>
 

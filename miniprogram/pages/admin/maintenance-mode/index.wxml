@@ -59,7 +59,7 @@
     <view class="row-between settings-row">
       <view class="settings-copy">
         <view class="nav-title">运营数据导出</view>
-        <view class="page-subtitle">仅管理员可导出内部运营 JSON，包含课题组与预约人信息；不含 openid、备注、隐私请求和审核日志。</view>
+        <view class="page-subtitle">仅管理员可导出内部运营 JSON，包含课题与预约人信息；不含 openid、备注、隐私请求和审核日志。</view>
       </view>
       <button class="button button--secondary button--compact settings-action" loading="{{exporting}}" disabled="{{exporting}}" bindtap="exportData">导出</button>
     </view>

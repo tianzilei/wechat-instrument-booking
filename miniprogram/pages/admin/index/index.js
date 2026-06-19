@@ -3,7 +3,7 @@ const api = require('../../../utils/api')
 const { setTabBarSelected } = require('../../../utils/tabbar')
 
 const TODO_CARD_DEFS = [
-  { key: 'reviewPending', title: '注册用户/课题待审', desc: '统一处理注册审核与课题申请', url: '/pages/admin/user-review/index' },
+  { key: 'reviewPending', title: '注册与课题待审', desc: '处理用户注册和课题申请', url: '/pages/admin/user-review/index' },
   { key: 'bookingPending', title: '预约待审', desc: '处理非工作时间与周末预约', url: '/pages/admin/booking-review/index' },
   { key: 'cancelPending', title: '取消待审', desc: '统一处理取消申请与规则复审', url: '/pages/admin/cancel-review/index' },
   { key: 'privacyPending', title: '隐私请求', desc: '处理查询、更正、删除等请求', url: '/pages/admin/privacy-review/index' },

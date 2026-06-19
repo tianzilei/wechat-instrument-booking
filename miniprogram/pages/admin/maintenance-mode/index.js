@@ -85,7 +85,7 @@ Page({
     if (this.data.exporting) return
     wx.showModal({
       title: '导出运营数据',
-      content: '该导出仅限管理员内部使用，包含课题组与预约人信息，不包含 openid、备注、隐私请求和审核日志。确认继续导出吗？',
+      content: '该导出仅限管理员内部使用，包含课题与预约人信息，不包含 openid、备注、隐私请求和审核日志。确认继续导出吗？',
       success: async (res) => {
         if (!res.confirm) return
         this.setData({ exporting: true })
