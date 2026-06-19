@@ -1,8 +1,20 @@
+function normalizeCallError(err) {
+  if (err && err.code && err.message) return err
+  const error = err instanceof Error ? err : new Error('连接服务失败，请检查网络后重试')
+  error.code = error.code || 'NETWORK_ERROR'
+  if (!error.message || error.message.indexOf('callFunction:fail') >= 0) {
+    error.message = '连接服务失败，请检查网络后重试'
+  }
+  return error
+}
+
 function callFunctionRaw(name, data = {}) {
   return wx.cloud.callFunction({
     name,
     data,
-  }).then((res) => res.result || {})
+  }).then((res) => res.result || {}).catch((err) => {
+    throw normalizeCallError(err)
+  })
 }
 
 function callFunction(name, data = {}) {

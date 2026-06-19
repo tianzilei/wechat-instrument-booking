@@ -32,10 +32,12 @@ Page({
     ],
   },
 
-  onShow() {
+  async onShow() {
     setTabBarSelected(this, 2)
-    this.setData({ isAdmin: app.isAdmin() })
-    if (app.isAdmin()) this.loadDashboard()
+    await app.ensureSessionReady()
+    const isAdmin = app.isAdmin()
+    this.setData({ isAdmin })
+    if (isAdmin) this.loadDashboard()
   },
 
   async loadDashboard() {

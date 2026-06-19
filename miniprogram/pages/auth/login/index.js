@@ -33,7 +33,8 @@ Page({
     primaryActionMode: '',
   },
 
-  onShow() {
+  async onShow() {
+    await app.ensureSessionReady()
     this.applyUser()
   },
 

@@ -21,9 +21,10 @@ Page({
     searching: false,
   },
 
-  onLoad(options) {
+  async onLoad(options) {
     this.projectSearchTimer = null
     this.projectSearchToken = 0
+    await app.ensureSessionReady()
     const user = app.globalData.user || {}
     const alreadyAccepted = !app.needsLegalAcceptance() && !!(user.agreementVersion && user.privacyVersion)
     const changeProjectFlow = options && options.mode === 'change-project'

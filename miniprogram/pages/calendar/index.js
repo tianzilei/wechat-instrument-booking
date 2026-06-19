@@ -155,8 +155,9 @@ Page({
     this.setWeek(weekStart)
   },
 
-  onShow() {
+  async onShow() {
     setTabBarSelected(this, 0)
+    await app.ensureSessionReady()
     this.setData({ isAdminView: app.isAdmin() })
     this.refreshUserHint()
     this.loadCalendar()
@@ -230,7 +231,13 @@ Page({
       this.updateBookingWindowHint(data.serverNow, data.maxAdvanceDays || DEFAULT_MAX_ADVANCE_DAYS)
       this.setData({ items, maintenanceSlots, userHint, serviceMode })
     } catch (err) {
-      this.setData({ items: [], maintenanceSlots: [] })
+      this.setData({
+        items: [],
+        maintenanceSlots: [],
+        serviceMode: 'normal',
+        userHint: '日历加载失败，请检查网络后重试',
+        bookingWindowHint: '暂时无法连接到服务，请稍后重试。',
+      })
     }
   },
 

@@ -21,8 +21,9 @@ App({
   },
 
   async refreshSession() {
-    try {
-      const result = await api.callFunctionRaw('login')
+    if (this.sessionRefreshPromise) return this.sessionRefreshPromise
+
+    this.sessionRefreshPromise = api.callFunctionRaw('login').then((result) => {
       if (result.success && result.data && result.data.identified) {
         const user = result.data.user || null
         if (user) {
@@ -36,19 +37,36 @@ App({
         this.globalData.hasLogin = false
         this.globalData.needsLegalAcceptance = false
       }
+      this.lastSessionResult = result
       return result
-    } catch (err) {
-      this.globalData.user = null
-      this.globalData.hasLogin = false
-      this.globalData.needsLegalAcceptance = false
-      return {
+    }).catch(() => {
+      const result = {
         success: false,
         error: {
           code: 'LOGIN_FAILED',
           message: '登录失败，请稍后重试',
         },
       }
+        this.globalData.user = null
+        this.globalData.hasLogin = false
+        this.globalData.needsLegalAcceptance = false
+      this.lastSessionResult = result
+      return result
+    }).finally(() => {
+      this.globalData.sessionReady = true
+      this.sessionRefreshPromise = null
+    })
+
+    return this.sessionRefreshPromise
+  },
+
+  ensureSessionReady() {
+    if (this.sessionRefreshPromise) return this.sessionRefreshPromise
+    if (this.globalData.sessionReady && this.lastSessionResult && this.lastSessionResult.success === false) {
+      return this.refreshSession()
     }
+    if (this.globalData.sessionReady) return Promise.resolve(this.lastSessionResult || { success: true, data: null, error: null })
+    return this.refreshSession()
   },
 
   setUser(user) {
@@ -78,6 +96,10 @@ App({
   globalData: {
     hasLogin: false,
     needsLegalAcceptance: false,
+    sessionReady: false,
     user: null,
   },
+
+  sessionRefreshPromise: null,
+  lastSessionResult: null,
 })

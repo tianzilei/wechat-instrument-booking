@@ -39,8 +39,9 @@ Page({
     showProjectEntry: false,
   },
 
-  onShow() {
+  async onShow() {
     setTabBarSelected(this, 1)
+    await app.ensureSessionReady()
     this.applyUser()
     this.loadStats()
   },
