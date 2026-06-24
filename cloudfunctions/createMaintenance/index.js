@@ -16,6 +16,12 @@ function fail(code, message) {
   return { success: false, data: null, error: { code, message } }
 }
 
+function businessError(code, message) {
+  const err = new Error(message)
+  err.code = code
+  return err
+}
+
 async function getAdmin(openid) {
   if (!openid) return null
   const res = await db.collection('users').where({ openid }).limit(1).get()
@@ -26,6 +32,14 @@ async function getAdmin(openid) {
 function isWriteConflictError(err) {
   const text = String((err && (err.errMsg || err.message || err.code)) || '').toLowerCase()
   return text.includes('conflict')
+}
+
+function getAddedDocId(addRes) {
+  if (!addRes) return ''
+  if (addRes._id) return addRes._id
+  if (addRes.id) return addRes.id
+  if (Array.isArray(addRes.idList) && addRes.idList[0]) return addRes.idList[0]
+  return ''
 }
 
 async function runWithBookingMutex(holder, callback) {
@@ -248,6 +262,10 @@ exports.main = async (event) => {
           updatedAt: nowServer,
         },
       })
+      const maintenanceId = getAddedDocId(addRes)
+      if (!maintenanceId) {
+        throw businessError('SYSTEM_BUSY', '系统繁忙，请稍后重试')
+      }
 
       for (const preview of latestPreviews) {
         await transaction.collection('bookings').doc(preview.booking._id).update({
@@ -258,7 +276,7 @@ exports.main = async (event) => {
       await transaction.collection('review_logs').add({
         data: {
           targetType: 'maintenance',
-          targetId: addRes._id,
+          targetId: maintenanceId,
           action: 'create',
           reason: event.reason || '',
           reviewerId: admin._id,
@@ -267,7 +285,7 @@ exports.main = async (event) => {
       })
 
       return {
-        maintenanceId: addRes._id,
+        maintenanceId,
         cancelledBookingIds,
       }
     })
@@ -278,6 +296,13 @@ exports.main = async (event) => {
       affectedBookingCount: result.cancelledBookingIds.length,
     })
   } catch (err) {
+    console.error('createMaintenance failed', {
+      code: err && err.code ? err.code : '',
+      message: err && err.message ? err.message : String(err || ''),
+      startAt: event.startAt || '',
+      endAt: event.endAt || '',
+      previewOnly: !!event.previewOnly,
+    })
     if (err && err.code) return fail(err.code, err.message)
     return fail('SYSTEM_BUSY', '系统繁忙，请稍后重试')
   }
