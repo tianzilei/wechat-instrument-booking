@@ -231,7 +231,9 @@ async function runWithBookingMutex(holder, callback) {
     const transaction = await db.startTransaction()
     try {
       const mutexRef = transaction.collection('system_locks').doc(BOOKING_MUTEX_DOC_ID)
-      await mutexRef.get()
+      try {
+        await mutexRef.get()
+      } catch (err) {}
       await mutexRef.set({
         data: {
           _id: BOOKING_MUTEX_DOC_ID,
