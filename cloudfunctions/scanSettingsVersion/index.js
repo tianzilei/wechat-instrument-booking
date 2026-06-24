@@ -38,7 +38,6 @@ async function runWithMigrationMutex(holder, callback) {
       } catch (err) {}
       await mutexRef.set({
         data: {
-          _id: MIGRATION_MUTEX_DOC_ID,
           holder,
           updatedAt: db.serverDate(),
         },

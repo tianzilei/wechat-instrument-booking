@@ -236,7 +236,6 @@ async function runWithBookingMutex(holder, callback) {
       } catch (err) {}
       await mutexRef.set({
         data: {
-          _id: BOOKING_MUTEX_DOC_ID,
           holder,
           updatedAt: db.serverDate(),
         },
