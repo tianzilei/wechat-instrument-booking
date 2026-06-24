@@ -189,7 +189,7 @@ function buildConflictQueryConditions(segments, projectId) {
   return [...v2Conditions, ...v1Conditions]
 }
 
-async function hasPreciseBookingConflict(segments, projectId) {
+async function hasPreciseBookingConflict(collectionRef, segments, projectId) {
   const requestSegments = getComparableSegments(segments)
   const conditions = buildConflictQueryConditions(requestSegments, projectId)
   if (conditions.length === 0) return false
@@ -197,7 +197,7 @@ async function hasPreciseBookingConflict(segments, projectId) {
   let skip = 0
   let hasMore = true
   while (hasMore) {
-    const batch = await db.collection('bookings').where(query).field({
+    const batch = await collectionRef.where(query).field({
       segments: true,
       firstStartAt: true,
       lastEndAt: true,
@@ -313,10 +313,11 @@ exports.main = async (event) => {
       if (anyMaintenanceConflict(segments, maintenanceSlots)) {
         throw businessError('MAINTENANCE_CONFLICT', '任一时段命中维护')
       }
-      if (user.projectId && await checkProjectConflict(segments, user.projectId)) {
+      const bookingsRef = transaction.collection('bookings')
+      if (user.projectId && await checkProjectConflict(bookingsRef, segments, user.projectId)) {
         throw businessError('PROJECT_BOOKING_CONFLICT', '该时段已被本课题预约')
       }
-      if (await checkConflict(segments)) {
+      if (await checkConflict(bookingsRef, segments)) {
         throw businessError('BOOKING_CONFLICT', '时段已被占用')
       }
 
@@ -333,7 +334,7 @@ exports.main = async (event) => {
       }))
       const durationHours = segments.reduce((sum, segment) => sum + (new Date(segment.endAt) - new Date(segment.startAt)) / 3600000, 0)
 
-      const bookingRes = await transaction.collection('bookings').add({
+      const bookingRes = await bookingsRef.add({
         data: {
           userId: user._id,
           projectId: user.projectId || '',
@@ -380,6 +381,12 @@ exports.main = async (event) => {
       duplicateRequest: !!result.duplicateRequest,
     })
   } catch (err) {
+    console.error('confirmWaitlistV2 failed', {
+      code: err && err.code ? err.code : '',
+      message: err && err.message ? err.message : String(err || ''),
+      waitlistId: event.waitlistId || '',
+      action: event.action || '',
+    })
     if (err && err.code === 'STATE_CHANGED') {
       await triggerWaitlistReconcile('confirmWaitlistV2_state_changed')
     }
@@ -388,12 +395,12 @@ exports.main = async (event) => {
   }
 }
 
-async function checkConflict(segments) {
-  return hasPreciseBookingConflict(segments, '')
+async function checkConflict(collectionRef, segments) {
+  return hasPreciseBookingConflict(collectionRef, segments, '')
 }
 
-async function checkProjectConflict(segments, projectId) {
-  return hasPreciseBookingConflict(segments, projectId)
+async function checkProjectConflict(collectionRef, segments, projectId) {
+  return hasPreciseBookingConflict(collectionRef, segments, projectId)
 }
 
 function getSpecialReasons(segments, openStartHour, openEndHour) {

@@ -161,7 +161,7 @@ function buildConflictQueryConditions(segments, sharedFilter) {
   return [...v2Conditions, ...v1Conditions]
 }
 
-async function hasPreciseBookingConflict(segments, sharedFilter) {
+async function hasPreciseBookingConflict(collectionRef, segments, sharedFilter) {
   const requestSegments = getComparableSegments(segments)
   const conditions = buildConflictQueryConditions(requestSegments, sharedFilter)
   if (conditions.length === 0) return false
@@ -169,7 +169,7 @@ async function hasPreciseBookingConflict(segments, sharedFilter) {
   let skip = 0
   let hasMore = true
   while (hasMore) {
-    const batch = await db.collection('bookings').where(query).field({
+    const batch = await collectionRef.where(query).field({
       segments: true,
       firstStartAt: true,
       lastEndAt: true,
@@ -187,21 +187,21 @@ async function hasPreciseBookingConflict(segments, sharedFilter) {
   return false
 }
 
-async function anyBookingConflict(segments, excludeBookingId) {
+async function anyBookingConflict(collectionRef, segments, excludeBookingId) {
   const sharedFilter = { status: _.in(ACTIVE_STATUSES) }
   if (excludeBookingId) {
     sharedFilter._id = _.neq(excludeBookingId)
   }
-  return hasPreciseBookingConflict(segments, sharedFilter)
+  return hasPreciseBookingConflict(collectionRef, segments, sharedFilter)
 }
 
-async function anyProjectConflict(segments, projectId, excludeBookingId) {
+async function anyProjectConflict(collectionRef, segments, projectId, excludeBookingId) {
   if (!projectId) return false
   const sharedFilter = { status: _.in(ACTIVE_STATUSES), projectId }
   if (excludeBookingId) {
     sharedFilter._id = _.neq(excludeBookingId)
   }
-  return hasPreciseBookingConflict(segments, sharedFilter)
+  return hasPreciseBookingConflict(collectionRef, segments, sharedFilter)
 }
 
 async function getUser(openid) {
@@ -354,24 +354,25 @@ exports.main = async (event) => {
 
   try {
     const result = await runWithBookingMutex(`create:${event.requestId}`, async (transaction) => {
-      const latestExisting = await db.collection('bookings').where({ requestId: event.requestId }).limit(1).get()
+      const bookingsRef = transaction.collection('bookings')
+      const latestExisting = await bookingsRef.where({ requestId: event.requestId }).limit(1).get()
       if (latestExisting.data.length > 0) {
         const booking = latestExisting.data[0]
         return { duplicateRequest: true, bookingId: booking._id, status: booking.status, bookingType: booking.bookingType }
       }
 
-      const maintenance = await fetchAll(db.collection('maintenance_slots'), { status: 'active' })
+      const maintenance = await fetchAll(transaction.collection('maintenance_slots'), { status: 'active' })
       if (anyMaintenanceConflict(normalized, maintenance)) {
         throw businessError('MAINTENANCE_CONFLICT', '任一时段命中维护')
       }
-      if (await anyProjectConflict(normalized, user.projectId || '', '')) {
+      if (await anyProjectConflict(bookingsRef, normalized, user.projectId || '', '')) {
         throw businessError('PROJECT_BOOKING_CONFLICT', '该时段已被本课题预约')
       }
-      if (await anyBookingConflict(normalized)) {
+      if (await anyBookingConflict(bookingsRef, normalized)) {
         throw businessError('BOOKING_CONFLICT', '任一时段发生占用冲突')
       }
 
-      const bookingRes = await transaction.collection('bookings').add({
+      const bookingRes = await bookingsRef.add({
         data: {
           userId: user._id,
           projectId: user.projectId || '',
@@ -411,6 +412,11 @@ exports.main = async (event) => {
 
     return ok({ bookingId: result.bookingId, status, bookingType, specialReasons, scheduleKey })
   } catch (err) {
+    console.error('createBookingV2 failed', {
+      code: err && err.code ? err.code : '',
+      message: err && err.message ? err.message : String(err || ''),
+      requestId: event.requestId || '',
+    })
     if (err && err.code) return fail(err.code, err.message)
     return fail('SYSTEM_BUSY', '系统繁忙，请稍后重试')
   }

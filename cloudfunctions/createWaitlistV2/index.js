@@ -120,7 +120,7 @@ function buildConflictQueryConditions(segments) {
   return [...v2Conditions, ...v1Conditions]
 }
 
-async function hasPreciseBookingConflict(segments) {
+async function hasPreciseBookingConflict(collectionRef, segments) {
   const requestSegments = getComparableSegments(segments)
   const conditions = buildConflictQueryConditions(requestSegments)
   if (conditions.length === 0) return false
@@ -128,7 +128,7 @@ async function hasPreciseBookingConflict(segments) {
   let skip = 0
   let hasMore = true
   while (hasMore) {
-    const batch = await db.collection('bookings').where(query).field({
+    const batch = await collectionRef.where(query).field({
       segments: true,
       firstStartAt: true,
       lastEndAt: true,
@@ -216,11 +216,11 @@ async function ensureProjectActive(userId, projectId) {
   return null
 }
 
-async function hasBookingConflict(segments) {
-  return hasPreciseBookingConflict(segments)
+async function hasBookingConflict(collectionRef, segments) {
+  return hasPreciseBookingConflict(collectionRef, segments)
 }
 
-async function hasMaintenanceConflict(segments) {
+async function hasMaintenanceConflict(collectionRef, segments) {
   const conditions = segments.map((s) => ({
     status: 'active',
     startAt: _.lt(s.endAt),
@@ -228,12 +228,12 @@ async function hasMaintenanceConflict(segments) {
   }))
   if (conditions.length === 0) return false
   const query = conditions.length === 1 ? conditions[0] : _.or(conditions)
-  const res = await db.collection('maintenance_slots').where(query).limit(1).get()
+  const res = await collectionRef.where(query).limit(1).get()
   return res.data.length > 0
 }
 
-async function getNextQueueOrder(scheduleKey) {
-  const res = await db.collection('waitlists').where({
+async function getNextQueueOrder(collectionRef, scheduleKey) {
+  const res = await collectionRef.where({
     scheduleKey,
     status: _.in(ACTIVE_WAITLIST_STATUSES),
   }).orderBy('queueOrder', 'desc').limit(1).get()
@@ -301,7 +301,8 @@ exports.main = async (event) => {
   const scheduleKey = makeScheduleKey(normalized)
   try {
     const result = await runWithBookingMutex(`waitlist:create:${user._id}:${scheduleKey}`, async (transaction) => {
-      const duplicate = await db.collection('waitlists').where({
+      const waitlistsRef = transaction.collection('waitlists')
+      const duplicate = await waitlistsRef.where({
         userId: user._id,
         scheduleKey,
         status: _.in(ACTIVE_WAITLIST_STATUSES),
@@ -316,20 +317,20 @@ exports.main = async (event) => {
         }
       }
 
-      if (await hasMaintenanceConflict(normalized)) {
+      if (await hasMaintenanceConflict(transaction.collection('maintenance_slots'), normalized)) {
         throw businessError('MAINTENANCE_CONFLICT', '该时段正在维护，不能加入候补')
       }
-      if (!await hasBookingConflict(normalized)) {
+      if (!await hasBookingConflict(transaction.collection('bookings'), normalized)) {
         throw businessError('SLOT_AVAILABLE', '该时段当前可预约，请直接预约')
       }
 
-      const queueOrder = await getNextQueueOrder(scheduleKey)
+      const queueOrder = await getNextQueueOrder(waitlistsRef, scheduleKey)
       const segments = normalized.map((s) => ({
         startAt: s.startAt,
         endAt: s.endAt,
         state: 'active',
       }))
-      const res = await transaction.collection('waitlists').add({
+      const res = await waitlistsRef.add({
         data: {
           userId: user._id,
           projectId: user.projectId || '',
@@ -357,6 +358,11 @@ exports.main = async (event) => {
     })
     return ok({ ...result, scheduleKey })
   } catch (err) {
+    console.error('createWaitlistV2 failed', {
+      code: err && err.code ? err.code : '',
+      message: err && err.message ? err.message : String(err || ''),
+      scheduleKey,
+    })
     if (err && err.code) return fail(err.code, err.message)
     return fail('SYSTEM_BUSY', '系统繁忙，请稍后重试')
   }
